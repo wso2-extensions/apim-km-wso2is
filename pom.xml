@@ -171,7 +171,7 @@
     <scm>
         <connection>scm:git:https://github.com/wso2-extensions/apim-km-wso2is.git</connection>
         <url>https://github.com/wso2-extensions/apim-km-wso2is.git</url>
-        <developerConnection>scm:git:https://github.com/wso2-extensions/apim-km-wso2is</developerConnection>
+        <developerConnection>scm:git:https://github.com/wso2-extensions/apim-km-wso2is.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
     <properties>
