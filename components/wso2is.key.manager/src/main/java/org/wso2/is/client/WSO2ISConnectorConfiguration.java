@@ -51,13 +51,11 @@ public class WSO2ISConnectorConfiguration implements KeyManagerConnectorConfigur
 
         List<ConfigurationDto> configurationDtoList = new ArrayList<>();
         configurationDtoList
-                .add(new ConfigurationDto("client_id", "Client ID", "input", "Client ID of service Application", "",
-                        true,
-                        false, Collections.emptyList(), false));
+                .add(new ConfigurationDto("consumer_key", "Client ID", "input", "Client ID of service Application", "",
+                        true, false, Collections.emptyList(), false));
         configurationDtoList
-                .add(new ConfigurationDto("client_secret", "Client Secret", "input",
-                        "Client Secret of service Application", "", true,
-                        true, Collections.emptyList(), false));
+                .add(new ConfigurationDto("consumer_secret", "Client Secret", "input",
+                        "Client Secret of service Application", "", true, true, Collections.emptyList(), false));
         return configurationDtoList;
     }
 
