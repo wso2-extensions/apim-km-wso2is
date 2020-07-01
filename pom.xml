@@ -62,7 +62,7 @@
             <dependency>
                 <groupId>org.wso2.carbon.apimgt</groupId>
                 <artifactId>org.wso2.carbon.apimgt.gateway</artifactId>
-                <version>${carbon.apimgt.version}</version>F
+                <version>${carbon.apimgt.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
