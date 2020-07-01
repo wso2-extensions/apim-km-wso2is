@@ -44,7 +44,15 @@
                         <Export-Package>
                             org.wso2.is.client.*;version="1.0.0"
                         </Export-Package>
-                    </instructions>
+                        <Import-Package>
+                            org.wso2.carbon.apimgt.impl.*;version="${carbon.apimgt.version}",
+                            org.apache.commons.codec.*,
+                            org.slf4j,
+                            org.osgi.framework.*;version="${imp.package.version.osgi.framework}",
+                            org.osgi.service.*;version="${imp.package.version.osgi.service}",
+                            *;resolution:=optional
+                        </Import-Package>
+                    </instructions>g
                 </configuration>
             </plugin>
             <plugin>
