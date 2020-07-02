@@ -1,0 +1,186 @@
+swagger: '2.0'
+######################################################
+# Prolog
+######################################################
+info:
+  version: "1.0.0"
+  title: "WSO2 Rest API - User Information"
+  description: |
+    This document specifies a **RESTful API** to access user information .
+
+    It is written with [swagger 2](http://swagger.io/).
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+
+######################################################
+# The fixed parts of the URLs of the API
+######################################################
+
+# The schemes supported by the API
+schemes:
+  - https
+
+# The domain of the API.
+# This is configured by the customer during deployment.
+# The given host is just an example.
+host: apim.wso2.com
+
+# The base path of the API.
+# Will be prefixed to all paths.
+
+# if the tenant domain is carbon.super basepath can be /user-info like this too.
+basePath: /t/{tenant-domain}/user-info
+
+# The following media types can be passed as input in message bodies of the API.
+# The actual media type must be specified in the Content-Type header field of the request.
+# The default is json, i.e. the Content-Type header is not needed to
+# be set, but supporting it serves extensibility.
+consumes:
+  - application/json
+
+# The following media types may be passed as output in message bodies of the API.
+# The media type(s) consumable by the requestor is specified in the Accept header field
+# of the corresponding request.
+# The actual media type returned will be specfied in the Content-Type header field
+# of the of the response.
+# The default of the Accept header is json, i.e. there is not needed to
+# set the value, but supporting it serves extensibility.
+produces:
+  - application/json
+paths:
+  /claims/{username}:
+    get:
+      description: |
+         This API is used to get user claims.
+      summary: |
+        Register user
+      # This are the post parameters:
+      parameters:
+        - name: username
+          in: path
+          description: |
+            User name
+          type: string
+          required: true
+        - name: domain
+          in: query
+          description: |
+            Domain of the user.
+          type: string
+        - name: dialect
+          in: query
+          description: |
+            Dialect URI for the claims.
+          type: string
+      responses:
+        200:
+          description: Claims returned.
+          schema:
+            $ref: '#/definitions/ClaimList'
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+        404:
+          description: User not found
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - User Claims
+        
+  /claims/{username}/generate-claims:
+    post:
+      description: |
+         This API is used to get user claims.
+      summary: |
+        Register user
+      # This are the post parameters:
+      parameters:
+        - name: username
+          in: path
+          description: |
+            User name
+          type: string
+          required: true
+        - name: properties
+          in: body
+          description:  Additional parameters that can be used to generate claims.
+          required: true
+          schema:
+            $ref: '#/definitions/ClaimRequest'
+      responses:
+        200:
+          description: Claims returned.
+          schema:
+            $ref: '#/definitions/ClaimList'
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+
+        404:
+          description: User not found
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - User Claims
+        
+definitions:
+  Claim:
+    type: object
+    properties:
+      uri:
+        type: string
+        example: "http://wso2.org/claims/givenname"
+        description: Claim URI.
+      value:
+        type: string
+        example: "John"
+        description: Value for the claim.
+  ClaimList:
+    title: Claim List
+    properties:
+      count:
+        type: integer
+        description: |
+          Number of claims returned.
+        example: 1
+      list:
+        type: array
+        items:
+          $ref: '#/definitions/Claim'
+
+
+#-----------------------------------------------------
+# The Error Response  object
+#-----------------------------------------------------
+  Error:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      description:
+        type: string
+
+  ClaimRequest:
+    type: object
+    properties:
+      accessToken:
+        type: string
+      authorizationCode:
+        type: string
+      dialect:
+        type: string
+

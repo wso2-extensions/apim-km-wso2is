@@ -82,6 +82,58 @@
                 <artifactId>wso2is.key.manager.feature</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+                <version>${cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-rs-service-description</artifactId>
+                <version>${cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
+                <version>${spring-web.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>${javax.ws.rs.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-jaxrs</artifactId>
+                <version>${swagger-jaxrs.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.reflections</groupId>
+                        <artifactId>reflections</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${fasterxml.jackson.databind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>${fasterxml.jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json.wso2</groupId>
+                <artifactId>json</artifactId>
+                <version>${json.orbit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.user.core</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -175,6 +227,14 @@
     <properties>
         <carbon.apimgt.version>6.7.52</carbon.apimgt.version>
         <json.simple.version>1.1</json.simple.version>
+        <cxf.version>3.3.6</cxf.version>
+        <spring-web.version>5.1.13.RELEASE</spring-web.version>
+        <json.orbit.version>3.0.0.wso2v1</json.orbit.version>
+        <swagger-jaxrs.version>1.6.1</swagger-jaxrs.version>
+        <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
+        <fasterxml.jackson.version>2.10.3</fasterxml.jackson.version>
+        <carbon.kernel.version>4.6.0</carbon.kernel.version>
+        <fasterxml.jackson.databind.version>2.10.3</fasterxml.jackson.databind.version>
         <gson.version>2.1</gson.version>
         <carbon.p2.plugin.version>1.5.3</carbon.p2.plugin.version>
         <project.version>1.0.0-SNAPSHOT</project.version>
