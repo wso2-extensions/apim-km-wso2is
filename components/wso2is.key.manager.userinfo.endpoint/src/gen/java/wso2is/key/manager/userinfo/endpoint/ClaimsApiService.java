@@ -15,7 +15,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import javax.ws.rs.core.Response;
 
 public abstract class ClaimsApiService {
-    public abstract Response claimsUsernameGenerateClaimsPost(String username,ClaimRequestDTO properties);
-    public abstract Response claimsUsernameGet(String username,String domain,String dialect);
+    public abstract Response claimsGeneratePost(ClaimRequestDTO properties);
+    public abstract Response claimsGet(String username,String domain,String dialect);
 }
 

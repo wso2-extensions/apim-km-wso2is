@@ -15,6 +15,9 @@ public class ClaimRequestDTO  {
   
   
   
+  private String username = null;
+  
+  
   private String accessToken = null;
   
   
@@ -22,6 +25,21 @@ public class ClaimRequestDTO  {
   
   
   private String dialect = null;
+  
+  
+  private String domain = null;
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("username")
+  public String getUsername() {
+    return username;
+  }
+  public void setUsername(String username) {
+    this.username = username;
+  }
 
   
   /**
@@ -60,15 +78,29 @@ public class ClaimRequestDTO  {
   }
 
   
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("domain")
+  public String getDomain() {
+    return domain;
+  }
+  public void setDomain(String domain) {
+    this.domain = domain;
+  }
+
+  
 
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
     sb.append("class ClaimRequestDTO {\n");
     
+    sb.append("  username: ").append(username).append("\n");
     sb.append("  accessToken: ").append(accessToken).append("\n");
     sb.append("  authorizationCode: ").append(authorizationCode).append("\n");
     sb.append("  dialect: ").append(dialect).append("\n");
+    sb.append("  domain: ").append(domain).append("\n");
     sb.append("}\n");
     return sb.toString();
   }

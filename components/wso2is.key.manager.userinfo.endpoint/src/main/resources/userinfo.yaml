@@ -49,7 +49,7 @@ consumes:
 produces:
   - application/json
 paths:
-  /claims/{username}:
+  /claims:
     get:
       description: |
          This API is used to get user claims.
@@ -58,7 +58,7 @@ paths:
       # This are the post parameters:
       parameters:
         - name: username
-          in: path
+          in: query
           description: |
             User name
           type: string
@@ -93,7 +93,7 @@ paths:
       tags:
         - User Claims
         
-  /claims/{username}/generate-claims:
+  /claims/generate:
     post:
       description: |
          This API is used to get user claims.
@@ -101,12 +101,6 @@ paths:
         Register user
       # This are the post parameters:
       parameters:
-        - name: username
-          in: path
-          description: |
-            User name
-          type: string
-          required: true
         - name: properties
           in: body
           description:  Additional parameters that can be used to generate claims.
@@ -177,10 +171,13 @@ definitions:
   ClaimRequest:
     type: object
     properties:
+      username:
+        type: string
       accessToken:
         type: string
       authorizationCode:
         type: string
       dialect:
         type: string
-
+      domain:
+        type: string

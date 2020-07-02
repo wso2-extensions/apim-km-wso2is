@@ -28,7 +28,7 @@ public class ClaimsApi  {
    private final ClaimsApiService delegate = ClaimsApiServiceFactory.getClaimsApi();
 
     @POST
-    @Path("/{username}/generate-claims")
+    @Path("/generate")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "Register user\n", notes = "This API is used to get user claims.\n", response = ClaimListDTO.class)
@@ -41,13 +41,12 @@ public class ClaimsApi  {
         
         @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
 
-    public Response claimsUsernameGenerateClaimsPost(@ApiParam(value = "User name\n",required=true ) @PathParam("username")  String username,
-    @ApiParam(value = "Additional parameters that can be used to generate claims." ,required=true ) ClaimRequestDTO properties)
+    public Response claimsGeneratePost(@ApiParam(value = "Additional parameters that can be used to generate claims." ,required=true ) ClaimRequestDTO properties)
     {
-    return delegate.claimsUsernameGenerateClaimsPost(username,properties);
+    return delegate.claimsGeneratePost(properties);
     }
     @GET
-    @Path("/{username}")
+    
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "Register user\n", notes = "This API is used to get user claims.\n", response = ClaimListDTO.class)
@@ -60,11 +59,11 @@ public class ClaimsApi  {
         
         @io.swagger.annotations.ApiResponse(code = 500, message = "Server Error") })
 
-    public Response claimsUsernameGet(@ApiParam(value = "User name\n",required=true ) @PathParam("username")  String username,
+    public Response claimsGet(@ApiParam(value = "User name\n",required=true) @QueryParam("username")  String username,
     @ApiParam(value = "Domain of the user.\n") @QueryParam("domain")  String domain,
     @ApiParam(value = "Dialect URI for the claims.\n") @QueryParam("dialect")  String dialect)
     {
-    return delegate.claimsUsernameGet(username,domain,dialect);
+    return delegate.claimsGet(username,domain,dialect);
     }
 }
 
