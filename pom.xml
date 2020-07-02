@@ -30,7 +30,9 @@
 
     <modules>
         <module>components/wso2is.key.manager</module>
+        <module>components/wso2is.key.manager.userinfo.endpoint</module>
         <module>features/wso2is.key.manager.feature</module>
+        <module>features/wso2is.key.manager.userinfo.endpoint.feature</module>
     </modules>
     <name>Client implementation to integrate with WSO2 IS Authorization Server</name>
     <url>http://wso2.org</url>
