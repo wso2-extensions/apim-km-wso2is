@@ -54,12 +54,36 @@
             <type>war</type>
         </dependency>
     </dependencies>
-    <build>
+        <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <!--phase>generate-resources</phase-->
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>src/main/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>resources</directory>
+                                    <includes>
+                                        <include>p2.inf</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.4</version>
+                <version>2.10</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -72,36 +96,13 @@
                                 <artifactItem>
                                     <groupId>org.wso2.km.ext.wso2is</groupId>
                                     <artifactId>wso2is.key.manager.userinfo.endpoint</artifactId>
-                                    <type>war</type>
                                     <overWrite>true</overWrite>
+                                    <type>war</type>
                                     <outputDirectory>${basedir}/src/main/resources/</outputDirectory>
                                     <destFileName>user-info.war</destFileName>
                                 </artifactItem>
                             </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>prefilter-resources</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>src/main/resources</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>resources</directory>
-                                    <includes>
-                                        <include>p2.inf</include>
-                                        <include>user-info.war</include>
-                                    </includes>
-                                </resource>
-                            </resources>
+                            <outputDirectory>${project.build.directory}/external/libs</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -109,57 +110,51 @@
             <plugin>
                 <groupId>org.wso2.maven</groupId>
                 <artifactId>carbon-p2-plugin</artifactId>
-                <version>${carbon.p2.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>p2-feature-generation</id>
+                        <id>4-p2-feature-generation</id>
                         <phase>package</phase>
                         <goals>
                             <goal>p2-feature-gen</goal>
                         </goals>
                         <configuration>
-                            <id>wso2is.key.manager.userinfo.endpoint.server</id>
+                            <id>wso2is.key.manager.userinfo.endpoint</id>
                             <propertiesFile>../../etc/feature.properties</propertiesFile>
                             <adviceFile>
                                 <properties>
-                                    <propertyDef>org.wso2.carbon.p2.category.type:server</propertyDef>
+                                    <propertyDef>org.wso2.carbon.p2.category.type:server
+                                    </propertyDef>
+                                    <propertyDef>org.eclipse.equinox.p2.type.group:false
+                                    </propertyDef>
                                 </properties>
                             </adviceFile>
-                            <bundles>
-                                <!--<bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.recovery</bundleDef>
-                                <bundleDef>org.wso2.carbon.identity.governance:org.wso2.carbon.identity.user.export.core</bundleDef>
-                                <bundleDef>
-                                    org.wso2.carbon.identity.governance:org.wso2.carbon.identity.user.rename.core
-                                </bundleDef>-->
-                            </bundles>
+                            <!--<bundles>
+                                <bundleDef>org.wso2.carbon.apimgt:org.wso2.carbon.apimgt.api:${carbon.apimgt.version}
+                                </bundleDef>
+                                <bundleDef>org.wso2.carbon.apimgt:org.wso2.carbon.apimgt.impl:${carbon.apimgt.version}
+                                </bundleDef>
+                                <bundleDef>com.googlecode.json-simple.wso2:json-simple</bundleDef>
+                                <bundleDef>com.google.code.gson:gson:${google.code.gson.version}</bundleDef>
+                                <bundleDef>net.sf.ehcache.wso2:ehcache</bundleDef>
+                                <bundleDef>org.json.wso2:json:${orbit.version.json}</bundleDef>
+                                <bundleDef>org.wso2.uri.template:wso2-uri-templates:${wso2-uri-templates.version}
+                                </bundleDef>
+                                <bundleDef>com.fasterxml.jackson.core:jackson-core:${fasterxml.jackson.version}
+                                </bundleDef>
+                                <bundleDef>commons-codec:commons-codec</bundleDef>
+                            </bundles>-->
                             <importFeatures>
+                                <!--<importFeatureDef>org.wso2.carbon.core.server:compatible:${carbon.kernel.feature.version}
+                                </importFeatureDef>-->
                             </importFeatures>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.1</version>
-                <executions>
-                    <execution>
-                        <id>clean_target</id>
-                        <phase>install</phase>
-                        <configuration>
-                            <tasks>
-                                <delete dir="src/main/resources" />
-                                <delete dir="src/main" />
-                                <delete dir="src" />
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+
+
         </plugins>
     </build>
+
 
 </project>

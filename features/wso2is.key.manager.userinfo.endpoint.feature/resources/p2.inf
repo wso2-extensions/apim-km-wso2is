@@ -1,2 +1,2 @@
 instructions.configure = \
-org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/wso2is.key.manager.userinfo.server_${feature.version}/user-info.war,target:${installFolder}/../../deployment/server/webapps/user-info.war,overwrite:true);\
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/wso2is.key.manager.userinfo.endpoint_${feature.version}/user-info.war,target:${installFolder}/../../deployment/server/webapps/user-info.war,overwrite:true);\
