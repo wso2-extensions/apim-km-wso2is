@@ -32,7 +32,9 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.io.InputStream;
@@ -56,6 +58,7 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                             "username not found in the request body"))
                     .build();
         }
+        Map<String, String> customClaims;
         String username = properties.getUsername();
         String accessToken = null;
         String authCode = null;
@@ -74,6 +77,9 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                 username = properties.getDomain() + "/" + username;
             }
         }
+        //TODO load claims using AuthorizationGrantCache
+        customClaims = new HashMap<String, String>();
+        
         RealmService realm = (RealmService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(RealmService.class, null);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
@@ -84,8 +90,8 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                                 "Requested user " + username + " does not exist."))
                         .build();
             }
-            SortedMap<String, String> claims = getClaims(username, tenantId , dialect, realm);
-            return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(claims)).build();
+            customClaims.putAll(getClaims(username, tenantId , dialect, realm));;
+            return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
         } catch (UserStoreException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(UserInfoUtil.getError(Response.Status.INTERNAL_SERVER_ERROR.toString(),
