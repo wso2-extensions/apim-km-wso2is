@@ -61,14 +61,10 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
         Map<String, String> customClaims;
         String username = properties.getUsername();
         String accessToken = null;
-        String authCode = null;
         String dialect = DEFAULT_DIALECT_URI;
         if (properties != null) {
             if (!StringUtils.isEmpty(properties.getAccessToken())) {
                 accessToken = properties.getAccessToken();
-            }
-            if (!StringUtils.isEmpty(properties.getAuthorizationCode())) {
-                authCode = properties.getAuthorizationCode();
             }
             if (!StringUtils.isEmpty(properties.getDialect())) {
                 dialect = properties.getDialect();
@@ -147,8 +143,8 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
         }
         UserStoreManager userStoreManager = realm.getTenantUserRealm(tenantId).getUserStoreManager();
 
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(username);
-        claimValues = new TreeMap(userStoreManager.getUserClaimValues(tenantAwareUserName, claimURIs, null));
+
+        claimValues = new TreeMap(userStoreManager.getUserClaimValues(username, claimURIs, null));
         if(log.isDebugEnabled()) {
             log.debug("Claims for user: " + username + " : " + claimValues.toString());
         }
