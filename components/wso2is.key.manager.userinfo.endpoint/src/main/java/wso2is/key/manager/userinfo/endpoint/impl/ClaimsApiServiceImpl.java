@@ -20,8 +20,8 @@ package wso2is.key.manager.userinfo.endpoint.impl;
 
 import wso2is.key.manager.userinfo.endpoint.*;
 import wso2is.key.manager.userinfo.endpoint.dto.*;
-import wso2is.key.manager.userinfo.endpoint.util.UserInfoUtil;
 
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.ClaimMapping;
@@ -29,9 +29,16 @@ import org.wso2.carbon.user.api.UserRealmService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.MessageContext;
 
-import java.util.ArrayList;
+import wso2is.key.manager.userinfo.endpoint.dto.ClaimListDTO;
+import wso2is.key.manager.userinfo.endpoint.dto.ClaimRequestDTO;
+import wso2is.key.manager.userinfo.endpoint.dto.ErrorDTO;
+import wso2is.key.manager.userinfo.endpoint.util.UserInfoUtil;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,19 +46,15 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.io.InputStream;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
-public class ClaimsApiServiceImpl extends ClaimsApiService {
+
+public class ClaimsApiServiceImpl implements ClaimsApiService {
+
     private static final Log log = LogFactory.getLog(ClaimsApiServiceImpl.class);
     private final String DEFAULT_DIALECT_URI = "http://wso2.org/claims";
-    
-    @Override
-    public Response claimsGeneratePost(ClaimRequestDTO properties) {
+    public Response claimsGeneratePost(ClaimRequestDTO properties, MessageContext messageContext) {
         if(properties != null && StringUtils.isEmpty(properties.getUsername())) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(), "Bad request",
@@ -96,8 +99,7 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
         }
     }
 
-    @Override
-    public Response claimsGet(String username, String domain, String dialect) {
+    public Response claimsGet(String username, String domain, String dialect, MessageContext messageContext) {
         if (StringUtils.isEmpty(username)) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(), "Bad request",
@@ -128,8 +130,8 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                             "Internal server error", "Error while accessing the user store"))
                     .build();
         }
+
     }
-    
     private SortedMap<String, String> getClaims(String username, int tenantId, String dialectURI,
             UserRealmService realm) throws UserStoreException {
         SortedMap<String, String> claimValues;
