@@ -16,12 +16,12 @@
  * under the License.
  */
 
-package wso2is.key.manager.userinfo.endpoint.impl;
+package org.wso2.is.key.manager.userinfo.endpoint.impl;
 
-import wso2is.key.manager.userinfo.endpoint.*;
-import wso2is.key.manager.userinfo.endpoint.dto.*;
-import wso2is.key.manager.userinfo.endpoint.util.UserInfoUtil;
-
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
@@ -33,10 +33,11 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.is.key.manager.userinfo.endpoint.ClaimsApiService;
+import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimRequestDTO;
+import org.wso2.is.key.manager.userinfo.endpoint.util.UserInfoUtil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -51,21 +52,24 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import javax.ws.rs.core.Response;
 
 import static org.apache.commons.collections.MapUtils.isNotEmpty;
-
-public class ClaimsApiServiceImpl extends ClaimsApiService {
+/**
+ *Service Implementation for Claims API.
+ */
+public class ClaimsApiServiceImpl implements ClaimsApiService {
     private static final Log log = LogFactory.getLog(ClaimsApiServiceImpl.class);
-    private final String DEFAULT_DIALECT_URI = "http://wso2.org/claims";
-    
+    private static final String DEFAULT_DIALECT_URI = "http://wso2.org/claims";
+
     @Override
-    public Response claimsGeneratePost(ClaimRequestDTO properties) {
-        if(properties != null && StringUtils.isEmpty(properties.getUsername())) {
+    public Response claimsGeneratePost(ClaimRequestDTO properties, MessageContext messageContext) {
+
+        if (properties != null && StringUtils.isEmpty(properties.getUsername())) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(), "Bad request",
                             "username not found in the request body"))
                     .build();
         }
         Map<String, String> customClaims = null;
-        Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping 
+        Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping
                                 = new HashMap<org.wso2.carbon.identity.application.common.model.ClaimMapping, String>();
         String username = properties.getUsername();
         String accessToken = null;
@@ -87,7 +91,7 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
             }
         }
         boolean convertDialect = false; // TODO get from the rest api payload
-        
+
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String userNameWithTenantDomain = username + "@" + tenantDomain;
 
@@ -108,7 +112,6 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                         + "retrieved from the user store for user : " + userNameWithTenantDomain);
             }
         }
-
         RealmService realm = (RealmService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(RealmService.class, null);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
@@ -122,7 +125,7 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
             if (customClaims == null) {
                 customClaims = new HashMap<String, String>();
             }
-            customClaims.putAll(getClaims(username, tenantId, dialect, realm));;
+            customClaims.putAll(getClaims(username, tenantId, dialect, realm));
             return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
         } catch (UserStoreException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -133,7 +136,8 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
     }
 
     @Override
-    public Response claimsGet(String username, String domain, String dialect) {
+    public Response claimsGet(String username, String domain, String dialect, MessageContext messageContext) {
+
         if (StringUtils.isEmpty(username)) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(), "Bad request",
@@ -165,9 +169,10 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                     .build();
         }
     }
-    
+
     private SortedMap<String, String> getClaims(String username, int tenantId, String dialectURI,
-            UserRealmService realm) throws UserStoreException {
+                                                UserRealmService realm) throws UserStoreException {
+
         SortedMap<String, String> claimValues;
         ClaimManager claimManager = realm.getTenantUserRealm(tenantId).getClaimManager();
 
@@ -181,11 +186,11 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
 
 
         claimValues = new TreeMap(userStoreManager.getUserClaimValues(username, claimURIs, null));
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Claims for user: " + username + " : " + claimValues.toString());
         }
         return claimValues;
     }
-    
-    
+
+
 }

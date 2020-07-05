@@ -16,7 +16,11 @@
  * under the License.
  */
 
-package wso2is.key.manager.userinfo.endpoint.util;
+package org.wso2.is.key.manager.userinfo.endpoint.util;
+
+import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimDTO;
+import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimListDTO;
+import org.wso2.is.key.manager.userinfo.endpoint.dto.ErrorDTO;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,23 +37,23 @@ import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataHandler;
 import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
 
-import wso2is.key.manager.userinfo.endpoint.dto.ClaimDTO;
-import wso2is.key.manager.userinfo.endpoint.dto.ClaimListDTO;
-import wso2is.key.manager.userinfo.endpoint.dto.ErrorDTO;
-
+/**
+ * Utility class for Claims.
+ */
 public class UserInfoUtil {
-    
-    private static final String OIDC_DIALECT_URI = "http://wso2.org/oidc/claim";
-    
+private static final String OIDC_DIALECT_URI = "http://wso2.org/oidc/claim";
+
     public static ErrorDTO getError(String code, String message, String description) {
+
         ErrorDTO errorDTO = new ErrorDTO();
         errorDTO.setCode(code);
         errorDTO.setMessage(message);
         errorDTO.setDescription(description);
         return errorDTO;
     }
-    
+
     public static ClaimListDTO getListDTOfromClaimsMap(Map<String, String> claims) {
+
         ClaimListDTO listDto = new ClaimListDTO();
         List<ClaimDTO> list = new ArrayList<ClaimDTO>();
         listDto.setCount(claims.size());
@@ -62,7 +66,7 @@ public class UserInfoUtil {
         listDto.setList(list);
         return listDto;
     }
-    
+
     public static Map<String, String> convertClaimMap(Map<ClaimMapping, String> userAttributes, String username,
             String dialect, boolean convertDialect) throws Exception {
 
