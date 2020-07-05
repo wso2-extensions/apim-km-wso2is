@@ -23,6 +23,9 @@ import wso2is.key.manager.userinfo.endpoint.dto.*;
 import wso2is.key.manager.userinfo.endpoint.util.UserInfoUtil;
 
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.ClaimMapping;
 import org.wso2.carbon.user.api.UserRealmService;
@@ -39,12 +42,15 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.io.InputStream;
 
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
 import javax.ws.rs.core.Response;
+
+import static org.apache.commons.collections.MapUtils.isNotEmpty;
 
 public class ClaimsApiServiceImpl extends ClaimsApiService {
     private static final Log log = LogFactory.getLog(ClaimsApiServiceImpl.class);
@@ -58,17 +64,20 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                             "username not found in the request body"))
                     .build();
         }
-        Map<String, String> customClaims;
+        Map<String, String> customClaims = null;
+        Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping 
+                                = new HashMap<org.wso2.carbon.identity.application.common.model.ClaimMapping, String>();
         String username = properties.getUsername();
         String accessToken = null;
-        String authCode = null;
         String dialect = DEFAULT_DIALECT_URI;
         if (properties != null) {
             if (!StringUtils.isEmpty(properties.getAccessToken())) {
                 accessToken = properties.getAccessToken();
-            }
-            if (!StringUtils.isEmpty(properties.getAuthorizationCode())) {
-                authCode = properties.getAuthorizationCode();
+                AuthorizationGrantCacheEntry cacheEntry = AuthorizationGrantCache.getInstance()
+                        .getValueFromCacheByToken(new AuthorizationGrantCacheKey(accessToken));
+                if (cacheEntry != null) {
+                    customClaimsWithMapping.putAll(cacheEntry.getUserAttributes());
+                }
             }
             if (!StringUtils.isEmpty(properties.getDialect())) {
                 dialect = properties.getDialect();
@@ -77,20 +86,43 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
                 username = properties.getDomain() + "/" + username;
             }
         }
-        //TODO load claims using AuthorizationGrantCache
-        customClaims = new HashMap<String, String>();
+        boolean convertDialect = false; // TODO get from the rest api payload
         
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        String userNameWithTenantDomain = username + "@" + tenantDomain;
+
+        try {
+            customClaims = UserInfoUtil.convertClaimMap(customClaimsWithMapping, userNameWithTenantDomain, dialect,
+                    convertDialect);
+        } catch (Exception e) {
+            log.error("Error while retrieving user claims from AuthorizationGrantCache ", e);
+        }
+        if (isNotEmpty(customClaims)) {
+            if (log.isDebugEnabled()) {
+                log.debug("The custom claims are retrieved from AuthorizationGrantCache for user : "
+                        + userNameWithTenantDomain);
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Custom claims are not available in the AuthorizationGrantCache. Hence will be "
+                        + "retrieved from the user store for user : " + userNameWithTenantDomain);
+            }
+        }
+
         RealmService realm = (RealmService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(RealmService.class, null);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         try {
-            if(!realm.getTenantUserRealm(tenantId).getUserStoreManager().isExistingUser(username)) {
+            if (!realm.getTenantUserRealm(tenantId).getUserStoreManager().isExistingUser(username)) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(UserInfoUtil.getError(Response.Status.NOT_FOUND.toString(), "User not found",
                                 "Requested user " + username + " does not exist."))
                         .build();
             }
-            customClaims.putAll(getClaims(username, tenantId , dialect, realm));;
+            if (customClaims == null) {
+                customClaims = new HashMap<String, String>();
+            }
+            customClaims.putAll(getClaims(username, tenantId, dialect, realm));;
             return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
         } catch (UserStoreException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -147,11 +179,13 @@ public class ClaimsApiServiceImpl extends ClaimsApiService {
         }
         UserStoreManager userStoreManager = realm.getTenantUserRealm(tenantId).getUserStoreManager();
 
-        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(username);
-        claimValues = new TreeMap(userStoreManager.getUserClaimValues(tenantAwareUserName, claimURIs, null));
+
+        claimValues = new TreeMap(userStoreManager.getUserClaimValues(username, claimURIs, null));
         if(log.isDebugEnabled()) {
             log.debug("Claims for user: " + username + " : " + claimValues.toString());
         }
         return claimValues;
     }
+    
+    
 }
