@@ -35,6 +35,7 @@
         <module>components/wso2is.notification.event.handlers</module>
         <module>features/wso2is.key.manager.feature</module>
         <module>features/wso2is.key.manager.userinfo.endpoint.feature</module>
+        <module>features/wso2is.key.manager.notification.feature</module>
     </modules>
     <name>Client implementation to integrate with WSO2 IS Authorization Server</name>
     <url>http://wso2.org</url>
@@ -147,6 +148,11 @@
             <dependency>
                 <groupId>org.wso2.km.ext.wso2is</groupId>
                 <artifactId>wso2is.key.manager.feature</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.km.ext.wso2is</groupId>
+                <artifactId>wso2is.notification.event.handlers</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

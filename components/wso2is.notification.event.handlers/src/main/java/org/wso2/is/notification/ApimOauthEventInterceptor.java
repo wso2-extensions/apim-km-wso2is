@@ -45,12 +45,17 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
 
     String notificationEndpoint;
     Map<String, String> headerMap = new HashMap<>();
+    boolean enabled;
 
     public ApimOauthEventInterceptor() {
 
         super.init(initConfig);
-        notificationEndpoint = properties.getProperty(NotificationConstants.NOTIFICATION_ENDPOINT);
-        headerMap.putAll(NotificationUtil.extractHeadersMapFromProperties(properties));
+        String endpointProperty = properties.getProperty(NotificationConstants.NOTIFICATION_ENDPOINT);
+        if (StringUtils.isNotEmpty(endpointProperty)) {
+            enabled = true;
+            notificationEndpoint = NotificationUtil.replaceSystemProperty(endpointProperty);
+            headerMap.putAll(NotificationUtil.extractHeadersMapFromProperties(properties));
+        }
     }
 
     private static final Log log = LogFactory.getLog(ApimOauthEventInterceptor.class);
@@ -61,7 +66,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                                               RefreshTokenValidationDataDO refreshTokenDO, Map<String, Object> params)
             throws IdentityOAuth2Exception {
 
-        if (accessTokenDO != null) {
+        if (enabled && accessTokenDO != null) {
             try {
                 long expiryTime = accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis();
                 String accessToken = accessTokenDO.getAccessToken();
@@ -92,7 +97,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             AccessTokenDO accessTokenDO, Map<String, Object> params)
             throws IdentityOAuth2Exception {
 
-        if (accessTokenDO != null) {
+        if (enabled && accessTokenDO != null) {
             try {
                 long expiryTime = accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis();
                 String accessToken = accessTokenDO.getAccessToken();

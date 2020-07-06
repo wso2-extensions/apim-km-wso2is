@@ -19,6 +19,14 @@
 
 package org.wso2.is.notification;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.config.RealmConfigXMLProcessor;
+import org.wso2.is.notification.internal.ServiceReferenceHolder;
+
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -29,6 +37,8 @@ import static org.wso2.is.notification.NotificationConstants.HEADER_PROPERTY;
  * Utility class for Notifications
  */
 public class NotificationUtil {
+
+    private static final Log log = LogFactory.getLog(NotificationUtil.class);
 
     private NotificationUtil() {
 
@@ -41,9 +51,66 @@ public class NotificationUtil {
             String key = (String) propertiesEntry.getKey();
             String value = (String) propertiesEntry.getValue();
             if (key.startsWith(HEADER_PROPERTY)) {
-                headers.put(key.split(HEADER_PROPERTY)[1], value);
+                headers.put(key.split(HEADER_PROPERTY)[1], replaceSystemProperty(value));
             }
         }
         return headers;
     }
+
+    /**
+     * Resolves system properties and replaces in given in text
+     *
+     * @param text
+     * @return System properties resolved text
+     */
+    public static String replaceSystemProperty(String text) {
+
+        int indexOfStartingChars = -1;
+        int indexOfClosingBrace;
+
+        // The following condition deals with properties.
+        // Properties are specified as ${system.property},
+        // and are assumed to be System properties
+        while (indexOfStartingChars < text.indexOf("${")
+                && (indexOfStartingChars = text.indexOf("${")) != -1
+                && (indexOfClosingBrace = text.indexOf('}')) != -1) { // Is a
+            // property
+            // used?
+            String sysProp = text.substring(indexOfStartingChars + 2,
+                    indexOfClosingBrace);
+            String propValue = System.getProperty(sysProp);
+
+            if (propValue == null) {
+                if ("carbon.context".equals(sysProp)) {
+                    propValue = ServiceReferenceHolder.getInstance().getContextService().getServerConfigContext()
+                            .getContextRoot();
+                } else if ("admin.username".equals(sysProp) || "admin.password".equals(sysProp)) {
+                    try {
+                        RealmConfiguration realmConfig =
+                                new RealmConfigXMLProcessor().buildRealmConfigurationFromFile();
+                        if ("admin.username".equals(sysProp)) {
+                            propValue = realmConfig.getAdminUserName();
+                        } else {
+                            propValue = realmConfig.getAdminPassword();
+                        }
+                    } catch (UserStoreException e) {
+                        // Can't throw an exception because the server is
+                        // starting and can't be halted.
+                        log.error("Unable to build the Realm Configuration", e);
+                        return null;
+                    }
+                }
+            }
+            //Derive original text value with resolved system property value
+            if (propValue != null) {
+                text = text.substring(0, indexOfStartingChars) + propValue
+                        + text.substring(indexOfClosingBrace + 1);
+            }
+            if ("carbon.home".equals(sysProp) && ".".equals(propValue)) {
+                text = new File(".").getAbsolutePath() + File.separator + text;
+            }
+        }
+        return text;
+    }
+
 }

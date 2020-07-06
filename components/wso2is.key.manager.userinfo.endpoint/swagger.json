@@ -18,7 +18,7 @@
     "/claims" : {
       "get" : {
         "tags" : [ "User Claims" ],
-        "summary" : "Register user\n",
+        "summary" : "Get User Claims\n",
         "description" : "This API is used to get user claims.\n",
         "parameters" : [ {
           "name" : "username",

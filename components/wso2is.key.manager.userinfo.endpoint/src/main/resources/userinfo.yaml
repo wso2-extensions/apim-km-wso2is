@@ -54,7 +54,7 @@ paths:
       description: |
          This API is used to get user claims.
       summary: |
-        Register user
+        Get User Claims
       # This are the post parameters:
       parameters:
         - name: username

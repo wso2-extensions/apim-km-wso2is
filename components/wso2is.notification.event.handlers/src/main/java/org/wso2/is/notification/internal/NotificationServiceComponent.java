@@ -14,8 +14,8 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.oauth.event.OAuthEventInterceptor;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.notification.ApimOauthEventInterceptor;
-
 
 /**
  * Activation class for notification
@@ -66,6 +66,23 @@ public class NotificationServiceComponent {
     protected void unsetIdentityCoreInitializedEvent(IdentityCoreInitializedEvent identityCoreInitializedEvent) {
         // Nothing to implement.
     }
+
+    @Reference(
+            name = "config.context.service",
+            service = org.wso2.carbon.utils.ConfigurationContextService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetConfigurationContextService")
+    protected void setConfigurationContextService(ConfigurationContextService contextService) {
+
+        ServiceReferenceHolder.getInstance().setContextService(contextService);
+    }
+
+    protected void unsetConfigurationContextService(ConfigurationContextService contextService) {
+
+        ServiceReferenceHolder.getInstance().setContextService(null);
+    }
+
     @Deactivate
     protected void deactivate(ComponentContext context) {
 

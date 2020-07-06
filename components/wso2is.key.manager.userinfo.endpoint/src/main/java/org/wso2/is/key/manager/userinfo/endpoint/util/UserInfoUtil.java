@@ -18,6 +18,12 @@
 
 package org.wso2.is.key.manager.userinfo.endpoint.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.wso2.carbon.claim.mgt.ClaimManagerHandler;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.common.model.Claim;
+import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataHandler;
 import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimDTO;
 import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimListDTO;
 import org.wso2.is.key.manager.userinfo.endpoint.dto.ErrorDTO;
@@ -29,19 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.wso2.carbon.claim.mgt.ClaimManagementException;
-import org.wso2.carbon.claim.mgt.ClaimManagerHandler;
-import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.common.model.Claim;
-import org.wso2.carbon.identity.application.common.model.ClaimMapping;
-import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataHandler;
-import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
-
 /**
  * Utility class for Claims.
  */
 public class UserInfoUtil {
-private static final String OIDC_DIALECT_URI = "http://wso2.org/oidc/claim";
+
+    private static final String OIDC_DIALECT_URI = "http://wso2.org/oidc/claim";
 
     public static ErrorDTO getError(String code, String message, String description) {
 
@@ -57,18 +56,19 @@ private static final String OIDC_DIALECT_URI = "http://wso2.org/oidc/claim";
         ClaimListDTO listDto = new ClaimListDTO();
         List<ClaimDTO> list = new ArrayList<ClaimDTO>();
         listDto.setCount(claims.size());
-        for (String claim : claims.keySet()) {
+        for (Map.Entry<String, String> claimEntry : claims.entrySet()) {
             ClaimDTO dto = new ClaimDTO();
-            dto.setUri(claim);
-            dto.setValue(claims.get(claim));
+            dto.setUri(claimEntry.getKey());
+            dto.setValue(claimEntry.getValue());
             list.add(dto);
         }
         listDto.setList(list);
         return listDto;
     }
 
+    @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")
     public static Map<String, String> convertClaimMap(Map<ClaimMapping, String> userAttributes, String username,
-            String dialect, boolean convertDialect) throws Exception {
+                                                      String dialect, boolean convertDialect) throws Exception {
 
         Map<String, String> userClaims = new HashMap<>();
         Map<String, String> userClaimsCopy = new HashMap<>();
@@ -85,7 +85,6 @@ private static final String OIDC_DIALECT_URI = "http://wso2.org/oidc/claim";
             return userClaims;
         }
 
-        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
 
         Map<String, String> configuredDialectToCarbonClaimMapping = null; // (key) configuredDialectClaimURI -> (value)

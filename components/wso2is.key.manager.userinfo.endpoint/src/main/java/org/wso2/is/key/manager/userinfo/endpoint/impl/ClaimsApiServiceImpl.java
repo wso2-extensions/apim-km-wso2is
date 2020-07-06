@@ -32,7 +32,6 @@ import org.wso2.carbon.user.api.UserRealmService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.userinfo.endpoint.ClaimsApiService;
 import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.userinfo.endpoint.util.UserInfoUtil;
@@ -41,21 +40,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.io.InputStream;
-
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 
 import javax.ws.rs.core.Response;
 
 import static org.apache.commons.collections.MapUtils.isNotEmpty;
+
 /**
  *Service Implementation for Claims API.
  */
 public class ClaimsApiServiceImpl implements ClaimsApiService {
+
     private static final Log log = LogFactory.getLog(ClaimsApiServiceImpl.class);
     private static final String DEFAULT_DIALECT_URI = "http://wso2.org/claims";
 
@@ -67,28 +61,31 @@ public class ClaimsApiServiceImpl implements ClaimsApiService {
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(), "Bad request",
                             "username not found in the request body"))
                     .build();
+        } else if (properties == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(), "Bad request",
+                            "Payload not found in Request body"))
+                    .build();
         }
         Map<String, String> customClaims = null;
-        Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping
-                                = new HashMap<org.wso2.carbon.identity.application.common.model.ClaimMapping, String>();
+        Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping =
+                new HashMap<>();
         String username = properties.getUsername();
-        String accessToken = null;
+        String accessToken;
         String dialect = DEFAULT_DIALECT_URI;
-        if (properties != null) {
-            if (!StringUtils.isEmpty(properties.getAccessToken())) {
-                accessToken = properties.getAccessToken();
-                AuthorizationGrantCacheEntry cacheEntry = AuthorizationGrantCache.getInstance()
-                        .getValueFromCacheByToken(new AuthorizationGrantCacheKey(accessToken));
-                if (cacheEntry != null) {
-                    customClaimsWithMapping.putAll(cacheEntry.getUserAttributes());
-                }
+        if (!StringUtils.isEmpty(properties.getAccessToken())) {
+            accessToken = properties.getAccessToken();
+            AuthorizationGrantCacheEntry cacheEntry = AuthorizationGrantCache.getInstance()
+                    .getValueFromCacheByToken(new AuthorizationGrantCacheKey(accessToken));
+            if (cacheEntry != null) {
+                customClaimsWithMapping.putAll(cacheEntry.getUserAttributes());
             }
-            if (!StringUtils.isEmpty(properties.getDialect())) {
-                dialect = properties.getDialect();
-            }
-            if (!StringUtils.isEmpty(properties.getDomain())) {
-                username = properties.getDomain() + "/" + username;
-            }
+        }
+        if (!StringUtils.isEmpty(properties.getDialect())) {
+            dialect = properties.getDialect();
+        }
+        if (!StringUtils.isEmpty(properties.getDomain())) {
+            username = properties.getDomain() + "/" + username;
         }
         boolean convertDialect = false; // TODO get from the rest api payload
 
@@ -123,7 +120,7 @@ public class ClaimsApiServiceImpl implements ClaimsApiService {
                         .build();
             }
             if (customClaims == null) {
-                customClaims = new HashMap<String, String>();
+                customClaims = new HashMap<>();
             }
             customClaims.putAll(getClaims(username, tenantId, dialect, realm));
             return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
@@ -184,13 +181,11 @@ public class ClaimsApiServiceImpl implements ClaimsApiService {
         }
         UserStoreManager userStoreManager = realm.getTenantUserRealm(tenantId).getUserStoreManager();
 
-
         claimValues = new TreeMap(userStoreManager.getUserClaimValues(username, claimURIs, null));
         if (log.isDebugEnabled()) {
             log.debug("Claims for user: " + username + " : " + claimValues.toString());
         }
         return claimValues;
     }
-
 
 }
