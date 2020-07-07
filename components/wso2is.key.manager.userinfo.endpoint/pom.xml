@@ -34,14 +34,6 @@
                 </configuration>
             </plugin>
 
-            <!--<plugin>
-                <groupId>org.wso2.maven.plugins</groupId>
-                <artifactId>swagger2cxf-maven-plugin</artifactId>
-                <version>1.0-SNAPSHOT</version>
-                <configuration>
-                    <inputSpec>${project.basedir}/src/main/resources/userinfo.yaml</inputSpec>
-                </configuration>
-            </plugin>-->
             <plugin>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
@@ -54,15 +46,15 @@
                             <inputSpec>${project.basedir}/src/main/resources/userinfo.yaml</inputSpec>
                             <language>jaxrs-cxf-cdi</language>
                             <configOptions>
-                                <apiPackage>wso2is.key.manager.userinfo.endpoint</apiPackage>
-                                <modelPackage>wso2is.key.manager.userinfo.endpoint.dto</modelPackage>
+                                <apiPackage>org.wso2.is.key.manager.userinfo.endpoint</apiPackage>
+                                <modelPackage>org.wso2.is.key.manager.userinfo.endpoint.dto</modelPackage>
                                 <sourceFolder>src/gen/java</sourceFolder>
                                 <dateLibrary>java8</dateLibrary>
                                 <hideGenerationTimestamp>true</hideGenerationTimestamp>
                             </configOptions>
                             <output>.</output>
                             <templateDirectory>${project.basedir}/src/main/resources/server-templates</templateDirectory>
-                            <skipOverwrite>true</skipOverwrite>
+                           <skipOverwrite>true</skipOverwrite>
                             <modelNameSuffix>DTO</modelNameSuffix>
                         </configuration>
                     </execution>
