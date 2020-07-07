@@ -26,5 +26,13 @@ public class NotificationConstants {
 
     public static final String TOKEN_REVOCATION_EVENT = "token_revocation";
     public static final String NOTIFICATION_ENDPOINT = "notification_endpoint";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
     public static final String HEADER_PROPERTY = "header.";
+    public static final String ENVIRONMENT_VARIABLE_STARTING_CHAR = "${";
+    public static final String ENVIRONMENT_VARIABLE_ENDING_CHAR = "}";
+    public static final String CARBON_CONTEXT = "carbon.context";
+    public static final String ADMIN_USER_NAME_SYSTEM_PROPERTY = "admin.username";
+    public static final String ADMIN_PASSWORD_SYSTEM_PROPERTY = "admin.password";
+    public static final String CARBON_HOME_SYSTEM_PROPERTY = "carbon.home";
 }

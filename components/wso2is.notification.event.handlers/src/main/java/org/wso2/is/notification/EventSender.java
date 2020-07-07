@@ -20,6 +20,8 @@
 package org.wso2.is.notification;
 
 import com.google.gson.Gson;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -30,6 +32,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.wso2.is.notification.event.Event;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -41,24 +44,34 @@ import java.util.concurrent.TimeUnit;
 public class EventSender {
 
     private static final Log log = LogFactory.getLog(EventSender.class);
-    private static final EventSender instance = new EventSender();
+    private String notificationEndpoint;
+    private String username;
+    private char[] password;
+    private Map<String, String> headers;
     private static final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(200, 500, 100L,
             TimeUnit.SECONDS,
             new LinkedBlockingDeque<Runnable>() {
             });
 
-    private EventSender() {
+    public EventSender(String notificationEndpoint, String userName, String password, Map<String, String> headers) {
 
+        this.notificationEndpoint = notificationEndpoint;
+        this.username = userName;
+        this.password = password.toCharArray();
+        this.headers = headers;
     }
 
-    public void execute(EventSender.EventRunner eventRunner) {
+    public EventSender(String notificationEndpoint, Map<String, String> headers) {
 
+        this.notificationEndpoint = notificationEndpoint;
+        this.headers = headers;
+    }
+
+    public void publishEvent(Event event) {
+
+        EventRunner eventRunner =
+                new EventRunner(notificationEndpoint, username, String.valueOf(password), headers, event);
         threadPoolExecutor.execute(eventRunner);
-    }
-
-    public static EventSender getInstance() {
-
-        return instance;
     }
 
     /**
@@ -67,12 +80,17 @@ public class EventSender {
     public static class EventRunner implements Runnable {
 
         private String notificationEndpoint;
+        private String username;
+        private String password;
         private Map<String, String> headers;
         private Event event;
 
-        public EventRunner(String notificationEndpoint, Map<String, String> headers, Event event) {
+        public EventRunner(String notificationEndpoint, String username, String password,
+                           Map<String, String> headers, Event event) {
 
             this.notificationEndpoint = notificationEndpoint;
+            this.username = username;
+            this.password = password;
             this.headers = headers;
             this.event = event;
         }
@@ -82,9 +100,15 @@ public class EventSender {
 
             try (CloseableHttpClient closeableHttpClient = HttpClientBuilder.create().useSystemProperties().build()) {
                 HttpPost httpPost = new HttpPost(notificationEndpoint);
+                if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
+                    byte[] credentials =
+                            Base64.encodeBase64((username + ":" + password).getBytes(StandardCharsets.UTF_8));
+                    httpPost.addHeader("Authorization", "Basic " + new String(credentials, StandardCharsets.UTF_8));
+                }
                 headers.forEach((key, value) -> {
                     httpPost.addHeader(key, value);
                 });
+
                 String content = new Gson().toJson(event);
                 StringEntity requestEntity = new StringEntity(content);
                 requestEntity.setContentType("application/json");

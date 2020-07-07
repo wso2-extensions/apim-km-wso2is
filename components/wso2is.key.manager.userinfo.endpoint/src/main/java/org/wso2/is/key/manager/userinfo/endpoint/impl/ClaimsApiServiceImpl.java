@@ -32,6 +32,7 @@ import org.wso2.carbon.user.api.UserRealmService;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.is.key.manager.userinfo.endpoint.ClaimsApiService;
 import org.wso2.is.key.manager.userinfo.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.userinfo.endpoint.util.UserInfoUtil;
@@ -85,7 +86,7 @@ public class ClaimsApiServiceImpl implements ClaimsApiService {
             dialect = properties.getDialect();
         }
         if (!StringUtils.isEmpty(properties.getDomain())) {
-            username = properties.getDomain() + "/" + username;
+            username = UserCoreUtil.addDomainToName(username, properties.getDomain());
         }
         boolean convertDialect = false; // TODO get from the rest api payload
 

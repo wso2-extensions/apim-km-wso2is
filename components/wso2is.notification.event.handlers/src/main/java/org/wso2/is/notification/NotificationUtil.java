@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.wso2.is.notification.NotificationConstants.ENVIRONMENT_VARIABLE_ENDING_CHAR;
+import static org.wso2.is.notification.NotificationConstants.ENVIRONMENT_VARIABLE_STARTING_CHAR;
 import static org.wso2.is.notification.NotificationConstants.HEADER_PROPERTY;
 
 /**
@@ -71,9 +73,9 @@ public class NotificationUtil {
         // The following condition deals with properties.
         // Properties are specified as ${system.property},
         // and are assumed to be System properties
-        while (indexOfStartingChars < text.indexOf("${")
-                && (indexOfStartingChars = text.indexOf("${")) != -1
-                && (indexOfClosingBrace = text.indexOf('}')) != -1) { // Is a
+        while (indexOfStartingChars < text.indexOf(ENVIRONMENT_VARIABLE_STARTING_CHAR)
+                && (indexOfStartingChars = text.indexOf(ENVIRONMENT_VARIABLE_STARTING_CHAR)) != -1
+                && (indexOfClosingBrace = text.indexOf(ENVIRONMENT_VARIABLE_ENDING_CHAR)) != -1) { // Is a
             // property
             // used?
             String sysProp = text.substring(indexOfStartingChars + 2,
@@ -81,14 +83,15 @@ public class NotificationUtil {
             String propValue = System.getProperty(sysProp);
 
             if (propValue == null) {
-                if ("carbon.context".equals(sysProp)) {
+                if (NotificationConstants.CARBON_CONTEXT.equals(sysProp)) {
                     propValue = ServiceReferenceHolder.getInstance().getContextService().getServerConfigContext()
                             .getContextRoot();
-                } else if ("admin.username".equals(sysProp) || "admin.password".equals(sysProp)) {
+                } else if (NotificationConstants.ADMIN_USER_NAME_SYSTEM_PROPERTY.equals(sysProp) ||
+                        NotificationConstants.ADMIN_PASSWORD_SYSTEM_PROPERTY.equals(sysProp)) {
                     try {
                         RealmConfiguration realmConfig =
                                 new RealmConfigXMLProcessor().buildRealmConfigurationFromFile();
-                        if ("admin.username".equals(sysProp)) {
+                        if (NotificationConstants.ADMIN_USER_NAME_SYSTEM_PROPERTY.equals(sysProp)) {
                             propValue = realmConfig.getAdminUserName();
                         } else {
                             propValue = realmConfig.getAdminPassword();
@@ -106,7 +109,7 @@ public class NotificationUtil {
                 text = text.substring(0, indexOfStartingChars) + propValue
                         + text.substring(indexOfClosingBrace + 1);
             }
-            if ("carbon.home".equals(sysProp) && ".".equals(propValue)) {
+            if (NotificationConstants.CARBON_HOME_SYSTEM_PROPERTY.equals(sysProp) && ".".equals(propValue)) {
                 text = new File(".").getAbsolutePath() + File.separator + text;
             }
         }

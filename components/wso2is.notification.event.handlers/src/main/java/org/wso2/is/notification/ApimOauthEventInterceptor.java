@@ -46,15 +46,27 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     String notificationEndpoint;
     Map<String, String> headerMap = new HashMap<>();
     boolean enabled;
+    String username;
+    char[] password;
+    private EventSender eventSender;
 
     public ApimOauthEventInterceptor() {
 
         super.init(initConfig);
         String endpointProperty = properties.getProperty(NotificationConstants.NOTIFICATION_ENDPOINT);
+        String usernameProperty = properties.getProperty(NotificationConstants.USERNAME);
+        String passwordProperty = properties.getProperty(NotificationConstants.PASSWORD);
         if (StringUtils.isNotEmpty(endpointProperty)) {
             enabled = true;
             notificationEndpoint = NotificationUtil.replaceSystemProperty(endpointProperty);
             headerMap.putAll(NotificationUtil.extractHeadersMapFromProperties(properties));
+            if (StringUtils.isNotEmpty(usernameProperty) && StringUtils.isNotEmpty(passwordProperty)) {
+                username = NotificationUtil.replaceSystemProperty(usernameProperty);
+                password = NotificationUtil.replaceSystemProperty(passwordProperty).toCharArray();
+                eventSender = new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap);
+            } else {
+                eventSender = new EventSender(notificationEndpoint, headerMap);
+            }
         }
     }
 
@@ -117,11 +129,8 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
 
         if (isEnabled()) {
             if (StringUtils.isNotEmpty(notificationEndpoint)) {
-                EventSender.EventRunner eventRunner =
-                        new EventSender.EventRunner(notificationEndpoint, headerMap, tokenRevocationEvent);
-                EventSender.getInstance().execute(eventRunner);
+                eventSender.publishEvent(tokenRevocationEvent);
             }
         }
-
     }
 }

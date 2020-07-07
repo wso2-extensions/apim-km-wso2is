@@ -28,12 +28,12 @@ import java.util.Map;
  */
 public abstract class Event implements Serializable {
 
-    public String eventId;
-    public long timeStamp;
-    public String type;
-    public int tenantId;
-    public String tenantDomain;
-    private Map<String, String> properties = new HashMap<String, String>();
+    protected String eventId;
+    protected long timeStamp;
+    protected String type;
+    protected int tenantId;
+    protected String tenantDomain;
+    protected Map<String, String> properties = new HashMap<String, String>();
 
     public String getEventId() {
 
