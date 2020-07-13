@@ -1,0 +1,459 @@
+swagger: '2.0'
+######################################################
+# Prolog
+######################################################
+info:
+  version: "1.0.0"
+  title: "WSO2 Rest API - User Information"
+  description: |
+    This document specifies a **RESTful API** to access user information .
+
+    It is written with [swagger 2](http://swagger.io/).
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+
+######################################################
+# The fixed parts of the URLs of the API
+######################################################
+
+# The schemes supported by the API
+schemes:
+  - https
+
+# The domain of the API.
+# This is configured by the customer during deployment.
+# The given host is just an example.
+host: apim.wso2.com
+
+# The base path of the API.
+# Will be prefixed to all paths.
+
+# if the tenant domain is carbon.super basepath can be /user-info like this too.
+basePath: /keymanager-operations
+
+# The following media types can be passed as input in message bodies of the API.
+# The actual media type must be specified in the Content-Type header field of the request.
+# The default is json, i.e. the Content-Type header is not needed to
+# be set, but supporting it serves extensibility.
+consumes:
+  - application/json
+
+# The following media types may be passed as output in message bodies of the API.
+# The media type(s) consumable by the requestor is specified in the Accept header field
+# of the corresponding request.
+# The actual media type returned will be specfied in the Content-Type header field
+# of the of the response.
+# The default of the Accept header is json, i.e. there is not needed to
+# set the value, but supporting it serves extensibility.
+produces:
+  - application/json
+paths:
+  /user-info/claims:
+    get:
+      description: |
+         This API is used to get user claims.
+      summary: |
+        Register user
+      # This are the post parameters:
+      parameters:
+        - name: username
+          in: query
+          description: |
+            User name
+          type: string
+          required: true
+        - name: domain
+          in: query
+          description: |
+            Domain of the user.
+          type: string
+        - name: dialect
+          in: query
+          description: |
+            Dialect URI for the claims.
+          type: string
+      responses:
+        200:
+          description: Claims returned.
+          schema:
+            $ref: '#/definitions/ClaimList'
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+        404:
+          description: User not found
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - User Claims
+        
+  /user-info/claims/generate:
+    post:
+      description: |
+         This API is used to get user claims.
+      summary: |
+        Register user
+      # This are the post parameters:
+      parameters:
+        - name: properties
+          in: body
+          description:  Additional parameters that can be used to generate claims.
+          required: true
+          schema:
+            $ref: '#/definitions/ClaimRequest'
+      responses:
+        200:
+          description: Claims returned.
+          schema:
+            $ref: '#/definitions/ClaimList'
+        400:
+          description: Bad Request
+          schema:
+             $ref: '#/definitions/Error'
+
+        500:
+          description: Server Error
+          schema:
+             $ref: '#/definitions/Error'
+
+        404:
+          description: User not found
+          schema:
+             $ref: '#/definitions/Error'
+      tags:
+        - User Claims
+
+  /dcr/register:
+    post:
+      description: |
+        If you want to register an OAuth2 application with a specified client_id and secret, check the sample request given below.
+      x-wso2-request: |
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+        "Content-Type: application/json" -d '{
+         "client_name": "application_test",
+         "grant_types": ["password"],
+         "ext_param_client_id":"provided_client_id0001",
+         "ext_param_client_secret":"provided_client_secret0001" }'
+        "https://localhost:9443/api/identity/oauth2/dcr/v1.0/register"
+      x-wso2-response: |
+        "HTTP/1.1 201 Created"
+        {"client_name”:"application_test",
+        "client_id":"provided_client_id0001",
+        "client_secret":"provided_client_secret0001",
+        "redirect_uris":[""]}
+
+
+      summary: |
+        Registers an OAuth2 application
+      operationId: registerApplication
+      parameters:
+      - name: RegistrationRequest
+        in: body
+        description: Application information to register.
+        required: true
+        schema:
+          $ref: '#/definitions/RegistrationRequest'
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/Application'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+      tags:
+      - OAuth2 DCR
+    # Endpoint to get application information
+  /dcr/register/{client_id}:
+     get:
+        summary: |
+          Get OAuth2 application information
+        description: |
+          This API is used to get/retrieve an OAuth2 application by client_id.
+        x-wso2-request: |
+          curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{}' "https://localhost:9443/api/identity/oauth2/dcr/v1.1/register/s6BhdRkqt3"
+        x-wso2-response: |
+          "HTTP/1.1 200 OK"
+          { "client_id": "s6BhdRkqt3",
+          "client_secret":"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk",
+          "client_secret_expires_at": 1577858400,
+          "redirect_uris":["https://client.example.org/callback"],
+          "client_name":"application_owner_application_1" }
+        operationId: getApplication
+        parameters:
+        - name: client_id
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        responses:
+          '200':
+            description: Successfully Retrieved
+            schema:
+              $ref: '#/definitions/Application'
+          '404':
+            description: Not Found
+            schema:
+              $ref: '#/definitions/Error'
+          '500':
+            description: Server Error
+            schema:
+              $ref: '#/definitions/Error'
+        tags:
+        - OAuth2 DCR
+      # Endpoint to delete OAuth2 application
+     delete:
+        summary: |
+          Delete OAuth2 application
+        description: |
+          This API is used to delete an OAuth2 application by client_id.
+        x-wso2-request: |
+          curl -X DELETE -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{}' "https://localhost:9443/api/identity/oauth2/dcr/v1.1/register/s6BhdRkqt3"
+        x-wso2-response: |
+          "HTTP/1.1 204 No Content"
+        operationId: deleteApplication
+        parameters:
+        - name: client_id
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        responses:
+          '204':
+            description: Successfully deleted
+          '404':
+            description: Not Found
+            schema:
+              $ref: '#/definitions/Error'
+          '500':
+            description: Server Error
+            schema:
+              $ref: '#/definitions/Error'
+        tags:
+        - OAuth2 DCR
+      # Endpoint uses to update OAuth2 application
+     put:
+        description: |
+          This API is used to update an OAuth2 application.
+        x-wso2-request: |
+          curl -X PUT -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+          "Content-Type: application/json" -d '{
+            "redirect_uris":["https://client.example.org/callback"],
+            "client_name": "application_1",
+            "grant_types": ["password"] }'
+          "https://localhost:9443/api/identity/oauth2/dcr/v1.1/register"
+        x-wso2-response: |
+          "HTTP/1.1 200 OK"
+          { "client_id": "s6BhdRkqt3",
+          "client_secret":"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk",
+          "client_secret_expires_at": 1577858400,
+          "redirect_uris":["https://client.example.org/callback"],
+          "client_name":"application_owner_application_1" }
+        summary: |
+          Updates an OAuth2 application
+        operationId: updateApplication
+        parameters:
+        - name: updateRequest
+          in: body
+          description: Application information to update.
+          required: true
+          schema:
+            $ref: '#/definitions/UpdateRequest'
+        - name: client_id
+          type: string
+          in: path
+          description: Unique identifier for the OAuth2 client application.
+          required: true
+        responses:
+          '200':
+            description: Successfully updated
+            schema:
+              $ref: '#/definitions/Application'
+          '400':
+            description: Bad Request
+            schema:
+              $ref: '#/definitions/Error'
+          '409':
+            description: Conflict
+            schema:
+              $ref: '#/definitions/Error'
+          '500':
+            description: Server Error
+            schema:
+              $ref: '#/definitions/Error'
+        tags:
+        - OAuth2 DCR
+definitions:
+  Claim:
+    type: object
+    properties:
+      uri:
+        type: string
+        example: "http://wso2.org/claims/givenname"
+        description: Claim URI.
+      value:
+        type: string
+        example: "John"
+        description: Value for the claim.
+  ClaimList:
+    title: Claim List
+    properties:
+      count:
+        type: integer
+        description: |
+          Number of claims returned.
+        example: 1
+      list:
+        type: array
+        items:
+          $ref: '#/definitions/Claim'
+
+
+#-----------------------------------------------------
+# The Error Response  object
+#-----------------------------------------------------
+  Error:
+    type: object
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+      description:
+        type: string
+
+  ClaimRequest:
+    type: object
+    properties:
+      username:
+        type: string
+      accessToken:
+        type: string
+      dialect:
+        type: string
+      domain:
+        type: string
+
+  RegistrationRequest:
+    type: object
+    required:
+    - redirect_uris
+    - client_name
+    properties:
+      redirect_uris:
+        type: array
+        items:
+          type: string
+      client_name:
+        type: string
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      grant_types:
+        type: array
+        items:
+          type: string
+      tokenType:
+        type: string
+      application_owner:
+        type: string
+      jwks_uri:
+        type: string
+      url:
+        type: string
+      ext_param_client_id:
+        type: string
+      ext_param_client_secret:
+        type: string
+      contacts:
+        type: array
+        items:
+          type: string
+      post_logout_redirect_uris:
+        type: array
+        items:
+          type: string
+      request_uris:
+        type: array
+        items:
+          type: string
+      response_types:
+        type: array
+        items:
+          type: string
+      ext_param_sp_template:
+        type: string
+      backchannel_logout_uri:
+        type: string
+      backchannel_logout_session_required:
+        type: boolean
+      spTemplateName:
+        type: string
+    #-----------------------------------------------------
+    # The Application Update Request Object
+    #-----------------------------------------------------
+  UpdateRequest:
+      type: object
+      properties:
+        redirect_uris:
+          type: array
+          items:
+            type: string
+        client_name:
+          type: string
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        grant_types:
+          type: array
+          items:
+            type: string
+        tokenType:
+          type: string
+        application_owner:
+          type: string
+        backchannel_logout_uri:
+          type: string
+        backchannel_logout_session_required:
+          type: boolean
+    #-----------------------------------------------------
+    # The OAuth2 Application Object
+    #-----------------------------------------------------
+  Application:
+      type: object
+      properties:
+        client_id:
+          type: string
+        client_secret:
+          type: string
+        client_secret_expires_at:
+          type: string
+        redirect_uris:
+          type: array
+          items:
+            type: string
+        client_name:
+          type: string
+        grant_types:
+          type: array
+          items:
+            type: string
+        application_owner:
+          type: string
