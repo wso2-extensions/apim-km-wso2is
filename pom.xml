@@ -123,6 +123,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.apimgt</groupId>
+                <artifactId>org.wso2.carbon.apimgt.notification</artifactId>
+                <version>${carbon.apimgt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.apimgt</groupId>
                 <artifactId>org.wso2.carbon.apimgt.gateway</artifactId>
                 <version>${carbon.apimgt.version}</version>
             </dependency>
@@ -330,7 +335,7 @@
         <tag>HEAD</tag>
     </scm>
     <properties>
-        <carbon.apimgt.version>6.7.52</carbon.apimgt.version>
+        <carbon.apimgt.version>6.7.90-SNAPSHOT</carbon.apimgt.version>
         <carbon.identity.version>5.17.5</carbon.identity.version>
         <carbon.identity-inbound-auth-oauth.version>6.4.2</carbon.identity-inbound-auth-oauth.version>
         <json.simple.version>1.1</json.simple.version>

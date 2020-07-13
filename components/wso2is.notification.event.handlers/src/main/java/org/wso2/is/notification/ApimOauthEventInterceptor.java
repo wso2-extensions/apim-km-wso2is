@@ -145,6 +145,16 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                     , previousAccessToken.getIssuedTime().getTime() + previousAccessToken.getValidityPeriodInMillis()
                     , previousAccessToken.getAuthorizedUser().getUserName(), oAuthAppDO.getOauthConsumerKey(),
                     oAuthAppDO.getTokenType());
+            String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
+            tokenRevocationEvent.setTenantDomain(tenantDomain);
+            try {
+                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                        .getTenantId(tenantDomain);
+                tokenRevocationEvent.setTenantId(tenantId);
+            } catch (UserStoreException e) {
+                log.error("Error while finding tenant id", e);
+            }
+
             publishEvent(tokenRevocationEvent);
         }
     }
