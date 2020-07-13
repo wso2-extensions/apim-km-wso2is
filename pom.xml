@@ -35,6 +35,7 @@
         <module>features/wso2is.key.manager.feature</module>
         <module>features/wso2is.key.manager.userinfo.endpoint.feature</module>
         <module>features/wso2is.key.manager.notification.feature</module>
+        <module>components/wso2is.key.manager.core</module>
     </modules>
     <name>Client implementation to integrate with WSO2 IS Authorization Server</name>
     <url>http://wso2.org</url>
@@ -65,12 +66,8 @@
                             <id>validate</id>
                             <phase>validate</phase>
                             <configuration>
-                                <configLocation>
-                                    https://raw.githubusercontent.com/wso2/code-quality-tools/master/checkstyle/checkstyle.xml
-                                </configLocation>
-                                <suppressionsLocation>
-                                    https://raw.githubusercontent.com/wso2/code-quality-tools/master/checkstyle/suppressions.xml
-                                </suppressionsLocation>
+                                <configLocation>checkstyle/checkstyle.xml</configLocation>
+                                <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
                                 <encoding>UTF-8</encoding>
                                 <consoleOutput>true</consoleOutput>
                                 <failsOnError>true</failsOnError>
@@ -232,6 +229,16 @@
                 <artifactId>org.wso2.carbon.claim.mgt</artifactId>
                 <version>${carbon.identity.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.auth.rest</groupId>
+                <artifactId>org.wso2.carbon.identity.auth.service</artifactId>
+                <version>${identity.auth.rest.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.km.ext.wso2is</groupId>
+                <artifactId>wso2is.key.manager.core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -352,5 +359,6 @@
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <version.checkstyle>8.34</version.checkstyle>
         <io.swagger.codegen.version>2.3.1</io.swagger.codegen.version>
+        <identity.auth.rest.version>1.4.0</identity.auth.rest.version>
     </properties>
 </project>
