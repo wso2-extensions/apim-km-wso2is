@@ -20,30 +20,26 @@ package wso2is.key.manager.operations.endpoint.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.MessageContext;
-import org.wso2.carbon.identity.oauth.dcr.bean.Application;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMClientException;
 import wso2is.key.manager.operations.endpoint.DcrApiService;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
-import wso2is.key.manager.operations.endpoint.dcr.service.ExtendedDCRMService;
+import wso2is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import wso2is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import wso2is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import wso2is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import wso2is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
-
 import javax.ws.rs.core.Response;
-
 
 public class DcrApiServiceImpl implements DcrApiService {
 
     private static final Log LOG = LogFactory.getLog(DcrApiServiceImpl.class);
 
-    private ExtendedDCRMService service =  new ExtendedDCRMService();
+    private DCRMService service = new DCRMService();
 
     @Override
     public Response deleteApplication(String clientId, MessageContext messageContext) {
-
         try {
             service.deleteApplication(clientId);
         } catch (DCRMClientException e) {
@@ -60,11 +56,10 @@ public class DcrApiServiceImpl implements DcrApiService {
 
     @Override
     public Response getApplication(String clientId, MessageContext messageContext) {
-
         ApplicationDTO applicationDTO = null;
         try {
-            Application application = service.getApplication(clientId);
-            applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication((ExtendedApplication) application);
+            ExtendedApplication application = service.getApplication(clientId);
+            applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client error while retrieving  application with client key:" + clientId, e);
@@ -79,9 +74,7 @@ public class DcrApiServiceImpl implements DcrApiService {
 
     @Override
     public Response registerApplication(RegistrationRequestDTO registrationRequest, MessageContext messageContext) {
-
         ApplicationDTO applicationDTO = null;
-        ExtendedDCRMUtils.setOAuth2DCRMService(service);
 
         try {
             ExtendedApplicationRegistrationRequest request = ExtendedDCRMUtils.
@@ -102,12 +95,10 @@ public class DcrApiServiceImpl implements DcrApiService {
 
     @Override
     public Response updateApplication(UpdateRequestDTO updateRequest, String clientId, MessageContext messageContext) {
-
         ApplicationDTO applicationDTO = null;
         try {
             ExtendedApplication application = service
                     .updateApplication(ExtendedDCRMUtils.getApplicationUpdateRequest(updateRequest), clientId);
-
 
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (DCRMClientException e) {

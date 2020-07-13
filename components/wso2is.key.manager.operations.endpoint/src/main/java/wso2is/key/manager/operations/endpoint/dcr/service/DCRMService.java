@@ -35,7 +35,6 @@ import org.wso2.carbon.identity.oauth.OAuthAdminService;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
-import org.wso2.carbon.identity.oauth.dcr.service.DCRMService;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants.ErrorMessages;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRConstants;
@@ -47,24 +46,31 @@ import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
+import wso2is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * Extended DCRMService service is used to manage OAuth2 application registration.
  */
-public class ExtendedDCRMService extends DCRMService {
+public class DCRMService {
 
-    private static final Log log = LogFactory.getLog(ExtendedDCRMService.class);
+    private static final Log log = LogFactory.getLog(DCRMService.class);
     private static OAuthAdminService oAuthAdminService = new OAuthAdminService();
+    private ApplicationManagementService appMgtService;
 
     private static final String AUTH_TYPE_OAUTH_2 = "oauth2";
     private static final String OAUTH_VERSION = "OAuth-2.0";
     private static final String GRANT_TYPE_SEPARATOR = " ";
     private static Pattern clientIdRegexPattern = null;
 
+    public DCRMService() {
+
+        appMgtService = ApplicationManagementService.getInstance();
+    }
 
     /**
      * Create OAuth2/OIDC application.
@@ -79,7 +85,6 @@ public class ExtendedDCRMService extends DCRMService {
         return createOAuthApplication(registrationRequest);
     }
 
-
     /**
      * Update OAuth/OIDC application.
      *
@@ -91,9 +96,9 @@ public class ExtendedDCRMService extends DCRMService {
     public ExtendedApplication updateApplication(ExtendedApplicationUpdateRequest updateRequest, String clientId) throws
             DCRMException {
 
-        OAuthConsumerAppDTO appDTO = getApplicationDetailsById(clientId);
+        OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        String applicationOwner = updateRequest.getApplicationOwner();
+        String applicationOwner = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String clientName = updateRequest.getClientName();
 
         // Update Service Provider
@@ -140,16 +145,116 @@ public class ExtendedDCRMService extends DCRMService {
                     ErrorMessages.FAILED_TO_UPDATE_APPLICATION, clientId, e);
         }
 
-        return buildResponse(getApplicationDetailsById(clientId));
+        return buildResponse(getApplicationById(clientId));
     }
 
-    private OAuthConsumerAppDTO getApplicationDetailsById(String clientId) throws DCRMException {
+    /**
+     * @param clientId
+     * @return
+     * @throws DCRMException
+     */
+    public ExtendedApplication getApplication(String clientId) throws DCRMException {
+
+        boolean isApplicationRolePermissionRequired = ExtendedDCRMUtils.isApplicationRolePermissionRequired();
+        return this.buildResponse(this.getApplicationById(clientId, isApplicationRolePermissionRequired));
+    }
+
+    /**
+     * @param clientId
+     * @throws DCRMException
+     */
+    public void deleteApplication(String clientId) throws DCRMException {
+
+        OAuthConsumerAppDTO appDTO = this.getApplicationById(clientId);
+        String applicationOwner =  PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+
+        String spName;
+        try {
+            spName = appMgtService.getServiceProviderNameByClientId(appDTO.getOauthConsumerKey(), "oauth2", tenantDomain);
+        } catch (IdentityApplicationManagementException var7) {
+            throw new DCRMException("Error while retrieving the service provider.", var7);
+        }
+
+        if (!StringUtils.equals(spName, "default")) {
+            if (log.isDebugEnabled()) {
+                log.debug("The application with consumer key: " + appDTO.getOauthConsumerKey() + " has an association with the service provider: " + spName);
+            }
+
+            this.deleteServiceProvider(spName, tenantDomain, applicationOwner);
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("The application with consumer key: " + appDTO.getOauthConsumerKey() + " doesn't have an associated service provider.");
+            }
+
+            this.deleteOAuthApplicationWithoutAssociatedSP(appDTO, tenantDomain, applicationOwner);
+        }
+
+    }
+
+    /**
+     * Delete OAuth application when there is no associated service provider exists.
+     *
+     * @param appDTO       {@link OAuthConsumerAppDTO} object of the OAuth app to be deleted
+     * @param tenantDomain Tenant Domain
+     * @param username     User Name
+     * @throws DCRMException
+     */
+    private void deleteOAuthApplicationWithoutAssociatedSP(OAuthConsumerAppDTO appDTO, String tenantDomain,
+                                                           String username) throws DCRMException {
+
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Delete OAuth application with the consumer key: " + appDTO.getOauthConsumerKey());
+            }
+            oAuthAdminService.removeOAuthApplicationData(appDTO.getOauthConsumerKey());
+        } catch (IdentityOAuthAdminException e) {
+            throw new DCRMException("Error while deleting the OAuth application with consumer key: " +
+                    appDTO.getOauthConsumerKey(), e);
+        }
+
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Get service provider with application name: " + appDTO.getApplicationName());
+            }
+            ServiceProvider serviceProvider = appMgtService.getServiceProvider(appDTO
+                    .getApplicationName(), tenantDomain);
+            if (serviceProvider == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("There is no service provider exists with the name: " + appDTO.getApplicationName());
+                }
+            } else if (serviceProvider.getInboundAuthenticationConfig().getInboundAuthenticationRequestConfigs()
+                    .length == 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Delete the service provider: " + serviceProvider.getApplicationName());
+                }
+                appMgtService.deleteApplication(serviceProvider.getApplicationName(), tenantDomain,
+                        username);
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Service provider with name: " + serviceProvider.getApplicationName() +
+                            " can not be deleted since it has association with other application/s");
+                }
+            }
+        } catch (IdentityApplicationManagementException e) {
+            throw new DCRMException("Error while deleting the service provider with the name: " +
+                    appDTO.getApplicationName(), e);
+        }
+    }
+
+    /**
+     * @param clientId
+     * @return
+     * @throws DCRMException
+     */
+    private OAuthConsumerAppDTO getApplicationById(String clientId) throws DCRMException {
 
         return getApplicationById(clientId, true);
     }
 
     /**
      * get Application By Id
+     *
      * @param clientId
      * @param isApplicationRolePermissionRequired
      * @return OAuthConsumerAppDTO
@@ -166,6 +271,7 @@ public class ExtendedDCRMService extends DCRMService {
 
         try {
             OAuthConsumerAppDTO dto = oAuthAdminService.getOAuthApplicationData(clientId);
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(dto.getUsername().split("@")[0]);
             if (dto == null || StringUtils.isEmpty(dto.getApplicationName())) {
                 throw DCRMUtils.generateClientException(
                         ErrorMessages.NOT_FOUND_APPLICATION_WITH_ID, clientId);
@@ -186,6 +292,7 @@ public class ExtendedDCRMService extends DCRMService {
 
     /**
      * create OAuthApplication
+     *
      * @param registrationRequest
      * @return ExtendedApplication
      * @throws DCRMException
@@ -199,7 +306,6 @@ public class ExtendedDCRMService extends DCRMService {
 
         String spName = registrationRequest.getClientName();
         String templateName = registrationRequest.getSpTemplateName();
-
 
         // Regex validation of the application name.
         if (!DCRMUtils.isRegexValidated(spName)) {
@@ -246,6 +352,7 @@ public class ExtendedDCRMService extends DCRMService {
 
     /**
      * Build the response
+     *
      * @param createdApp
      * @return ExtendedApplication
      */
@@ -255,7 +362,8 @@ public class ExtendedDCRMService extends DCRMService {
         redirectUrisList.add(createdApp.getCallbackUrl());
 
         List<String> grantTypeList = new ArrayList<>();
-        grantTypeList.add(createdApp.getGrantTypes());
+        String[] grantTypes = createdApp.getGrantTypes().split(" ");
+        Collections.addAll(grantTypeList, grantTypes);
 
         ExtendedApplication application = new ExtendedApplication();
         application.setClientName(createdApp.getApplicationName());
@@ -263,6 +371,7 @@ public class ExtendedDCRMService extends DCRMService {
         application.setClientSecret(createdApp.getOauthConsumerSecret());
         application.setRedirectUris(redirectUrisList);
         application.setGrantTypes(grantTypeList);
+        application.setApplicationOwner(createdApp.getUsername());
         return application;
     }
 
@@ -427,7 +536,6 @@ public class ExtendedDCRMService extends DCRMService {
 
         ServiceProvider serviceProvider = null;
         try {
-            ApplicationManagementService appMgtService = ApplicationManagementService.getInstance();
             serviceProvider = appMgtService.getServiceProvider(applicationName, tenantDomain);
         } catch (IdentityApplicationManagementException e) {
             throw DCRMUtils.generateServerException(
@@ -448,7 +556,6 @@ public class ExtendedDCRMService extends DCRMService {
             throws DCRMException {
 
         try {
-            ApplicationManagementService appMgtService = ApplicationManagementService.getInstance();
             appMgtService.updateApplication(serviceProvider, tenantDomain, userName);
         } catch (IdentityApplicationManagementException e) {
             throw DCRMUtils.generateServerException(
@@ -469,7 +576,6 @@ public class ExtendedDCRMService extends DCRMService {
                                        String templateName) throws DCRMException {
 
         try {
-            ApplicationManagementService appMgtService = ApplicationManagementService.getInstance();
             if (templateName != null) {
                 boolean isTemplateExists = appMgtService.isExistingApplicationTemplate(templateName, tenantDomain);
                 if (!isTemplateExists) {
@@ -498,7 +604,6 @@ public class ExtendedDCRMService extends DCRMService {
                                        String tenantDomain, String userName) throws DCRMException {
 
         try {
-            ApplicationManagementService appMgtService = ApplicationManagementService.getInstance();
             appMgtService.deleteApplication(applicationName, tenantDomain, userName);
         } catch (IdentityApplicationManagementException e) {
             throw DCRMUtils
@@ -608,7 +713,6 @@ public class ExtendedDCRMService extends DCRMService {
     private boolean isUserAuthorized(String clientId) throws DCRMServerException {
 
         try {
-            ApplicationManagementService appMgtService = ApplicationManagementService.getInstance();
             String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
             String spName = appMgtService.
                     getServiceProviderNameByClientId(clientId, DCRMConstants.OAUTH2, tenantDomain);

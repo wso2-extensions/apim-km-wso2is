@@ -26,7 +26,6 @@ import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import wso2is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
-import wso2is.key.manager.operations.endpoint.dcr.service.ExtendedDCRMService;
 import wso2is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import wso2is.key.manager.operations.endpoint.dto.ErrorDTO;
 import wso2is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
@@ -44,18 +43,6 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     private static final String BAD_REQUEST_STATUS = "BAD_REQUEST_";
     private static final String NOT_FOUND_STATUS = "NOT_FOUND_";
     private static final String FORBIDDEN_STATUS = "FORBIDDEN_";
-
-    private static ExtendedDCRMService oAuth2DCRMService;
-
-    public static void setOAuth2DCRMService(ExtendedDCRMService oAuth2DCRMService) {
-
-        ExtendedDCRMUtils.oAuth2DCRMService = oAuth2DCRMService;
-    }
-
-    public static ExtendedDCRMService getOAuth2DCRMService() {
-
-        return oAuth2DCRMService;
-    }
 
     public static ExtendedApplicationRegistrationRequest getApplicationRegistrationRequest(
             RegistrationRequestDTO registrationRequestDTO) {
@@ -153,10 +140,19 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setClientSecret(application.getClientSecret());
         applicationDTO.setRedirectUris(application.getRedirectUris());
         applicationDTO.setGrantTypes(application.getGrantTypes());
+        applicationDTO.setApplicationOwner(application.getApplicationOwner());
 
         return applicationDTO;
     }
 
+    /**
+     * build the DCRMEndpointException
+     * @param status
+     * @param code
+     * @param description
+     * @param isStatusOnly
+     * @return
+     */
     private static DCRMEndpointException buildDCRMEndpointException(Response.Status status,
                                                                     String code, String description,
                                                                     boolean isStatusOnly) {
