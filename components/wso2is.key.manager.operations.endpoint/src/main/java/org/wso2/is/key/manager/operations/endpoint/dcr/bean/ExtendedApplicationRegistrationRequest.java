@@ -27,6 +27,8 @@ import java.io.Serializable;
  */
 public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrationRequest implements Serializable {
 
+    private static final long serialVersionUID = -4515815791420125411L;
+
     private String applicationOwner = null;
 
     /**

@@ -150,8 +150,8 @@
             }
           }
         },
-        "x-wso2-request" : "curl -k -X POST -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H\n\"Content-Type: application/json\" -d '{\n \"client_name\": \"application_test\",\n \"grant_types\": [\"password\"],\n \"ext_param_client_id\":\"provided_client_id0001\",\n \"ext_param_client_secret\":\"provided_client_secret0001\" }'\n\"https://localhost:9443/api/identity/oauth2/dcr/v1.0/register\"\n",
-        "x-wso2-response" : "\"HTTP/1.1 201 Created\"\n{\"client_name”:\"application_test\",\n\"client_id\":\"provided_client_id0001\",\n\"client_secret\":\"provided_client_secret0001\",\n\"redirect_uris\":[\"\"]}\n"
+        "x-wso2-request" : "curl -k -X POST -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H\n\"Content-Type: application/json\" -d '{\n \"client_name\": \"application_test\",\n \"grant_types\": [\"password\"],\n \"ext_param_client_id\":\"provided_client_id0001\",\n \"ext_param_client_secret\":\"provided_client_secret0001\",\n \"grant_types\": [\"password\"],\n \"ext_application_owner\": \"admin\" }'\n\"https://localhost:9443/keymanager-operations/dcr/register\"\n",
+        "x-wso2-response" : "\"HTTP/1.1 201 Created\"\n{\"client_name”:\"application_test\",\n\"client_id\":\"provided_client_id0001\",\n\"client_secret\":\"provided_client_secret0001\",\n\"redirect_uris\":[\"\"]\n\"grant_types\": [\"password\"],\n\"ext_application_owner\": \"admin\"}\n"
       }
     },
     "/dcr/register/{client_id}" : {
@@ -187,8 +187,8 @@
             }
           }
         },
-        "x-wso2-request" : "curl -X GET -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H \"Content-Type: application/json\" -d '{}' \"https://localhost:9443/api/identity/oauth2/dcr/v1.1/register/s6BhdRkqt3\"\n",
-        "x-wso2-response" : "\"HTTP/1.1 200 OK\"\n{ \"client_id\": \"s6BhdRkqt3\",\n\"client_secret\":\"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk\",\n\"client_secret_expires_at\": 1577858400,\n\"redirect_uris\":[\"https://client.example.org/callback\"],\n\"client_name\":\"application_owner_application_1\" }\n"
+        "x-wso2-request" : "curl -X GET -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H \"Content-Type: application/json\" -d '{}' \"https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3\"\n",
+        "x-wso2-response" : "\"HTTP/1.1 200 OK\"\n{ \"client_id\": \"s6BhdRkqt3\",\n\"client_secret\":\"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk\",\n\"client_secret_expires_at\": 1577858400,\n\"redirect_uris\":[\"https://client.example.org/callback\"],\n\"client_name\":\"application_owner_application_1\",\n\"grant_types\": [\"password\"],\n\"ext_application_owner\": \"admin\"}\n"
       },
       "put" : {
         "tags" : [ "OAuth2 DCR" ],
@@ -236,8 +236,8 @@
             }
           }
         },
-        "x-wso2-request" : "curl -X PUT -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H\n\"Content-Type: application/json\" -d '{\n  \"redirect_uris\":[\"https://client.example.org/callback\"],\n  \"client_name\": \"application_1\",\n  \"grant_types\": [\"password\"] }'\n\"https://localhost:9443/api/identity/oauth2/dcr/v1.1/register\"\n",
-        "x-wso2-response" : "\"HTTP/1.1 200 OK\"\n{ \"client_id\": \"s6BhdRkqt3\",\n\"client_secret\":\"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk\",\n\"client_secret_expires_at\": 1577858400,\n\"redirect_uris\":[\"https://client.example.org/callback\"],\n\"client_name\":\"application_owner_application_1\" }\n"
+        "x-wso2-request" : "curl -X PUT -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H\n\"Content-Type: application/json\" -d '{\n  \"redirect_uris\":[\"https://client.example.org/callback\"],\n  \"client_name\": \"application_1\",\n  \"grant_types\": [\"password\"],\n  \"ext_application_owner\": \"admin\" }'\n\"https://localhost:9443/keymanager-operations/dcr/register\"\n",
+        "x-wso2-response" : "\"HTTP/1.1 200 OK\"\n{ \"client_id\": \"s6BhdRkqt3\",\n\"client_secret\":\"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk\",\n\"client_secret_expires_at\": 1577858400,\n\"redirect_uris\":[\"https://client.example.org/callback\"],\n\"client_name\":\"application_owner_application_1\",\n\"grant_types\": [\"password\"],\n\"ext_application_owner\": \"admin\" }\n"
       },
       "delete" : {
         "tags" : [ "OAuth2 DCR" ],
@@ -268,7 +268,7 @@
             }
           }
         },
-        "x-wso2-request" : "curl -X DELETE -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H \"Content-Type: application/json\" -d '{}' \"https://localhost:9443/api/identity/oauth2/dcr/v1.1/register/s6BhdRkqt3\"\n",
+        "x-wso2-request" : "curl -X DELETE -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H \"Content-Type: application/json\" -d '{}' \"https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3\"\n",
         "x-wso2-response" : "\"HTTP/1.1 204 No Content\"\n"
       }
     }

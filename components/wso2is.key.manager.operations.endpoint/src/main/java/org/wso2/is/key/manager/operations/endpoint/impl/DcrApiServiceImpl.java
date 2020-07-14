@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMClientException;
+import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
@@ -28,10 +29,12 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
 
 import javax.ws.rs.core.Response;
 
+/**
+ * Service Implementation for DCR API
+ */
 public class DcrApiServiceImpl implements DcrApiService {
 
     private static final Log LOG = LogFactory.getLog(DcrApiServiceImpl.class);

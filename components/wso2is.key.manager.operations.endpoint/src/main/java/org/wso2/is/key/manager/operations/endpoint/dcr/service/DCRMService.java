@@ -38,9 +38,9 @@ import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants.ErrorMessages;
 import org.wso2.carbon.identity.oauth.dcr.bean.ApplicationUpdateRequest;
-import org.wso2.carbon.identity.oauth.dcr.util.DCRConstants;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMServerException;
+import org.wso2.carbon.identity.oauth.dcr.util.DCRConstants;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.identity.oauth.dcr.util.ErrorCodes;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
@@ -176,20 +176,23 @@ public class DCRMService {
 
         String spName;
         try {
-            spName = appMgtService.getServiceProviderNameByClientId(appDTO.getOauthConsumerKey(), "oauth2", tenantDomain);
+            spName = appMgtService.getServiceProviderNameByClientId(appDTO.getOauthConsumerKey(),
+                    "oauth2", tenantDomain);
         } catch (IdentityApplicationManagementException var7) {
             throw new DCRMException("Error while retrieving the service provider.", var7);
         }
 
         if (!StringUtils.equals(spName, "default")) {
             if (log.isDebugEnabled()) {
-                log.debug("The application with consumer key: " + appDTO.getOauthConsumerKey() + " has an association with the service provider: " + spName);
+                log.debug("The application with consumer key: " + appDTO.getOauthConsumerKey() +
+                        " has an association with the service provider: " + spName);
             }
 
             this.deleteServiceProvider(spName, tenantDomain, applicationOwner);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("The application with consumer key: " + appDTO.getOauthConsumerKey() + " doesn't have an associated service provider.");
+                log.debug("The application with consumer key: " + appDTO.getOauthConsumerKey() +
+                        " doesn't have an associated service provider.");
             }
 
             this.deleteOAuthApplicationWithoutAssociatedSP(appDTO, tenantDomain, applicationOwner);
@@ -760,10 +763,7 @@ public class DCRMService {
      * @return validated or not
      */
     private static boolean clientIdMatchesRegex(String clientId, String clientIdValidatorRegex) {
-
-        if (clientIdRegexPattern == null) {
-            clientIdRegexPattern = Pattern.compile(clientIdValidatorRegex);
-        }
+        clientIdRegexPattern = Pattern.compile(clientIdValidatorRegex);
         return clientIdRegexPattern.matcher(clientId).matches();
     }
 

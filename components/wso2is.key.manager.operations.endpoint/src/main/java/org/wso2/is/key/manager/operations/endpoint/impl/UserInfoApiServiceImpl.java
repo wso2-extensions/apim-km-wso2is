@@ -33,8 +33,8 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.UserInfoApiService;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.userinfo.util.UserInfoUtil;
 
 import java.util.HashMap;
@@ -47,7 +47,7 @@ import javax.ws.rs.core.Response;
 import static org.apache.commons.collections.MapUtils.isNotEmpty;
 
 /**
- *Service Implementation for Claims API.
+ * Service Implementation for Claims API.
  */
 public class UserInfoApiServiceImpl implements UserInfoApiService {
 

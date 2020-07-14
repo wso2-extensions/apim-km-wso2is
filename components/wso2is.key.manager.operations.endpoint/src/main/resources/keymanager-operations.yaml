@@ -139,16 +139,18 @@ paths:
          "client_name": "application_test",
          "grant_types": ["password"],
          "ext_param_client_id":"provided_client_id0001",
-         "ext_param_client_secret":"provided_client_secret0001" }'
-        "https://localhost:9443/api/identity/oauth2/dcr/v1.0/register"
+         "ext_param_client_secret":"provided_client_secret0001",
+         "grant_types": ["password"],
+         "ext_application_owner": "admin" }'
+        "https://localhost:9443/keymanager-operations/dcr/register"
       x-wso2-response: |
         "HTTP/1.1 201 Created"
         {"client_name”:"application_test",
         "client_id":"provided_client_id0001",
         "client_secret":"provided_client_secret0001",
-        "redirect_uris":[""]}
-
-
+        "redirect_uris":[""]
+        "grant_types": ["password"],
+        "ext_application_owner": "admin"}
       summary: |
         Registers an OAuth2 application
       operationId: registerApplication
@@ -186,14 +188,16 @@ paths:
         description: |
           This API is used to get/retrieve an OAuth2 application by client_id.
         x-wso2-request: |
-          curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{}' "https://localhost:9443/api/identity/oauth2/dcr/v1.1/register/s6BhdRkqt3"
+          curl -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{}' "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3"
         x-wso2-response: |
           "HTTP/1.1 200 OK"
           { "client_id": "s6BhdRkqt3",
           "client_secret":"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk",
           "client_secret_expires_at": 1577858400,
           "redirect_uris":["https://client.example.org/callback"],
-          "client_name":"application_owner_application_1" }
+          "client_name":"application_owner_application_1",
+          "grant_types": ["password"],
+          "ext_application_owner": "admin"}
         operationId: getApplication
         parameters:
         - name: client_id
@@ -223,7 +227,7 @@ paths:
         description: |
           This API is used to delete an OAuth2 application by client_id.
         x-wso2-request: |
-          curl -X DELETE -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{}' "https://localhost:9443/api/identity/oauth2/dcr/v1.1/register/s6BhdRkqt3"
+          curl -X DELETE -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: application/json" -d '{}' "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3"
         x-wso2-response: |
           "HTTP/1.1 204 No Content"
         operationId: deleteApplication
@@ -255,15 +259,18 @@ paths:
           "Content-Type: application/json" -d '{
             "redirect_uris":["https://client.example.org/callback"],
             "client_name": "application_1",
-            "grant_types": ["password"] }'
-          "https://localhost:9443/api/identity/oauth2/dcr/v1.1/register"
+            "grant_types": ["password"],
+            "ext_application_owner": "admin" }'
+          "https://localhost:9443/keymanager-operations/dcr/register"
         x-wso2-response: |
           "HTTP/1.1 200 OK"
           { "client_id": "s6BhdRkqt3",
           "client_secret":"ZJYCqe3GGRvdrudKyZS0XhGv_Z45DuKhCUk0gBR1vZk",
           "client_secret_expires_at": 1577858400,
           "redirect_uris":["https://client.example.org/callback"],
-          "client_name":"application_owner_application_1" }
+          "client_name":"application_owner_application_1",
+          "grant_types": ["password"],
+          "ext_application_owner": "admin" }
         summary: |
           Updates an OAuth2 application
         operationId: updateApplication

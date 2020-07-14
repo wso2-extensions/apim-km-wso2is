@@ -25,11 +25,11 @@ import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
-import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 
 import javax.ws.rs.core.Response;
 
@@ -139,7 +139,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setClientSecret(application.getClientSecret());
         applicationDTO.setRedirectUris(application.getRedirectUris());
         applicationDTO.setGrantTypes(application.getGrantTypes());
-        applicationDTO.setExtApplicationOwner(MultitenantUtils.getTenantAwareUsername(application.getApplicationOwner()));
+        applicationDTO.setExtApplicationOwner(MultitenantUtils.
+                getTenantAwareUsername(application.getApplicationOwner()));
 
         return applicationDTO;
     }
