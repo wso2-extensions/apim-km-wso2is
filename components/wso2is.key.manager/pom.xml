@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.km.ext.wso2is</groupId>
         <artifactId>wso2is.auth.client</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.6-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>wso2is.key.manager</artifactId>
@@ -44,13 +44,14 @@
                         </Export-Package>
                         <Import-Package>
                             org.wso2.carbon.apimgt.impl.*;version="${carbon.apimgt.version}",
+                            org.wso2.carbon.apimgt.notification.*;version="${carbon.apimgt.version}",
                             org.apache.commons.codec.*,
                             org.slf4j,
                             org.osgi.framework.*;version="${imp.package.version.osgi.framework}",
                             org.osgi.service.*;version="${imp.package.version.osgi.service}",
                             *;resolution:=optional
                         </Import-Package>
-                    </instructions>g
+                    </instructions>
                 </configuration>
             </plugin>
             <plugin>
@@ -68,6 +69,10 @@
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.apimgt</groupId>
+            <artifactId>org.wso2.carbon.apimgt.notification</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -1,0 +1,180 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "description" : "This document specifies a **RESTful API** to access user information .\n\nIt is written with [swagger 2](http://swagger.io/).\n",
+    "version" : "1.0.0",
+    "title" : "WSO2 Rest API - User Information",
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host" : "apim.wso2.com",
+  "basePath" : "/t/{tenant-domain}/user-info",
+  "schemes" : [ "https" ],
+  "consumes" : [ "application/json" ],
+  "produces" : [ "application/json" ],
+  "paths" : {
+    "/claims" : {
+      "get" : {
+        "tags" : [ "User Claims" ],
+        "summary" : "Get User Claims\n",
+        "description" : "This API is used to get user claims.\n",
+        "parameters" : [ {
+          "name" : "username",
+          "in" : "query",
+          "description" : "User name\n",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "domain",
+          "in" : "query",
+          "description" : "Domain of the user.\n",
+          "required" : false,
+          "type" : "string"
+        }, {
+          "name" : "dialect",
+          "in" : "query",
+          "description" : "Dialect URI for the claims.\n",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Claims returned.",
+            "schema" : {
+              "$ref" : "#/definitions/ClaimList"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "404" : {
+            "description" : "User not found",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/claims/generate" : {
+      "post" : {
+        "tags" : [ "User Claims" ],
+        "summary" : "Register user\n",
+        "description" : "This API is used to get user claims.\n",
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "properties",
+          "description" : "Additional parameters that can be used to generate claims.",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/definitions/ClaimRequest"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Claims returned.",
+            "schema" : {
+              "$ref" : "#/definitions/ClaimList"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "404" : {
+            "description" : "User not found",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "Claim" : {
+      "type" : "object",
+      "properties" : {
+        "uri" : {
+          "type" : "string",
+          "example" : "http://wso2.org/claims/givenname",
+          "description" : "Claim URI."
+        },
+        "value" : {
+          "type" : "string",
+          "example" : "John",
+          "description" : "Value for the claim."
+        }
+      }
+    },
+    "ClaimList" : {
+      "properties" : {
+        "count" : {
+          "type" : "integer",
+          "example" : 1,
+          "description" : "Number of claims returned.\n"
+        },
+        "list" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/Claim"
+          }
+        }
+      },
+      "title" : "Claim List"
+    },
+    "Error" : {
+      "type" : "object",
+      "properties" : {
+        "code" : {
+          "type" : "string"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        }
+      }
+    },
+    "ClaimRequest" : {
+      "type" : "object",
+      "properties" : {
+        "username" : {
+          "type" : "string"
+        },
+        "accessToken" : {
+          "type" : "string"
+        },
+        "authorizationCode" : {
+          "type" : "string"
+        },
+        "dialect" : {
+          "type" : "string"
+        },
+        "domain" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}

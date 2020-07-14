@@ -25,7 +25,9 @@ import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+/**
+ * Connector configuration for WSO2IS.
+ */
 @Component(
         name = "wso2is.configuration.component",
         immediate = true,
@@ -51,11 +53,11 @@ public class WSO2ISConnectorConfiguration implements KeyManagerConnectorConfigur
 
         List<ConfigurationDto> configurationDtoList = new ArrayList<>();
         configurationDtoList
-                .add(new ConfigurationDto("consumer_key", "Client ID", "input", "Client ID of service Application", "",
+                .add(new ConfigurationDto("Username", "Username", "input", "Username of admin user", "",
                         true, false, Collections.emptyList(), false));
         configurationDtoList
-                .add(new ConfigurationDto("consumer_secret", "Client Secret", "input",
-                        "Client Secret of service Application", "", true, true, Collections.emptyList(), false));
+                .add(new ConfigurationDto("Password", "Password", "input",
+                        "Password of Admin user", "", true, true, Collections.emptyList(), false));
         return configurationDtoList;
     }
 
