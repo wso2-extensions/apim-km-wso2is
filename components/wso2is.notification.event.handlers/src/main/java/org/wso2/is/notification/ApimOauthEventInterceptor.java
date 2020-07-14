@@ -26,10 +26,15 @@ import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientExcepti
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth.event.AbstractOAuthEventInterceptor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.authz.AuthorizationHandlerManager;
+import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
+import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenRespDTO;
 import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
 import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationResponseDTO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
+import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
+import org.wso2.carbon.identity.oauth2.token.handlers.grant.RefreshGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.is.notification.event.TokenRevocationEvent;
@@ -122,6 +127,35 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             } catch (InvalidOAuthClientException e) {
                 log.error("Error while retrieving token type", e);
             }
+        }
+    }
+
+    @Override
+    public void onPostTokenRenewal(OAuth2AccessTokenReqDTO tokenReqDTO, OAuth2AccessTokenRespDTO tokenRespDTO,
+                                   OAuthTokenReqMessageContext tokReqMsgCtx, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+
+        if (tokReqMsgCtx.getProperty(RefreshGrantHandler.PREV_ACCESS_TOKEN) != null &&
+                tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY) != null) {
+            RefreshTokenValidationDataDO previousAccessToken =
+                    (RefreshTokenValidationDataDO) tokReqMsgCtx.getProperty(RefreshGrantHandler.PREV_ACCESS_TOKEN);
+            OAuthAppDO oAuthAppDO =
+                    (OAuthAppDO) tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
+            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(previousAccessToken.getAccessToken()
+                    , previousAccessToken.getIssuedTime().getTime() + previousAccessToken.getValidityPeriodInMillis()
+                    , previousAccessToken.getAuthorizedUser().getUserName(), oAuthAppDO.getOauthConsumerKey(),
+                    oAuthAppDO.getTokenType());
+            String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
+            tokenRevocationEvent.setTenantDomain(tenantDomain);
+            try {
+                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                        .getTenantId(tenantDomain);
+                tokenRevocationEvent.setTenantId(tenantId);
+            } catch (UserStoreException e) {
+                log.error("Error while finding tenant id", e);
+            }
+
+            publishEvent(tokenRevocationEvent);
         }
     }
 

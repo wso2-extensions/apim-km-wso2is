@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.wso2.km.ext.wso2is</groupId>
         <artifactId>wso2is.auth.client</artifactId>
-        <version>1.0.5-SNAPSHOT</version>
+        <version>1.0.6-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -35,6 +35,10 @@
         <dependency>
             <groupId>org.wso2.km.ext.wso2is</groupId>
             <artifactId>wso2is.notification.event.handlers</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.km.ext.wso2is</groupId>
+            <artifactId>wso2is.key.manager.core</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -87,6 +91,7 @@
                                 <bundleDef>
                                     org.wso2.km.ext.wso2is:wso2is.notification.event.handlers:${project.version}
                                 </bundleDef>
+                                <bundleDef>org.wso2.km.ext.wso2is:wso2is.key.manager.core:${project.version}</bundleDef>
                             </bundles>
                         </configuration>
                     </execution>
