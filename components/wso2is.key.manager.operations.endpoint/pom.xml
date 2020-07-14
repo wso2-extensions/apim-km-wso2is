@@ -9,7 +9,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>wso2is.key.manager.operations.endpoint</artifactId>
+    <artifactId>org.wso2.is.key.manager.operations.endpoint</artifactId>
     <name>WSO2IS Key Manager Operation Rest API</name>
     <modelVersion>4.0.0</modelVersion>
     <packaging>war</packaging>
@@ -54,8 +54,8 @@
                             <inputSpec>${project.basedir}/src/main/resources/keymanager-operations.yaml</inputSpec>
                             <language>jaxrs-cxf-cdi</language>
                             <configOptions>
-                                <apiPackage>wso2is.key.manager.operations.endpoint</apiPackage>
-                                <modelPackage>wso2is.key.manager.operations.endpoint.dto</modelPackage>
+                                <apiPackage>org.wso2.is.key.manager.operations.endpoint</apiPackage>
+                                <modelPackage>org.wso2.is.key.manager.operations.endpoint.dto</modelPackage>
                                 <sourceFolder>src/gen/java</sourceFolder>
                                 <dateLibrary>java8</dateLibrary>
                                 <hideGenerationTimestamp>true</hideGenerationTimestamp>

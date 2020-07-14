@@ -371,7 +371,7 @@ definitions:
           type: string
       tokenType:
         type: string
-      application_owner:
+      ext_application_owner:
         type: string
       jwks_uri:
         type: string
@@ -427,7 +427,7 @@ definitions:
             type: string
         tokenType:
           type: string
-        application_owner:
+        ext_application_owner:
           type: string
         backchannel_logout_uri:
           type: string
@@ -455,5 +455,5 @@ definitions:
           type: array
           items:
             type: string
-        application_owner:
+        ext_application_owner:
           type: string

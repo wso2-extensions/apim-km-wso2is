@@ -7,8 +7,8 @@
     <bean class="org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer"/>
     <jaxrs:server id="services" address="/">
         <jaxrs:serviceBeans>
-            <bean class="wso2is.key.manager.operations.endpoint.DcrApi"/>
-            <bean class="wso2is.key.manager.operations.endpoint.UserInfoApi"/>
+            <bean class="org.wso2.is.key.manager.operations.endpoint.DcrApi"/>
+            <bean class="org.wso2.is.key.manager.operations.endpoint.UserInfoApi"/>
         </jaxrs:serviceBeans>
         <jaxrs:providers>
             <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
