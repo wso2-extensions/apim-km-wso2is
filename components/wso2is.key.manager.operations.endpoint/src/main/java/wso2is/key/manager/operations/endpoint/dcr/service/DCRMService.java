@@ -65,6 +65,7 @@ public class DCRMService {
     private static final String AUTH_TYPE_OAUTH_2 = "oauth2";
     private static final String OAUTH_VERSION = "OAuth-2.0";
     private static final String GRANT_TYPE_SEPARATOR = " ";
+    private static final String DOMAIN_SEPARATOR = "@";
     private static Pattern clientIdRegexPattern = null;
 
     public DCRMService() {
@@ -75,9 +76,9 @@ public class DCRMService {
     /**
      * Create OAuth2/OIDC application.
      *
-     * @param registrationRequest
-     * @return
-     * @throws DCRMException
+     * @param registrationRequest registrationRequest
+     * @return ExtendedApplication
+     * @throws DCRMException DCRMException
      */
     public ExtendedApplication registerApplication(ExtendedApplicationRegistrationRequest registrationRequest)
             throws DCRMException {
@@ -88,10 +89,10 @@ public class DCRMService {
     /**
      * Update OAuth/OIDC application.
      *
-     * @param updateRequest
-     * @param clientId
-     * @return
-     * @throws DCRMException
+     * @param updateRequest updateRequest
+     * @param clientId clientId
+     * @return ExtendedApplication
+     * @throws DCRMException DCRMException
      */
     public ExtendedApplication updateApplication(ExtendedApplicationUpdateRequest updateRequest, String clientId) throws
             DCRMException {
@@ -149,9 +150,11 @@ public class DCRMService {
     }
 
     /**
-     * @param clientId
-     * @return
-     * @throws DCRMException
+     * get the Application By Id
+     *
+     * @param clientId clientId
+     * @return ExtendedApplication
+     * @throws DCRMException DCRMException
      */
     public ExtendedApplication getApplication(String clientId) throws DCRMException {
 
@@ -160,13 +163,15 @@ public class DCRMService {
     }
 
     /**
-     * @param clientId
-     * @throws DCRMException
+     * Delete OAuth application
+     *
+     * @param clientId clientId
+     * @throws DCRMException DCRMException
      */
     public void deleteApplication(String clientId) throws DCRMException {
 
         OAuthConsumerAppDTO appDTO = this.getApplicationById(clientId);
-        String applicationOwner =  PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String applicationOwner = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
 
         String spName;
@@ -198,7 +203,7 @@ public class DCRMService {
      * @param appDTO       {@link OAuthConsumerAppDTO} object of the OAuth app to be deleted
      * @param tenantDomain Tenant Domain
      * @param username     User Name
-     * @throws DCRMException
+     * @throws DCRMException DCRMException
      */
     private void deleteOAuthApplicationWithoutAssociatedSP(OAuthConsumerAppDTO appDTO, String tenantDomain,
                                                            String username) throws DCRMException {
@@ -243,9 +248,9 @@ public class DCRMService {
     }
 
     /**
-     * @param clientId
-     * @return
-     * @throws DCRMException
+     * @param clientId clientId
+     * @return OAuthConsumerAppDTO
+     * @throws DCRMException DCRMException
      */
     private OAuthConsumerAppDTO getApplicationById(String clientId) throws DCRMException {
 
@@ -255,10 +260,10 @@ public class DCRMService {
     /**
      * get Application By Id
      *
-     * @param clientId
-     * @param isApplicationRolePermissionRequired
+     * @param clientId clientId
+     * @param isApplicationRolePermissionRequired isApplicationRolePermissionRequired
      * @return OAuthConsumerAppDTO
-     * @throws DCRMException
+     * @throws DCRMException DCRMException
      */
     private OAuthConsumerAppDTO getApplicationById(String clientId, boolean isApplicationRolePermissionRequired)
             throws DCRMException {
@@ -271,8 +276,9 @@ public class DCRMService {
 
         try {
             OAuthConsumerAppDTO dto = oAuthAdminService.getOAuthApplicationData(clientId);
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(dto.getUsername().split("@")[0]);
-            if (dto == null || StringUtils.isEmpty(dto.getApplicationName())) {
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(dto.getUsername().
+                    split(DOMAIN_SEPARATOR)[0]);
+            if (StringUtils.isEmpty(dto.getApplicationName())) {
                 throw DCRMUtils.generateClientException(
                         ErrorMessages.NOT_FOUND_APPLICATION_WITH_ID, clientId);
             } else if (isApplicationRolePermissionRequired && !isUserAuthorized(clientId)) {
@@ -293,9 +299,9 @@ public class DCRMService {
     /**
      * create OAuthApplication
      *
-     * @param registrationRequest
-     * @return ExtendedApplication
-     * @throws DCRMException
+     * @param registrationRequest RegistrationRequest
+     * @return ExtendedApplication ExtendedApplication
+     * @throws DCRMException DCRMException
      */
     private ExtendedApplication createOAuthApplication(ExtendedApplicationRegistrationRequest registrationRequest)
             throws DCRMException {
@@ -353,7 +359,7 @@ public class DCRMService {
     /**
      * Build the response
      *
-     * @param createdApp
+     * @param createdApp createdApp
      * @return ExtendedApplication
      */
     private ExtendedApplication buildResponse(OAuthConsumerAppDTO createdApp) {
@@ -378,11 +384,11 @@ public class DCRMService {
     /**
      * update ServiceProvider With OAuthAppDetails
      *
-     * @param serviceProvider
-     * @param createdApp
-     * @param applicationOwner
-     * @param tenantDomain
-     * @throws DCRMException
+     * @param serviceProvider serviceProvider
+     * @param createdApp createdApp
+     * @param applicationOwner applicationOwner
+     * @param tenantDomain tenantDomain
+     * @throws DCRMException DCRMException
      */
     private void updateServiceProviderWithOAuthAppDetails(ServiceProvider serviceProvider,
                                                           OAuthConsumerAppDTO createdApp,
@@ -398,8 +404,7 @@ public class DCRMService {
         inboundAuthenticationRequestConfig.setInboundAuthType(AUTH_TYPE_OAUTH_2);
         inboundAuthenticationRequestConfigs.add(inboundAuthenticationRequestConfig);
         inboundAuthenticationConfig.setInboundAuthenticationRequestConfigs(inboundAuthenticationRequestConfigs
-                .toArray(new InboundAuthenticationRequestConfig[inboundAuthenticationRequestConfigs
-                        .size()]));
+                .toArray(new InboundAuthenticationRequestConfig[0]));
         serviceProvider.setInboundAuthenticationConfig(inboundAuthenticationConfig);
         //Set SaaS app option
         serviceProvider.setSaasApp(false);
@@ -408,6 +413,15 @@ public class DCRMService {
         updateServiceProvider(serviceProvider, tenantDomain, applicationOwner);
     }
 
+    /**
+     *
+     * @param registrationRequest registrationRequest
+     * @param applicationOwner applicationOwner
+     * @param tenantDomain tenantDomain
+     * @param spName spName
+     * @return OAuthConsumerAppDTO
+     * @throws DCRMException DCRMException
+     */
     private OAuthConsumerAppDTO createOAuthApp(ExtendedApplicationRegistrationRequest registrationRequest,
                                                String applicationOwner,
                                                String tenantDomain,
@@ -462,6 +476,16 @@ public class DCRMService {
         return createdApp;
     }
 
+    /**
+     * Create ServiceProvider
+     *
+     * @param applicationOwner applicationOwner
+     * @param tenantDomain tenantDomain
+     * @param spName spName
+     * @param templateName templateName
+     * @return ServiceProvider
+     * @throws DCRMException DCRMException
+     */
     private ServiceProvider createServiceProvider(String applicationOwner, String tenantDomain,
                                                   String spName, String templateName) throws DCRMException {
         // Create the Service Provider
@@ -486,9 +510,9 @@ public class DCRMService {
     /**
      * Check whether servers provider exist with a given name in the tenant.
      *
-     * @param serviceProviderName
-     * @param tenantDomain
-     * @return
+     * @param serviceProviderName serviceProviderName
+     * @param tenantDomain tenantDomain
+     * @return isServiceProviderExist
      */
     private boolean isServiceProviderExist(String serviceProviderName, String tenantDomain) {
 
@@ -527,14 +551,14 @@ public class DCRMService {
     /**
      * Get ServiceProvider
      *
-     * @param applicationName
-     * @param tenantDomain
+     * @param applicationName applicationName
+     * @param tenantDomain tenantDomain
      * @return ServiceProvider
-     * @throws DCRMException
+     * @throws DCRMException DCRMException
      */
     private ServiceProvider getServiceProvider(String applicationName, String tenantDomain) throws DCRMException {
 
-        ServiceProvider serviceProvider = null;
+        ServiceProvider serviceProvider;
         try {
             serviceProvider = appMgtService.getServiceProvider(applicationName, tenantDomain);
         } catch (IdentityApplicationManagementException e) {
@@ -547,10 +571,10 @@ public class DCRMService {
     /**
      * update Service Provider
      *
-     * @param serviceProvider
-     * @param tenantDomain
-     * @param userName
-     * @throws DCRMException
+     * @param serviceProvider serviceProvider
+     * @param tenantDomain tenantDomain
+     * @param userName userName
+     * @throws DCRMException DCRMException
      */
     private void updateServiceProvider(ServiceProvider serviceProvider, String tenantDomain, String userName)
             throws DCRMException {
@@ -566,11 +590,11 @@ public class DCRMService {
     /**
      * create ServiceProvider
      *
-     * @param serviceProvider
-     * @param tenantDomain
-     * @param username
-     * @param templateName
-     * @throws DCRMException
+     * @param serviceProvider serviceProvider
+     * @param tenantDomain tenantDomain
+     * @param username username
+     * @param templateName templateName
+     * @throws DCRMException DCRMException
      */
     private void createServiceProvider(ServiceProvider serviceProvider, String tenantDomain, String username,
                                        String templateName) throws DCRMException {
@@ -595,10 +619,10 @@ public class DCRMService {
     /**
      * Delete service provider
      *
-     * @param applicationName
-     * @param tenantDomain
-     * @param userName
-     * @throws DCRMException
+     * @param applicationName applicationName
+     * @param tenantDomain tenantDomain
+     * @param userName userName
+     * @throws DCRMException DCRMException
      */
     private void deleteServiceProvider(String applicationName,
                                        String tenantDomain, String userName) throws DCRMException {
@@ -614,10 +638,10 @@ public class DCRMService {
     /**
      * validate and set CallbackURIs
      *
-     * @param redirectUris
-     * @param grantTypes
+     * @param redirectUris redirectUris
+     * @param grantTypes grantTypes
      * @return CallbackURIs
-     * @throws DCRMException
+     * @throws DCRMException DCRMException
      */
     private String validateAndSetCallbackURIs(List<String> redirectUris, List<String> grantTypes) throws DCRMException {
 
@@ -649,9 +673,9 @@ public class DCRMService {
     /**
      * validate Backchannel LogoutURI
      *
-     * @param backchannelLogoutUri
+     * @param backchannelLogoutUri backchannelLogoutUri
      * @return validation of Backchannel LogoutURI
-     * @throws DCRMException
+     * @throws DCRMException DCRMException
      */
     private String validateBackchannelLogoutURI(String backchannelLogoutUri) throws DCRMException {
 
@@ -666,7 +690,7 @@ public class DCRMService {
     /**
      * Check RedirectURI is Mandatory
      *
-     * @param grantTypes
+     * @param grantTypes grantTypes
      * @return isRedirectURIMandatory
      */
     private boolean isRedirectURIMandatory(List<String> grantTypes) {
@@ -678,9 +702,9 @@ public class DCRMService {
     /**
      * create Regex Pattern
      *
-     * @param redirectURIs
+     * @param redirectURIs redirectURIs
      * @return regex pattern
-     * @throws DCRMException
+     * @throws DCRMException DCRMException
      */
     private String createRegexPattern(List<String> redirectURIs) throws DCRMException {
 
@@ -706,9 +730,9 @@ public class DCRMService {
     /**
      * Validate the user
      *
-     * @param clientId
+     * @param clientId clientId
      * @return user authorized or not
-     * @throws DCRMServerException
+     * @throws DCRMServerException DCRMServerException
      */
     private boolean isUserAuthorized(String clientId) throws DCRMServerException {
 
@@ -727,8 +751,8 @@ public class DCRMService {
     /**
      * Validate client id according to the regex.
      *
-     * @param clientId
-     * @param clientIdValidatorRegex
+     * @param clientId clientId
+     * @param clientIdValidatorRegex clientIdValidatorRegex
      * @return validated or not
      */
     private static boolean clientIdMatchesRegex(String clientId, String clientIdValidatorRegex) {

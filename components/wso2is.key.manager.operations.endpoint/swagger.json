@@ -444,6 +444,9 @@
         "tokenType" : {
           "type" : "string"
         },
+        "application_owner" : {
+          "type" : "string"
+        },
         "backchannel_logout_uri" : {
           "type" : "string"
         },

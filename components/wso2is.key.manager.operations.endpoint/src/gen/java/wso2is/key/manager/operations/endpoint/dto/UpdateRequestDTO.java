@@ -22,6 +22,7 @@ public class UpdateRequestDTO   {
     private String clientSecret = null;
     private List<String> grantTypes = new ArrayList<>();
     private String tokenType = null;
+    private String applicationOwner = null;
     private String backchannelLogoutUri = null;
     private Boolean backchannelLogoutSessionRequired = null;
 
@@ -129,6 +130,23 @@ public class UpdateRequestDTO   {
 
   /**
    **/
+  public UpdateRequestDTO applicationOwner(String applicationOwner) {
+    this.applicationOwner = applicationOwner;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("application_owner")
+  public String getApplicationOwner() {
+    return applicationOwner;
+  }
+  public void setApplicationOwner(String applicationOwner) {
+    this.applicationOwner = applicationOwner;
+  }
+
+  /**
+   **/
   public UpdateRequestDTO backchannelLogoutUri(String backchannelLogoutUri) {
     this.backchannelLogoutUri = backchannelLogoutUri;
     return this;
@@ -177,13 +195,14 @@ public class UpdateRequestDTO   {
         Objects.equals(clientSecret, updateRequest.clientSecret) &&
         Objects.equals(grantTypes, updateRequest.grantTypes) &&
         Objects.equals(tokenType, updateRequest.tokenType) &&
+        Objects.equals(applicationOwner, updateRequest.applicationOwner) &&
         Objects.equals(backchannelLogoutUri, updateRequest.backchannelLogoutUri) &&
         Objects.equals(backchannelLogoutSessionRequired, updateRequest.backchannelLogoutSessionRequired);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenType, backchannelLogoutUri, backchannelLogoutSessionRequired);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenType, applicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired);
   }
 
   @Override
@@ -197,6 +216,7 @@ public class UpdateRequestDTO   {
     sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("    grantTypes: ").append(toIndentedString(grantTypes)).append("\n");
     sb.append("    tokenType: ").append(toIndentedString(tokenType)).append("\n");
+    sb.append("    applicationOwner: ").append(toIndentedString(applicationOwner)).append("\n");
     sb.append("    backchannelLogoutUri: ").append(toIndentedString(backchannelLogoutUri)).append("\n");
     sb.append("    backchannelLogoutSessionRequired: ").append(toIndentedString(backchannelLogoutSessionRequired)).append("\n");
     sb.append("}");

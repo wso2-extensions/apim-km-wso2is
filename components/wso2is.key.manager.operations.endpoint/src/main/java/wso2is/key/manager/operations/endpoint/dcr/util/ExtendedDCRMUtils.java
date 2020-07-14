@@ -19,7 +19,6 @@ package wso2is.key.manager.operations.endpoint.dcr.util;
 
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
-import org.wso2.carbon.identity.oauth.dcr.bean.Application;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import wso2is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
@@ -68,6 +67,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationUpdateRequest.setRedirectUris(updateRequestDTO.getRedirectUris());
         applicationUpdateRequest.setGrantTypes(updateRequestDTO.getGrantTypes());
         applicationUpdateRequest.setTokenType(updateRequestDTO.getTokenType());
+        applicationUpdateRequest.setApplicationOwner(updateRequestDTO.getApplicationOwner());
         applicationUpdateRequest.setBackchannelLogoutUri(updateRequestDTO.getBackchannelLogoutUri());
         return applicationUpdateRequest;
 
@@ -99,7 +99,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      *
      * @param status    response status
      * @param throwable throwable
-     * @throws DCRMEndpointException
+     * @throws DCRMEndpointException DCRMEndpointException
      */
     public static void handleErrorResponse(Response.Status status, Throwable throwable,
                                            boolean isServerException, Log log)
@@ -147,11 +147,11 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
 
     /**
      * build the DCRMEndpointException
-     * @param status
-     * @param code
-     * @param description
-     * @param isStatusOnly
-     * @return
+     * @param status status
+     * @param code code
+     * @param description description
+     * @param isStatusOnly isStatusOnly
+     * @return DCRMEndpointException
      */
     private static DCRMEndpointException buildDCRMEndpointException(Response.Status status,
                                                                     String code, String description,
