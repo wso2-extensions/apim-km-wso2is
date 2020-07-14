@@ -4,24 +4,16 @@ import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
 import org.wso2.is.key.manager.operations.endpoint.impl.DcrApiServiceImpl;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 import io.swagger.annotations.*;
-import java.io.InputStream;
 
 import org.apache.cxf.jaxrs.ext.MessageContext;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.ext.multipart.Multipart;
 
-import java.util.Map;
-import java.util.List;
-import javax.validation.constraints.*;
 @Path("/dcr")
 
 @Api(description = "the dcr API")
