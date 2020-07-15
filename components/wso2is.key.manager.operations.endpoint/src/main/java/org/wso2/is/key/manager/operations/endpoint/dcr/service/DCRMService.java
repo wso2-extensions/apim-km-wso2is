@@ -47,7 +47,6 @@ import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
-import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -158,8 +157,7 @@ public class DCRMService {
      */
     public ExtendedApplication getApplication(String clientId) throws DCRMException {
 
-        boolean isApplicationRolePermissionRequired = ExtendedDCRMUtils.isApplicationRolePermissionRequired();
-        return this.buildResponse(this.getApplicationById(clientId, isApplicationRolePermissionRequired));
+        return this.buildResponse(this.getApplicationById(clientId, true));
     }
 
     /**
