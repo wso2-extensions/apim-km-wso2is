@@ -31,8 +31,10 @@
     <modules>
         <module>components/wso2is.key.manager</module>
         <module>components/wso2is.key.manager.userinfo.endpoint</module>
+        <module>components/wso2is.key.manager.operations.endpoint</module>
         <module>components/wso2is.notification.event.handlers</module>
         <module>features/wso2is.key.manager.feature</module>
+        <module>features/wso2is.key.manager.operations.endpoint.feature</module>
         <module>features/wso2is.key.manager.userinfo.endpoint.feature</module>
         <module>features/wso2is.key.manager.notification.feature</module>
         <module>components/wso2is.key.manager.core</module>
@@ -217,6 +219,11 @@
                 <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
                 <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
                 <version>${carbon.identity-data-publisher-application-authentication.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.inbound.auth.oauth2</groupId>
+                <artifactId>org.wso2.carbon.identity.oauth.dcr</artifactId>
+                <version>${carbon.identity-inbound-auth-oauth.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
