@@ -376,7 +376,9 @@ definitions:
         type: array
         items:
           type: string
-      tokenType:
+      application_type:
+        type: string
+      token_type_extension:
         type: string
       ext_application_owner:
         type: string
@@ -410,8 +412,7 @@ definitions:
         type: string
       backchannel_logout_session_required:
         type: boolean
-      spTemplateName:
-        type: string
+
     #-----------------------------------------------------
     # The Application Update Request Object
     #-----------------------------------------------------

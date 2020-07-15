@@ -21,7 +21,8 @@ public class RegistrationRequestDTO   {
     private String clientId = null;
     private String clientSecret = null;
     private List<String> grantTypes = new ArrayList<>();
-    private String tokenType = null;
+    private String applicationType = null;
+    private String tokenTypeExtension = null;
     private String extApplicationOwner = null;
     private String jwksUri = null;
     private String url = null;
@@ -34,7 +35,6 @@ public class RegistrationRequestDTO   {
     private String extParamSpTemplate = null;
     private String backchannelLogoutUri = null;
     private Boolean backchannelLogoutSessionRequired = null;
-    private String spTemplateName = null;
 
   /**
    **/
@@ -125,19 +125,36 @@ public class RegistrationRequestDTO   {
 
   /**
    **/
-  public RegistrationRequestDTO tokenType(String tokenType) {
-    this.tokenType = tokenType;
+  public RegistrationRequestDTO applicationType(String applicationType) {
+    this.applicationType = applicationType;
     return this;
   }
 
   
   @ApiModelProperty(value = "")
-  @JsonProperty("tokenType")
-  public String getTokenType() {
-    return tokenType;
+  @JsonProperty("application_type")
+  public String getApplicationType() {
+    return applicationType;
   }
-  public void setTokenType(String tokenType) {
-    this.tokenType = tokenType;
+  public void setApplicationType(String applicationType) {
+    this.applicationType = applicationType;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO tokenTypeExtension(String tokenTypeExtension) {
+    this.tokenTypeExtension = tokenTypeExtension;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("token_type_extension")
+  public String getTokenTypeExtension() {
+    return tokenTypeExtension;
+  }
+  public void setTokenTypeExtension(String tokenTypeExtension) {
+    this.tokenTypeExtension = tokenTypeExtension;
   }
 
   /**
@@ -344,23 +361,6 @@ public class RegistrationRequestDTO   {
     this.backchannelLogoutSessionRequired = backchannelLogoutSessionRequired;
   }
 
-  /**
-   **/
-  public RegistrationRequestDTO spTemplateName(String spTemplateName) {
-    this.spTemplateName = spTemplateName;
-    return this;
-  }
-
-  
-  @ApiModelProperty(value = "")
-  @JsonProperty("spTemplateName")
-  public String getSpTemplateName() {
-    return spTemplateName;
-  }
-  public void setSpTemplateName(String spTemplateName) {
-    this.spTemplateName = spTemplateName;
-  }
-
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -376,7 +376,8 @@ public class RegistrationRequestDTO   {
         Objects.equals(clientId, registrationRequest.clientId) &&
         Objects.equals(clientSecret, registrationRequest.clientSecret) &&
         Objects.equals(grantTypes, registrationRequest.grantTypes) &&
-        Objects.equals(tokenType, registrationRequest.tokenType) &&
+        Objects.equals(applicationType, registrationRequest.applicationType) &&
+        Objects.equals(tokenTypeExtension, registrationRequest.tokenTypeExtension) &&
         Objects.equals(extApplicationOwner, registrationRequest.extApplicationOwner) &&
         Objects.equals(jwksUri, registrationRequest.jwksUri) &&
         Objects.equals(url, registrationRequest.url) &&
@@ -388,13 +389,12 @@ public class RegistrationRequestDTO   {
         Objects.equals(responseTypes, registrationRequest.responseTypes) &&
         Objects.equals(extParamSpTemplate, registrationRequest.extParamSpTemplate) &&
         Objects.equals(backchannelLogoutUri, registrationRequest.backchannelLogoutUri) &&
-        Objects.equals(backchannelLogoutSessionRequired, registrationRequest.backchannelLogoutSessionRequired) &&
-        Objects.equals(spTemplateName, registrationRequest.spTemplateName);
+        Objects.equals(backchannelLogoutSessionRequired, registrationRequest.backchannelLogoutSessionRequired);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenType, extApplicationOwner, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, spTemplateName);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationType, tokenTypeExtension, extApplicationOwner, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired);
   }
 
   @Override
@@ -407,7 +407,8 @@ public class RegistrationRequestDTO   {
     sb.append("    clientId: ").append(toIndentedString(clientId)).append("\n");
     sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("    grantTypes: ").append(toIndentedString(grantTypes)).append("\n");
-    sb.append("    tokenType: ").append(toIndentedString(tokenType)).append("\n");
+    sb.append("    applicationType: ").append(toIndentedString(applicationType)).append("\n");
+    sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
     sb.append("    jwksUri: ").append(toIndentedString(jwksUri)).append("\n");
     sb.append("    url: ").append(toIndentedString(url)).append("\n");
@@ -420,7 +421,6 @@ public class RegistrationRequestDTO   {
     sb.append("    extParamSpTemplate: ").append(toIndentedString(extParamSpTemplate)).append("\n");
     sb.append("    backchannelLogoutUri: ").append(toIndentedString(backchannelLogoutUri)).append("\n");
     sb.append("    backchannelLogoutSessionRequired: ").append(toIndentedString(backchannelLogoutSessionRequired)).append("\n");
-    sb.append("    spTemplateName: ").append(toIndentedString(spTemplateName)).append("\n");
     sb.append("}");
     return sb.toString();
   }

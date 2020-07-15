@@ -361,7 +361,10 @@
             "type" : "string"
           }
         },
-        "tokenType" : {
+        "application_type" : {
+          "type" : "string"
+        },
+        "token_type_extension" : {
           "type" : "string"
         },
         "ext_application_owner" : {
@@ -411,9 +414,6 @@
         },
         "backchannel_logout_session_required" : {
           "type" : "boolean"
-        },
-        "spTemplateName" : {
-          "type" : "string"
         }
       }
     },
