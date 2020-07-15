@@ -3,16 +3,23 @@ package org.wso2.is.key.manager.operations.endpoint;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClaimListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
+import org.wso2.is.key.manager.operations.endpoint.UserInfoApiService;
 import org.wso2.is.key.manager.operations.endpoint.impl.UserInfoApiServiceImpl;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 import io.swagger.annotations.*;
+import java.io.InputStream;
 
 import org.apache.cxf.jaxrs.ext.MessageContext;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.Multipart;
 
+import java.util.Map;
+import java.util.List;
 import javax.validation.constraints.*;
 @Path("/user-info")
 

@@ -1,12 +1,19 @@
 package org.wso2.is.key.manager.operations.endpoint.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.ArrayList;
 import java.util.List;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClaimDTO;
+import javax.validation.constraints.*;
+
 
 import io.swagger.annotations.*;
 import java.util.Objects;
+
+import javax.xml.bind.annotation.*;
+
+
 
 public class ClaimListDTO   {
   

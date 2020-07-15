@@ -52,5 +52,4 @@ public class ExtendedApplication extends Application implements Serializable {
         this.grantTypes = grantTypes;
     }
 
-
 }
