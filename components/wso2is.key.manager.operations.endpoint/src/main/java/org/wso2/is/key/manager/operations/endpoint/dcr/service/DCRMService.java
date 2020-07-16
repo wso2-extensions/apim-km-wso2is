@@ -765,4 +765,39 @@ public class DCRMService {
         return clientIdRegexPattern.matcher(clientId).matches();
     }
 
+
+    public ExtendedApplication getNewApplicationConsumerSecret(String clientId) throws DCRMServerException {
+        OAuthConsumerAppDTO appDTO;
+        try {
+            appDTO = oAuthAdminService.updateAndRetrieveOauthSecretKey(clientId);
+
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, clientId, e);
+        }
+        return buildResponse(appDTO);
+    }
+
+
+    public ExtendedApplication updateApplicationOwner(String applicationOwner, String clientId) throws
+            DCRMException {
+
+        OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+
+        // Update Service Provider
+        ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
+        updateServiceProvider(sp, tenantDomain, applicationOwner);
+        appDTO.setUsername(applicationOwner);
+
+        // Update application
+        try {
+            oAuthAdminService.updateConsumerApplication(appDTO);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, clientId, e);
+        }
+
+        return buildResponse(getApplicationById(clientId));
+    }
 }

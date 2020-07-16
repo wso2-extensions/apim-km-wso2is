@@ -36,6 +36,34 @@ public class DcrApi  {
 DcrApiService delegate = new DcrApiServiceImpl();
 
 
+    @POST
+    @Path("/{clientId}/change-owner")
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Change Application Owner", notes = "This operation is used to change the owner of an Application. ", response = ApplicationDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 201, message = "Created", response = ApplicationDTO.class),
+        @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
+        @ApiResponse(code = 409, message = "Conflict", response = ErrorDTO.class),
+        @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
+    public Response dcrClientIdChangeOwnerPost( @NotNull @ApiParam(value = "",required=true)  @QueryParam("applicationOwner") String applicationOwner, @ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId){
+        return delegate.dcrClientIdChangeOwnerPost(applicationOwner, clientId, securityContext);
+    }
+
+    @POST
+    @Path("/{clientId}/re-generate-consumer-secret")
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @ApiOperation(value = "update the oauth secret key", notes = "This operation is used to update the oauth secret key ", response = ApplicationDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 201, message = "Created", response = ApplicationDTO.class),
+        @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
+        @ApiResponse(code = 409, message = "Conflict", response = ErrorDTO.class),
+        @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
+    public Response dcrClientIdReGenerateConsumerSecretPost(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId){
+        return delegate.dcrClientIdReGenerateConsumerSecretPost(clientId, securityContext);
+    }
+
     @DELETE
     @Path("/register/{client_id}")
     @Consumes({ "application/json" })

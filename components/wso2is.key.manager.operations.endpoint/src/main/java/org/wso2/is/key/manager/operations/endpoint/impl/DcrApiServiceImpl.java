@@ -42,6 +42,33 @@ public class DcrApiServiceImpl implements DcrApiService {
     private DCRMService service = new DCRMService();
 
     @Override
+    public Response dcrClientIdChangeOwnerPost(String applicationOwner, String clientId,
+                                               MessageContext messageContext) {
+        ApplicationDTO applicationDTO = null;
+        try {
+            ExtendedApplication application = service.updateApplicationOwner(applicationOwner, clientId);
+            applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.OK).entity(applicationDTO).build();
+    }
+
+    @Override
+    public Response dcrClientIdReGenerateConsumerSecretPost(String clientId, MessageContext messageContext) {
+        ApplicationDTO applicationDTO = null;
+        try {
+            ExtendedApplication application = service.getNewApplicationConsumerSecret(clientId);
+            applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.OK).entity(applicationDTO).build();
+    }
+
+    @Override
     public Response deleteApplication(String clientId, MessageContext messageContext) {
         try {
             service.deleteApplication(clientId);

@@ -271,6 +271,95 @@
         "x-wso2-request" : "curl -X DELETE -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H \"Content-Type: application/json\" -d '{}' \"https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3\"\n",
         "x-wso2-response" : "\"HTTP/1.1 204 No Content\"\n"
       }
+    },
+    "/dcr/{clientId}/change-owner" : {
+      "post" : {
+        "tags" : [ "OAuth2 DCR" ],
+        "summary" : "Change Application Owner",
+        "description" : "This operation is used to change the owner of an Application.\n",
+        "parameters" : [ {
+          "name" : "applicationOwner",
+          "in" : "query",
+          "required" : true,
+          "type" : "string"
+        }, {
+          "name" : "clientId",
+          "in" : "path",
+          "description" : "Unique identifier of the OAuth2 client application.",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "schema" : {
+              "$ref" : "#/definitions/Application"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "409" : {
+            "description" : "Conflict",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          }
+        },
+        "x-wso2-request" : "curl -k -X POST -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H\n        \"Content-Type: application/json\" -d '{\n         \"ext_application_owner\": \"admin\"}'\n        \"https://localhost:9443/keymanager-operations/dcr/change-owner?client_id=s6BhdRkqt3\"\n",
+        "x-wso2-response" : "HTTP/1.1 200 OK"
+      }
+    },
+    "/dcr/{clientId}/re-generate-consumer-secret" : {
+      "post" : {
+        "tags" : [ "OAuth2 DCR" ],
+        "summary" : "update the oauth secret key",
+        "description" : "This operation is used to update the oauth secret key\n",
+        "parameters" : [ {
+          "name" : "clientId",
+          "in" : "path",
+          "description" : "Unique identifier of the OAuth2 client application.",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "schema" : {
+              "$ref" : "#/definitions/Application"
+            }
+          },
+          "400" : {
+            "description" : "Bad Request",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "409" : {
+            "description" : "Conflict",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          },
+          "500" : {
+            "description" : "Server Error",
+            "schema" : {
+              "$ref" : "#/definitions/Error"
+            }
+          }
+        },
+        "x-wso2-request" : "curl -k -X POST -H \"Authorization: Basic YWRtaW46YWRtaW4=\" -H\n        \"Content-Type: application/json\"\n        \"https://localhost:9443/keymanager-operations/dcr/re-generate-consumer-secret?client_id=s6BhdRkqt3\"\n",
+        "x-wso2-response" : "HTTP/1.1 200 OK"
+      }
     }
   },
   "definitions" : {
