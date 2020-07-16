@@ -21,7 +21,7 @@ public class UpdateRequestDTO   {
     private String clientId = null;
     private String clientSecret = null;
     private List<String> grantTypes = new ArrayList<>();
-    private String tokenType = null;
+    private String tokenTypeExtension = null;
     private String extApplicationOwner = null;
     private String backchannelLogoutUri = null;
     private Boolean backchannelLogoutSessionRequired = null;
@@ -113,19 +113,19 @@ public class UpdateRequestDTO   {
 
   /**
    **/
-  public UpdateRequestDTO tokenType(String tokenType) {
-    this.tokenType = tokenType;
+  public UpdateRequestDTO tokenTypeExtension(String tokenTypeExtension) {
+    this.tokenTypeExtension = tokenTypeExtension;
     return this;
   }
 
   
   @ApiModelProperty(value = "")
-  @JsonProperty("tokenType")
-  public String getTokenType() {
-    return tokenType;
+  @JsonProperty("token_type_extension")
+  public String getTokenTypeExtension() {
+    return tokenTypeExtension;
   }
-  public void setTokenType(String tokenType) {
-    this.tokenType = tokenType;
+  public void setTokenTypeExtension(String tokenTypeExtension) {
+    this.tokenTypeExtension = tokenTypeExtension;
   }
 
   /**
@@ -194,7 +194,7 @@ public class UpdateRequestDTO   {
         Objects.equals(clientId, updateRequest.clientId) &&
         Objects.equals(clientSecret, updateRequest.clientSecret) &&
         Objects.equals(grantTypes, updateRequest.grantTypes) &&
-        Objects.equals(tokenType, updateRequest.tokenType) &&
+        Objects.equals(tokenTypeExtension, updateRequest.tokenTypeExtension) &&
         Objects.equals(extApplicationOwner, updateRequest.extApplicationOwner) &&
         Objects.equals(backchannelLogoutUri, updateRequest.backchannelLogoutUri) &&
         Objects.equals(backchannelLogoutSessionRequired, updateRequest.backchannelLogoutSessionRequired);
@@ -202,7 +202,7 @@ public class UpdateRequestDTO   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenType, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired);
   }
 
   @Override
@@ -215,7 +215,7 @@ public class UpdateRequestDTO   {
     sb.append("    clientId: ").append(toIndentedString(clientId)).append("\n");
     sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("    grantTypes: ").append(toIndentedString(grantTypes)).append("\n");
-    sb.append("    tokenType: ").append(toIndentedString(tokenType)).append("\n");
+    sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
     sb.append("    backchannelLogoutUri: ").append(toIndentedString(backchannelLogoutUri)).append("\n");
     sb.append("    backchannelLogoutSessionRequired: ").append(toIndentedString(backchannelLogoutSessionRequired)).append("\n");
