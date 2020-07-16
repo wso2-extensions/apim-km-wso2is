@@ -441,7 +441,7 @@
             "type" : "string"
           }
         },
-        "tokenType" : {
+        "token_type_extension" : {
           "type" : "string"
         },
         "ext_application_owner" : {

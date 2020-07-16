@@ -66,7 +66,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationUpdateRequest.setClientName(updateRequestDTO.getClientName());
         applicationUpdateRequest.setRedirectUris(updateRequestDTO.getRedirectUris());
         applicationUpdateRequest.setGrantTypes(updateRequestDTO.getGrantTypes());
-        applicationUpdateRequest.setTokenType(updateRequestDTO.getTokenType());
+        applicationUpdateRequest.setTokenType(updateRequestDTO.getTokenTypeExtension());
         applicationUpdateRequest.setBackchannelLogoutUri(updateRequestDTO.getBackchannelLogoutUri());
         return applicationUpdateRequest;
 
