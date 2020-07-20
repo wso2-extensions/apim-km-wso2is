@@ -277,6 +277,7 @@
         "tags" : [ "OAuth2 DCR" ],
         "summary" : "Change Application Owner",
         "description" : "This operation is used to change the owner of an Application.\n",
+        "operationId" : "changeApplicationOwner",
         "parameters" : [ {
           "name" : "applicationOwner",
           "in" : "query",
@@ -319,11 +320,12 @@
         "x-wso2-response" : "HTTP/1.1 200 OK"
       }
     },
-    "/dcr/{clientId}/re-generate-consumer-secret" : {
+    "/dcr/{clientId}/regenerate-consumer-secret" : {
       "post" : {
         "tags" : [ "OAuth2 DCR" ],
         "summary" : "update the oauth secret key",
         "description" : "This operation is used to update the oauth secret key\n",
+        "operationId" : "regenerateConsumerSecret",
         "parameters" : [ {
           "name" : "clientId",
           "in" : "path",

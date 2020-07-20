@@ -765,7 +765,13 @@ public class DCRMService {
         return clientIdRegexPattern.matcher(clientId).matches();
     }
 
-
+    /**
+     * Get new application consumer secret
+     *
+     * @param clientId ClientId
+     * @return ExtendedApplication
+     * @throws DCRMServerException DCRMException
+     */
     public ExtendedApplication getNewApplicationConsumerSecret(String clientId) throws DCRMServerException {
         OAuthConsumerAppDTO appDTO;
         try {
@@ -778,10 +784,16 @@ public class DCRMService {
         return buildResponse(appDTO);
     }
 
-
+    /**
+     * Update the application owner
+     *
+     * @param applicationOwner ApplicationOwner
+     * @param clientId ClientId
+     * @return ExtendedApplication
+     * @throws DCRMException DCRMException
+     */
     public ExtendedApplication updateApplicationOwner(String applicationOwner, String clientId) throws
             DCRMException {
-
         OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
 

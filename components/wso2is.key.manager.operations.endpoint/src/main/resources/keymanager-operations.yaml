@@ -320,6 +320,7 @@ paths:
                 "https://localhost:9443/keymanager-operations/dcr/change-owner?client_id=s6BhdRkqt3"
       x-wso2-response: "HTTP/1.1 200 OK"
       summary: Change Application Owner
+      operationId: changeApplicationOwner
       parameters:
       - name: applicationOwner
         in: query
@@ -350,7 +351,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  /dcr/{clientId}/re-generate-consumer-secret:
+  /dcr/{clientId}/regenerate-consumer-secret:
     post:
       description: |
         This operation is used to update the oauth secret key
@@ -360,6 +361,7 @@ paths:
                 "https://localhost:9443/keymanager-operations/dcr/re-generate-consumer-secret?client_id=s6BhdRkqt3"
       x-wso2-response: "HTTP/1.1 200 OK"
       summary: update the oauth secret key
+      operationId: regenerateConsumerSecret
       parameters:
       - name: clientId
         type: string
