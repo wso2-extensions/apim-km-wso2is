@@ -787,7 +787,8 @@ public class DCRMService {
 
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
-        updateServiceProvider(sp, tenantDomain, applicationOwner);
+        sp.setOwner(User.getUserFromUserName(applicationOwner));
+        updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()));
         appDTO.setUsername(applicationOwner);
 
         // Update application
