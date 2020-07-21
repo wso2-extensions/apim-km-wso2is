@@ -22,8 +22,10 @@ import javax.ws.rs.core.SecurityContext;
 
 
 public interface DcrApiService {
+      public Response changeApplicationOwner(String applicationOwner, String clientId, MessageContext messageContext) ;
       public Response deleteApplication(String clientId, MessageContext messageContext) ;
       public Response getApplication(String clientId, MessageContext messageContext) ;
+      public Response regenerateConsumerSecret(String clientId, MessageContext messageContext) ;
       public Response registerApplication(RegistrationRequestDTO registrationRequest, MessageContext messageContext) ;
       public Response updateApplication(UpdateRequestDTO updateRequest, String clientId, MessageContext messageContext) ;
 }

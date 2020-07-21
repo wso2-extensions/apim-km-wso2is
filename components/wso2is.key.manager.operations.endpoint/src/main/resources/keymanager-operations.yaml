@@ -305,6 +305,89 @@ paths:
               $ref: '#/definitions/Error'
         tags:
         - OAuth2 DCR
+
+  ######################################################
+  # The "Change Owner" of the oauth application
+  ######################################################
+  /dcr/{clientId}/change-owner:
+    post:
+      description: |
+        This operation is used to change the owner of an Application.
+      x-wso2-request: |
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+                "Content-Type: application/json" -d '{
+                 "ext_application_owner": "admin"}'
+                "https://localhost:9443/keymanager-operations/dcr/change-owner?client_id=s6BhdRkqt3"
+      x-wso2-response: "HTTP/1.1 200 OK"
+      summary: Change Application Owner
+      operationId: changeApplicationOwner
+      parameters:
+      - name: applicationOwner
+        in: query
+        type: string
+        required: true
+      - name: clientId
+        type: string
+        in: path
+        description: Unique identifier of the OAuth2 client application.
+        required: true
+      tags:
+      - OAuth2 DCR
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/Application'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+
+  /dcr/{clientId}/regenerate-consumer-secret:
+    post:
+      description: |
+        This operation is used to update the oauth secret key
+      x-wso2-request: |
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+                "Content-Type: application/json"
+                "https://localhost:9443/keymanager-operations/dcr/re-generate-consumer-secret?client_id=s6BhdRkqt3"
+      x-wso2-response: "HTTP/1.1 200 OK"
+      summary: update the oauth secret key
+      operationId: regenerateConsumerSecret
+      parameters:
+      - name: clientId
+        type: string
+        in: path
+        description: Unique identifier of the OAuth2 client application.
+        required: true
+      tags:
+      - OAuth2 DCR
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/Application'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+
 definitions:
   Claim:
     type: object
