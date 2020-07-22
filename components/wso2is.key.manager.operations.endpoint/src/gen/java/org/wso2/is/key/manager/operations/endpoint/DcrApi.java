@@ -37,7 +37,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
 
 
     @POST
-    @Path("/{clientId}/change-owner")
+    @Path("/register/{clientId}/change-owner")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @ApiOperation(value = "Change Application Owner", notes = "This operation is used to change the owner of an Application. ", response = ApplicationDTO.class, tags={ "OAuth2 DCR",  })
@@ -77,7 +77,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
     }
 
     @POST
-    @Path("/{clientId}/regenerate-consumer-secret")
+    @Path("/register/{clientId}/regenerate-consumer-secret")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
     @ApiOperation(value = "update the oauth secret key", notes = "This operation is used to update the oauth secret key ", response = ApplicationDTO.class, tags={ "OAuth2 DCR",  })

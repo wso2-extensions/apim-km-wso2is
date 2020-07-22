@@ -309,7 +309,7 @@ paths:
   ######################################################
   # The "Change Owner" of the oauth application
   ######################################################
-  /dcr/{clientId}/change-owner:
+  /dcr/register/{clientId}/change-owner:
     post:
       description: |
         This operation is used to change the owner of an Application.
@@ -351,7 +351,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
-  /dcr/{clientId}/regenerate-consumer-secret:
+  /dcr/register/{clientId}/regenerate-consumer-secret:
     post:
       description: |
         This operation is used to update the oauth secret key
