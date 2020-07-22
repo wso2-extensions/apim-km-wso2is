@@ -86,45 +86,45 @@ public class ExtendedISAuthHandler extends BasicAuthenticationHandler {
         if (AuthenticationStatus.SUCCESS.equals(authenticationResult.getAuthenticationStatus())) {
             AuthenticationContext authenticationContext = (AuthenticationContext) messageContext;
             String tenantHeader = getHeader(messageContext, X_WSO2_TENANT_HEADER);
-            String effectiveTenant = null;
-            boolean superAdmin = false;
             if (authenticationContext.getUser() != null) {
                 User user = authenticationContext.getUser();
                 try {
                     RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
                     TenantManager tenantManager = realmService.getTenantManager();
-
-                    // Check user was admin of super tenant
-                    if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain())) {
-                        UserRealm superTenantUserRealm =
-                                realmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID);
-                        String superAdminUserName = superTenantUserRealm.getRealmConfiguration().getAdminUserName();
-                        if (superAdminUserName.equals(user.getUserName())) {
-                            superAdmin = true;
-                        }
-                    }
-
+                    // check tenant header not empty
                     if (StringUtils.isNotEmpty(tenantHeader)) {
-                        if (superAdmin) {
-                            effectiveTenant = tenantHeader.trim();
-                        } else {
-                            authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
-                            return authenticationResult;
-                        }
-                    }
-                    if (StringUtils.isNotEmpty(effectiveTenant)) {
-                        int tenantId = tenantManager.getTenantId(effectiveTenant);
-                        Tenant tenant = tenantManager.getTenant(tenantId);
-                        if (tenant != null) {
-                            if (!tenant.isActive()) {
+                        // check tenant header not equals to authenticated user tenant domain
+                        if (!user.getTenantDomain().equals(tenantHeader.trim())) {
+                            // Check user was admin of super tenant
+                            if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain())) {
+                                UserRealm superTenantUserRealm =
+                                        realmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID);
+                                String superAdminUserName =
+                                        superTenantUserRealm.getRealmConfiguration().getAdminUserName();
+                                if (!superAdminUserName.equals(user.getUserName())) {
+                                    authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
+                                    return authenticationResult;
+                                } else {
+                                    int tenantId = tenantManager.getTenantId(tenantHeader.trim());
+                                    Tenant tenant = tenantManager.getTenant(tenantId);
+                                    if (tenant != null) {
+                                        if (!tenant.isActive()) {
+                                            authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
+                                            return authenticationResult;
+                                        } else {
+                                            user.setTenantDomain(tenant.getDomain());
+                                            user.setUserName(tenant.getAdminName());
+                                        }
+                                    } else {
+                                        authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
+                                        return authenticationResult;
+                                    }
+                                }
+                            } else {
                                 authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
                                 return authenticationResult;
-                            } else {
-                                user.setTenantDomain(tenant.getDomain());
-                                user.setUserName(tenant.getAdminName());
                             }
                         } else {
-                            authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
                             return authenticationResult;
                         }
                     }
