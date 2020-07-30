@@ -52,8 +52,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setGrantTypes(registrationRequestDTO.getGrantTypes());
         appRegistrationRequest.setTokenType(registrationRequestDTO.getTokenTypeExtension());
         appRegistrationRequest.setApplicationOwner(registrationRequestDTO.getExtApplicationOwner());
-        appRegistrationRequest.setConsumerKey(registrationRequestDTO.getClientId());
-        appRegistrationRequest.setConsumerSecret(registrationRequestDTO.getClientSecret());
+        appRegistrationRequest.setConsumerKey(registrationRequestDTO.getExtParamClientId());
+        appRegistrationRequest.setConsumerSecret(registrationRequestDTO.getExtParamClientSecret());
         appRegistrationRequest.setSpTemplateName(registrationRequestDTO.getExtParamSpTemplate());
         appRegistrationRequest.setBackchannelLogoutUri(registrationRequestDTO.getBackchannelLogoutUri());
         return appRegistrationRequest;
