@@ -23,6 +23,7 @@ package org.wso2.is.client;
 public class WSO2ISConstants {
 
     public static final String WSO2IS_TYPE = "WSO2-IAM";
+    public static final String DISPLAY_NAME = "WSO2 IAM";
 
     WSO2ISConstants() {
 
