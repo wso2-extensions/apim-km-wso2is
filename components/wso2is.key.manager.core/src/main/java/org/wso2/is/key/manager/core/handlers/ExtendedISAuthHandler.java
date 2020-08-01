@@ -35,9 +35,9 @@ import org.wso2.carbon.identity.core.handler.InitConfig;
 import org.wso2.carbon.user.api.Tenant;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 
 /**
@@ -88,36 +88,50 @@ public class ExtendedISAuthHandler extends BasicAuthenticationHandler {
             String tenantHeader = getHeader(messageContext, X_WSO2_TENANT_HEADER);
             if (authenticationContext.getUser() != null) {
                 User user = authenticationContext.getUser();
-                if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain()) &&
-                        StringUtils.isNotEmpty(tenantHeader) &&
-                        !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantHeader)) {
-                    TenantManager tenantManager =
-                            ServiceReferenceHolder.getInstance().getRealmService().getTenantManager();
-                    try {
-                        int tenantId = tenantManager.getTenantId(tenantHeader.trim());
-                        UserRealm tenantUserRealm =
-                                ServiceReferenceHolder.getInstance().getRealmService().getTenantUserRealm(tenantId);
-                        if (tenantUserRealm != null) {
-                            String adminUserName = tenantUserRealm.getRealmConfiguration().getAdminUserName();
-                            if (!MultitenantUtils.getTenantAwareUsername(user.toFullQualifiedUsername())
-                                    .equals(adminUserName)) {
+                try {
+                    RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
+                    TenantManager tenantManager = realmService.getTenantManager();
+                    // check tenant header not empty
+                    if (StringUtils.isNotEmpty(tenantHeader)) {
+                        // check tenant header not equals to authenticated user tenant domain
+                        if (!user.getTenantDomain().equals(tenantHeader.trim())) {
+                            // Check user was admin of super tenant
+                            if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(user.getTenantDomain())) {
+                                UserRealm superTenantUserRealm =
+                                        realmService.getTenantUserRealm(MultitenantConstants.SUPER_TENANT_ID);
+                                String superAdminUserName =
+                                        superTenantUserRealm.getRealmConfiguration().getAdminUserName();
+                                if (!superAdminUserName.equals(user.getUserName())) {
+                                    authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
+                                    return authenticationResult;
+                                } else {
+                                    int tenantId = tenantManager.getTenantId(tenantHeader.trim());
+                                    Tenant tenant = tenantManager.getTenant(tenantId);
+                                    if (tenant != null) {
+                                        if (!tenant.isActive()) {
+                                            authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
+                                            return authenticationResult;
+                                        } else {
+                                            user.setTenantDomain(tenant.getDomain());
+                                            user.setUserName(tenant.getAdminName());
+                                        }
+                                    } else {
+                                        authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
+                                        return authenticationResult;
+                                    }
+                                }
+                            } else {
                                 authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
                                 return authenticationResult;
                             }
-                        }
-                        Tenant tenant = tenantManager.getTenant(tenantId);
-                        if (!tenant.isActive()) {
-                            authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
                         } else {
-                            user.setTenantDomain(tenant.getDomain());
-                            user.setUserName(tenant.getAdminName());
+                            return authenticationResult;
                         }
-                    } catch (UserStoreException e) {
-                        String errorMessage = "Error occurred while trying to authenticate. " + e.getMessage();
-                        log.error(errorMessage);
-                        throw new AuthenticationFailException(errorMessage);
                     }
-
+                } catch (UserStoreException e) {
+                    String errorMessage = "Error occurred while trying to authenticate. " + e.getMessage();
+                    log.error(errorMessage);
+                    throw new AuthenticationFailException(errorMessage);
                 }
             }
         }

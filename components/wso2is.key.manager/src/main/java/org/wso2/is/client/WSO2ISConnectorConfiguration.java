@@ -31,8 +31,7 @@ import java.util.List;
 @Component(
         name = "wso2is.configuration.component",
         immediate = true,
-        service = KeyManagerConnectorConfiguration.class,
-        property = {"type=" + WSO2ISConstants.WSO2IS_TYPE}
+        service = KeyManagerConnectorConfiguration.class
 )
 public class WSO2ISConnectorConfiguration implements KeyManagerConnectorConfiguration {
 
@@ -65,5 +64,17 @@ public class WSO2ISConnectorConfiguration implements KeyManagerConnectorConfigur
     public List<ConfigurationDto> getApplicationConfigurations() {
 
        return new ArrayList<>();
+    }
+
+    @Override
+    public String getType() {
+
+        return WSO2ISConstants.WSO2IS_TYPE;
+    }
+
+    @Override
+    public String getDisplayName() {
+
+        return WSO2ISConstants.DISPLAY_NAME;
     }
 }
