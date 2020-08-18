@@ -30,8 +30,16 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.auth.service.handler.AuthenticationHandler;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
+import org.wso2.carbon.registry.core.service.RegistryService;
+import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
+import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.key.manager.core.handlers.ExtendedISAuthHandler;
+import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+import org.wso2.is.key.manager.core.tokenmgt.issuers.AbstractScopesIssuer;
+import org.wso2.is.key.manager.core.tokenmgt.issuers.PermissionBasedScopeIssuer;
+import org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer;
+import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder;
 
 /**
  * KeyManager core component to handle authentication
@@ -52,6 +60,19 @@ public class KeyManagerCoreServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }
+
+            PermissionBasedScopeIssuer permissionBasedScopeIssuer = new PermissionBasedScopeIssuer();
+            RoleBasedScopesIssuer roleBasedScopesIssuer = new RoleBasedScopesIssuer();
+            TokenMgtDataHolder.addScopesIssuer(permissionBasedScopeIssuer.getPrefix(), permissionBasedScopeIssuer);
+            TokenMgtDataHolder.addScopesIssuer(roleBasedScopesIssuer.getPrefix(), roleBasedScopesIssuer);
+            if (log.isDebugEnabled()) {
+                log.debug("Permission based scope Issuer and Role based scope issuers are loaded.");
+            }
+            ScopesIssuer.loadInstance();
+            if (log.isDebugEnabled()) {
+                log.debug("Identity API Key Mgt Bundle is started.");
+            }
+
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
         }
@@ -98,5 +119,112 @@ public class KeyManagerCoreServiceComponent {
     protected void unsetIdentityCoreInitializedEventService(IdentityCoreInitializedEvent identityCoreInitializedEvent) {
     /* reference IdentityCoreInitializedEvent service to guarantee that this component will wait until identity core
          is started */
+    }
+
+    @Reference(
+            name = "registry.service",
+            service = org.wso2.carbon.registry.core.service.RegistryService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetRegistryService")
+    protected void setRegistryService(RegistryService registryService) {
+
+        ServiceReferenceHolder.getInstance().setRegistryService(registryService);
+        if (log.isDebugEnabled()) {
+            log.debug("Registry Service is set in the API KeyMgt bundle.");
+        }
+    }
+
+    protected void unsetRegistryService(RegistryService registryService) {
+
+        ServiceReferenceHolder.getInstance().setRegistryService(null);
+        if (log.isDebugEnabled()) {
+            log.debug("Registry Service is unset in the API KeyMgt bundle.");
+        }
+    }
+
+    /**
+     * Add scope issuer to the map.
+     * @param scopesIssuer scope issuer.
+     */
+    @Reference(
+            name = "scope.issuer.main.service",
+            service = org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer.class,
+            cardinality = ReferenceCardinality.OPTIONAL,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetScopeIssuer")
+    protected void setScopeIssuer(ScopesIssuer scopesIssuer) {
+
+        if (scopesIssuer != null && log.isDebugEnabled()) {
+            log.debug("Scope issuer initialized");
+            ServiceReferenceHolder.getInstance().setScopesIssuer(scopesIssuer);
+        }
+    }
+
+    /**
+     * unset scope issuer.
+     * @param scopesIssuer
+     */
+    protected void unsetScopeIssuer(ScopesIssuer scopesIssuer) {
+
+        ServiceReferenceHolder.getInstance().setScopesIssuer(null);
+    }
+
+    /**
+     * Add scope issuer to the map.
+     * @param scopesIssuer scope issuer.
+     */
+    @Reference(
+            name = "scope.issuer.service",
+            service = org.wso2.is.key.manager.core.tokenmgt.issuers.AbstractScopesIssuer.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "removeScopeIssuer")
+    protected void addScopeIssuer(AbstractScopesIssuer scopesIssuer) {
+
+        TokenMgtDataHolder.addScopesIssuer(scopesIssuer.getPrefix(), scopesIssuer);
+    }
+
+    /**
+     * unset scope issuer.
+     * @param scopesIssuer
+     */
+    protected void removeScopeIssuer(AbstractScopesIssuer scopesIssuer) {
+
+        TokenMgtDataHolder.setScopesIssuers(null);
+    }
+
+    @Reference(
+            name = "tenant.registryloader",
+            service = org.wso2.carbon.registry.core.service.TenantRegistryLoader.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetTenantRegistryLoader")
+    protected void setTenantRegistryLoader(TenantRegistryLoader tenantRegistryLoader) {
+        ServiceReferenceHolder.getInstance().setTenantRegistryLoader(tenantRegistryLoader);
+        if (log.isDebugEnabled()) {
+            log.debug("Tenant Registry Loader is set in the API KeyMgt bundle.");
+        }
+    }
+
+    protected void unsetTenantRegistryLoader(TenantRegistryLoader tenantRegistryLoader) {
+        ServiceReferenceHolder.getInstance().setTenantRegistryLoader(null);
+        if (log.isDebugEnabled()) {
+            log.debug("Tenant Registry Loader is unset in the API KeyMgt bundle.");
+        }
+    }
+
+    @Reference(
+            name = "config.context.service",
+            service = org.wso2.carbon.utils.ConfigurationContextService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetConfigurationContextService")
+    protected void setConfigurationContextService(ConfigurationContextService contextService) {
+        ServiceReferenceHolder.setContextService(contextService);
+    }
+
+    protected void unsetConfigurationContextService(ConfigurationContextService contextService) {
+        ServiceReferenceHolder.setContextService(null);
     }
 }
