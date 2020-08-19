@@ -26,6 +26,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationRequestConfig;
+import org.wso2.carbon.identity.application.common.model.LocalAndOutboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
@@ -414,7 +415,16 @@ public class DCRMService {
         //Set SaaS app option
         serviceProvider.setSaasApp(false);
 
-        // Update the Service Provider app to add OAuthApp as an Inbound Authentication Config
+
+        // set tenant domain in local subject identifier true, so that the authenticated subject identifier of auth
+        // user in the tokens are set with the fully qualified username of token owner
+        LocalAndOutboundAuthenticationConfig localAndOutboundAuthenticationConfig =
+                new LocalAndOutboundAuthenticationConfig();
+        localAndOutboundAuthenticationConfig.setUseTenantDomainInLocalSubjectIdentifier(true);
+        serviceProvider.setLocalAndOutBoundAuthenticationConfig(localAndOutboundAuthenticationConfig);
+
+        // Update the Service Provider app to add OAuthApp as an Inbound Authentication Config and set tenant domain in
+        // local subject identifier to true
         updateServiceProvider(serviceProvider, tenantDomain, applicationOwner);
     }
 
