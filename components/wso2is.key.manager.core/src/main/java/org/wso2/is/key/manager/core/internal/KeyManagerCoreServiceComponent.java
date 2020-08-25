@@ -68,7 +68,7 @@ public class KeyManagerCoreServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("Permission based scope Issuer and Role based scope issuers are loaded.");
             }
-            ScopesIssuer.loadInstance();
+
             if (log.isDebugEnabled()) {
                 log.debug("Identity API Key Mgt Bundle is started.");
             }

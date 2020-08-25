@@ -25,7 +25,7 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.RequestParameter;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.ClientCredentialsGrantHandler;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 
 
 /**
@@ -73,6 +73,6 @@ public class ExtendedClientCredentialsGrantHandler extends ClientCredentialsGran
 
     @Override
     public boolean validateScope(OAuthTokenReqMessageContext tokReqMsgCtx) {
-        return ScopesIssuer.getInstance().setScopes(tokReqMsgCtx);
+        return ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
     }
 }

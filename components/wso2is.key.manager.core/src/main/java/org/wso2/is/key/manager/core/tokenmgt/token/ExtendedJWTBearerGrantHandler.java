@@ -43,7 +43,7 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 
 import java.text.ParseException;
@@ -122,7 +122,7 @@ public class ExtendedJWTBearerGrantHandler extends JWTBearerGrantHandler {
         }
         user.setUserAttributes(userAttributes);
         tokReqMsgCtx.setAuthorizedUser(user);
-        return ScopesIssuer.getInstance().setScopes(tokReqMsgCtx);
+        return ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
     }
 
     private IdentityProvider getResidentIDPForIssuer(String tenantDomain, String jwtIssuer)

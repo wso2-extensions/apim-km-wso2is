@@ -33,7 +33,7 @@ public class ServiceReferenceHolder {
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
     private RegistryService registryService;
-    private ScopesIssuer scopesIssuer;
+    private ScopesIssuer scopesIssuer = new ScopesIssuer();
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
 
@@ -61,7 +61,9 @@ public class ServiceReferenceHolder {
     }
 
     public void setScopesIssuer(ScopesIssuer scopesIssuer) {
-        this.scopesIssuer = scopesIssuer;
+        if (scopesIssuer != null) {
+            this.scopesIssuer = scopesIssuer;
+        }
     }
 
     public RegistryService getRegistryService() {

@@ -22,7 +22,7 @@ package org.wso2.is.key.manager.core.tokenmgt.handlers;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.saml.SAML2BearerGrantHandler;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 
 /**
  * Extended grant handler for SAML2 bearer
@@ -40,6 +40,6 @@ public class ExtendedSAML2BearerGrantHandler extends SAML2BearerGrantHandler {
             tokReqMsgCtx.setAuthorizedUser(authenticatedUser);
         }
 
-        return ScopesIssuer.getInstance().setScopes(tokReqMsgCtx);
+        return ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
     }
 }

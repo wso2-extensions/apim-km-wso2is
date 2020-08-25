@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.oauth.callback.AbstractOAuthCallbackHandler;
 import org.wso2.carbon.identity.oauth.callback.OAuthCallback;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class APIManagerOAuthCallbackHandler extends AbstractOAuthCallbackHandler
             }
             if (OAuthCallback.OAuthCallbackType.SCOPE_VALIDATION_AUTHZ.equals(oauthCallback.getCallbackType())) {
                 //Validate scopes in callback using scope issuers
-                ScopesIssuer.getInstance().setScopes(oauthCallback);
+                ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(oauthCallback);
                 oauthCallback.setValidScope(true);
             }
             if (OAuthCallback.OAuthCallbackType.SCOPE_VALIDATION_TOKEN.equals(oauthCallback.getCallbackType())) {

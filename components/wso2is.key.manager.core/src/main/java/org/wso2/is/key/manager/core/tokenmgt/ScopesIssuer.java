@@ -40,27 +40,14 @@ import java.util.Set;
 public class ScopesIssuer {
 
     private static Log log = LogFactory.getLog(ScopesIssuer.class);
-    private static Map<String, AbstractScopesIssuer> scopesIssuers;
+    private static Map<String, AbstractScopesIssuer> scopesIssuers = TokenMgtDataHolder.getScopesIssuers();
     private static final String DEFAULT_SCOPE_NAME = "default";
-    private static final String CONFIG_ELEM_SCOPE_ISSUER = "OAuthConfigurations.ScopeIssuer";
     /**
      * Singleton of ScopeIssuer.*
      */
-    private static ScopesIssuer scopesIssuer;
 
     public ScopesIssuer() {
 
-    }
-
-    public static void loadInstance() throws TokenMgtException {
-
-        scopesIssuer = new ScopesIssuer();
-        scopesIssuers = TokenMgtDataHolder.getScopesIssuers();
-    }
-
-    public static ScopesIssuer getInstance() {
-
-        return scopesIssuer;
     }
 
     /**

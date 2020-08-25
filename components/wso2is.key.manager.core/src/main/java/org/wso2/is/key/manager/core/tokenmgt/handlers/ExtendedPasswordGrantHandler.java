@@ -40,7 +40,6 @@ import org.wso2.carbon.user.core.config.RealmConfiguration;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -162,7 +161,7 @@ public class ExtendedPasswordGrantHandler extends PasswordGrantHandler {
     }
 
     @Override public boolean validateScope(OAuthTokenReqMessageContext tokReqMsgCtx) {
-        return ScopesIssuer.getInstance().setScopes(tokReqMsgCtx);
+        return ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
     }
 
     private String getLoginUserName(String userID) {

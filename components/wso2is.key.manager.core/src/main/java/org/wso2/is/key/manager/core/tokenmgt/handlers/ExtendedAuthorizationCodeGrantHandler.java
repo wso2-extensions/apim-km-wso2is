@@ -24,7 +24,7 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenRespDTO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.AuthorizationCodeGrantHandler;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 
 /**
  * Extended grant handler for authorization code
@@ -50,6 +50,6 @@ public class ExtendedAuthorizationCodeGrantHandler extends AuthorizationCodeGran
 
     @Override
     public boolean validateScope(OAuthTokenReqMessageContext tokReqMsgCtx) {
-        return ScopesIssuer.getInstance().setScopes(tokReqMsgCtx);
+        return ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
     }
 }
