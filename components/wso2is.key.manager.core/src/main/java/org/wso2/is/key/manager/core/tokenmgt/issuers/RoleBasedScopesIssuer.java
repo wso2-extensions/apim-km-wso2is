@@ -44,6 +44,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashSet;
 
 /**
  * This class represents the functions related to an scope issuer which
@@ -158,6 +160,10 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
         }
         String userStoreDomain = authenticatedUser.getUserStoreDomain();
         RealmService realmService = getRealmService();
+
+        Map<ClaimMapping, String> userAttributes = authenticatedUser.getUserAttributes();
+        String[] fedUserRoles = getRolesFromUserAttribute(userAttributes, ResourceConstants.ROLE_ATTRIBUTE_NAME);
+
         try {
             int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
             // If tenant Id is not set in the tokenReqContext, deriving it from username.
@@ -166,8 +172,18 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
             }
             UserStoreManager userStoreManager = realmService.getTenantUserRealm(tenantId).getUserStoreManager();
             String endUsernameWithDomain = addDomainToName(username, userStoreDomain);
-            userRoles = userStoreManager.getRoleListOfUser(endUsernameWithDomain);
+            String[] tempUserRoles = userStoreManager.getRoleListOfUser(endUsernameWithDomain);
 
+            if (fedUserRoles != null && tempUserRoles != null) {
+                Set<String> roleList = new LinkedHashSet<>();
+                roleList.addAll(Arrays.asList(fedUserRoles));
+                roleList.addAll(Arrays.asList(tempUserRoles));
+                userRoles = roleList.toArray(new String[roleList.size()]);
+            } else if (fedUserRoles != null) {
+                userRoles = fedUserRoles;
+            } else if (tempUserRoles != null) {
+                userRoles = tempUserRoles;
+            }
         } catch (UserStoreException e) {
             //Log and return since we do not want to stop issuing the token in case of scope validation failures.
             log.error("Error when getting the tenant's UserStoreManager or when getting roles of user ", e);
