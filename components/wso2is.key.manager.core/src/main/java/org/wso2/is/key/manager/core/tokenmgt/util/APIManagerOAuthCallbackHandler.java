@@ -54,7 +54,7 @@ public class APIManagerOAuthCallbackHandler extends AbstractOAuthCallbackHandler
             }
             if (OAuthCallback.OAuthCallbackType.SCOPE_VALIDATION_AUTHZ.equals(oauthCallback.getCallbackType())) {
                 //Validate scopes in callback using scope issuers
-                ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(oauthCallback);
+                //ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(oauthCallback);
                 oauthCallback.setValidScope(true);
             }
             if (OAuthCallback.OAuthCallbackType.SCOPE_VALIDATION_TOKEN.equals(oauthCallback.getCallbackType())) {

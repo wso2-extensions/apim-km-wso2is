@@ -122,7 +122,8 @@ public class ExtendedJWTBearerGrantHandler extends JWTBearerGrantHandler {
         }
         user.setUserAttributes(userAttributes);
         tokReqMsgCtx.setAuthorizedUser(user);
-        return ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
+        return true;
+                //ServiceReferenceHolder.getInstance().getScopesIssuer().setScopes(tokReqMsgCtx);
     }
 
     private IdentityProvider getResidentIDPForIssuer(String tenantDomain, String jwtIssuer)

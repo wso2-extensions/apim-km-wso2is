@@ -23,44 +23,132 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.opensaml.saml.saml2.core.Assertion;
+import org.osgi.service.component.annotations.Component;
+import org.wso2.carbon.apimgt.tokenmgt.handlers.ResourceConstants;
+import org.wso2.carbon.apimgt.tokenmgt.util.TokenMgtUtil;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.callback.OAuthCallback;
 import org.wso2.carbon.identity.oauth.common.GrantType;
+import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
+import org.wso2.carbon.identity.oauth2.dto.OAuth2AuthorizeReqDTO;
 import org.wso2.carbon.identity.oauth2.grant.jwt.JWTConstants;
+import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
+import org.wso2.carbon.identity.oauth2.validators.OAuth2TokenValidationMessageContext;
+import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
-import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
-import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
-/**
- * This class represents the functions related to an scope issuer which
+/*
+ * This class implements Scope Validator which represents the functions related to an scope issuer which
  * issues scopes based on user roles.
- */
-public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
+*/
+@Component(name = "RoleBasedScopesIssuer", immediate = true, service = ScopeValidator.class)
+public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements ScopeValidator {
 
     private static Log log = LogFactory.getLog(RoleBasedScopesIssuer.class);
     private static final String DEFAULT_SCOPE_NAME = "default";
     private static final String PRESERVED_CASE_SENSITIVE_VARIABLE = "preservedCaseSensitive";
+    private static final String ACCESS_TOKEN_DO = "AccessTokenDO";
+    List<String> allowed;
 
     // set role based scopes issuer as the default
     private static final String ISSUER_PREFIX = "default";
+    OAuthServerConfiguration oAuthServerConfiguration = OAuthServerConfiguration.getInstance();
+
+    @Override
+    public boolean canHandle() {
+        return oAuthServerConfiguration.isGlobalScopeValidatorEnabled();
+    }
+
+    @Override
+    public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
+            IdentityOAuth2Exception {
+        List<String> authScopes = getScopes(oAuthAuthzReqMessageContext, oAuthServerConfiguration.getAllowedScopes());
+        oAuthAuthzReqMessageContext.setApprovedScope(authScopes.toArray(new String[authScopes.size()]));
+        log.info(authScopes);
+        return true;
+    }
+
+    @Override
+    public boolean validateScope(OAuthTokenReqMessageContext oAuthTokenReqMessageContext) throws
+            IdentityOAuth2Exception {
+        List<String> authScopes = getScopes(oAuthTokenReqMessageContext, oAuthServerConfiguration.getAllowedScopes());
+        oAuthTokenReqMessageContext.setScope(authScopes.toArray(new String[authScopes.size()]));
+        return true;
+    }
+
+    @Override
+    public boolean validateScope(OAuth2TokenValidationMessageContext oAuth2TokenValidationMessageContext) throws
+            IdentityOAuth2Exception {
+        List<String> authScopes = getScopes(oAuth2TokenValidationMessageContext,
+                oAuthServerConfiguration.getAllowedScopes());
+        oAuth2TokenValidationMessageContext.getResponseDTO().setScope(authScopes.toArray(
+                new String[authScopes.size()]));
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 
     @Override
     public String getPrefix() {
         return ISSUER_PREFIX;
+    }
+
+    public List<String> getScopes(OAuth2TokenValidationMessageContext oAuth2TokenValidationMessageContext,
+                                  List<String> allowedScopes) {
+        List<String> authorizedScopes = null;
+        List<String> requestedScopes = Arrays.asList(oAuth2TokenValidationMessageContext.getResponseDTO().getScope());
+        AuthenticatedUser authenticatedUser = OAuthUtil
+                .getAuthenticatedUser(oAuth2TokenValidationMessageContext.getResponseDTO().getAuthorizedUser());
+        AccessTokenDO accessTokenDO = (AccessTokenDO) oAuth2TokenValidationMessageContext.getProperty(ACCESS_TOKEN_DO);
+        String clientId = accessTokenDO.getConsumerKey();
+
+        Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
+        if (appScopes != null) {
+            //If no scopes can be found in the context of the application
+            if (isAppScopesEmpty(appScopes, clientId)) {
+                return getAllowedScopes(allowedScopes, requestedScopes);
+            }
+            String[] userRoles = getUserRoles(authenticatedUser);
+            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
+        }
+        return authorizedScopes;
+    }
+
+    public List<String> getScopes(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext, List<String> allowedScopes) {
+
+        List<String> authorizedScopes = null;
+        List<String> requestedScopes = new ArrayList<>();
+        if(oAuthAuthzReqMessageContext.getApprovedScope() != null) {
+            requestedScopes = Arrays.asList(oAuthAuthzReqMessageContext.getApprovedScope());
+        }
+        String clientId = oAuthAuthzReqMessageContext.getAuthorizationReqDTO().getConsumerKey();
+        AuthenticatedUser authenticatedUser = oAuthAuthzReqMessageContext.getAuthorizationReqDTO().getUser();
+
+        Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
+        if (appScopes != null) {
+            //If no scopes can be found in the context of the application
+            if (isAppScopesEmpty(appScopes, clientId)) {
+                return getAllowedScopes(allowedScopes, requestedScopes);
+            }
+            String[] userRoles = getUserRoles(authenticatedUser);
+            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
+        }
+        return authorizedScopes;
     }
 
     /**
@@ -70,7 +158,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
      * @return authorized scopes list
      */
     @Override
-    public List<String> getScopes(OAuthCallback scopeValidationCallback) {
+    public List<String> getScopes(OAuthCallback scopeValidationCallback, List<String> allowedScopes) {
 
         List<String> authorizedScopes = null;
         List<String> requestedScopes = Arrays.asList(scopeValidationCallback.getRequestedScope());
@@ -81,10 +169,10 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
         if (appScopes != null) {
             //If no scopes can be found in the context of the application
             if (isAppScopesEmpty(appScopes, clientId)) {
-                return getAllowedScopes(requestedScopes);
+                return getAllowedScopes(allowedScopes, requestedScopes);
             }
             String[] userRoles = getUserRoles(authenticatedUser);
-            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
+            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
         }
         return authorizedScopes;
     }
@@ -96,7 +184,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
      * @return authorized scopes list
      */
     @Override
-    public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) {
+    public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx, List<String> allowedScopes) {
 
         List<String> authorizedScopes = null;
         List<String> requestedScopes = Arrays.asList(tokReqMsgCtx.getScope());
@@ -107,7 +195,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
         if (appScopes != null) {
             //If no scopes can be found in the context of the application
             if (isAppScopesEmpty(appScopes, clientId)) {
-                return getAllowedScopes(requestedScopes);
+                return getAllowedScopes(allowedScopes, requestedScopes);
             }
 
             String grantType = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getGrantType();
@@ -133,7 +221,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
             } else {
                 userRoles = getUserRoles(authenticatedUser);
             }
-            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
+            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
         }
         return authorizedScopes;
     }
@@ -184,7 +272,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
      * @return authorized scopes list
      */
     private List<String> getAuthorizedScopes(String[] userRoles, List<String> requestedScopes,
-                                             Map<String, String> appScopes) {
+                                             Map<String, String> appScopes, List<String> allowedScopes) {
 
         List<String> defaultScope = new ArrayList<>();
         defaultScope.add(DEFAULT_SCOPE_NAME);
@@ -202,7 +290,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
         } else {
             userRoleList = new ArrayList<>();
             for (String aRole : userRoles) {
-                userRoleList.add(aRole.toLowerCase(Locale.ENGLISH));
+                userRoleList.add(aRole.toLowerCase(Locale.getDefault()));
             }
         }
 
@@ -217,7 +305,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
                     if (preservedCaseSensitive) {
                         roleList.add(aRole.trim());
                     } else {
-                        roleList.add(aRole.trim().toLowerCase(Locale.ENGLISH));
+                        roleList.add(aRole.trim().toLowerCase(Locale.getDefault()));
                     }
                 }
                 //Check if user has at least one of the roles associated with the scope
@@ -225,10 +313,14 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
                 if (!roleList.isEmpty()) {
                     authorizedScopes.add(scope);
                 }
-            } else {
+            }
+            //The requested scope is defined for the context of the App but no roles have been associated with the
+            //scope OR the scope string starts with 'device_'
+            else if (appScopes.containsKey(scope) || isAllowedScope(allowedScopes, scope)) {
                 authorizedScopes.add(scope);
             }
         }
+
         return (!authorizedScopes.isEmpty()) ? authorizedScopes : defaultScope;
     }
 
@@ -276,3 +368,5 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer {
     }
 
 }
+
+

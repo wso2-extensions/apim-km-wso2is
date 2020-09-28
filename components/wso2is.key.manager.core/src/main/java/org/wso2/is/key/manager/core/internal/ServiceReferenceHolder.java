@@ -23,7 +23,7 @@ import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
+//import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
 
 /**
  * Service holder to keep track on osgi Services
@@ -33,7 +33,7 @@ public class ServiceReferenceHolder {
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
     private RegistryService registryService;
-    private ScopesIssuer scopesIssuer = new ScopesIssuer();
+    //private ScopesIssuer scopesIssuer = new ScopesIssuer();
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
 
@@ -56,15 +56,15 @@ public class ServiceReferenceHolder {
         return realmService;
     }
 
-    public ScopesIssuer getScopesIssuer() {
-        return scopesIssuer;
-    }
-
-    public void setScopesIssuer(ScopesIssuer scopesIssuer) {
-        if (scopesIssuer != null) {
-            this.scopesIssuer = scopesIssuer;
-        }
-    }
+//    public ScopesIssuer getScopesIssuer() {
+//        return scopesIssuer;
+//    }
+//
+//    public void setScopesIssuer(ScopesIssuer scopesIssuer) {
+//        if (scopesIssuer != null) {
+//            this.scopesIssuer = scopesIssuer;
+//        }
+//    }
 
     public RegistryService getRegistryService() {
         return registryService;
