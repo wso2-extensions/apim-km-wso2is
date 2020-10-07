@@ -37,7 +37,11 @@ import org.wso2.is.key.manager.core.tokenmgt.TokenMgtException;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 

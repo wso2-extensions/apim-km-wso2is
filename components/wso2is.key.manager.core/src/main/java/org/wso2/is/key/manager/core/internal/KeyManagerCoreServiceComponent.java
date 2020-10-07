@@ -30,13 +30,13 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.auth.service.handler.AuthenticationHandler;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
+import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.key.manager.core.handlers.ExtendedISAuthHandler;
-import org.wso2.is.key.manager.core.tokenmgt.issuers.AbstractScopesIssuer;
-import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder;
+import org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer;
 
 /**
  * KeyManager core component to handle authentication
@@ -54,6 +54,8 @@ public class KeyManagerCoreServiceComponent {
 
         try {
             cxt.getBundleContext().registerService(AuthenticationHandler.class, new ExtendedISAuthHandler(), null);
+            cxt.getBundleContext().registerService(ScopeValidator.class, new RoleBasedScopesIssuer(), null);
+            log.info("PREQA Scope validator implementation is registered");
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }

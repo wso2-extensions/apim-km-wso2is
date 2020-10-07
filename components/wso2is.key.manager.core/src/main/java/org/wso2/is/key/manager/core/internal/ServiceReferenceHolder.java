@@ -23,7 +23,6 @@ import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-//import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
 
 /**
  * Service holder to keep track on osgi Services

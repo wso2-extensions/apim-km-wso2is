@@ -43,7 +43,6 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
-import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 
 import java.text.ParseException;

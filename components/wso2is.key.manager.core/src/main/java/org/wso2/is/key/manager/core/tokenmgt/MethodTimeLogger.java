@@ -18,7 +18,7 @@
 
 package org.wso2.is.key.manager.core.tokenmgt;
 
-import org.apache.axis2.context.MessageContext;
+/*import org.apache.axis2.context.MessageContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,20 +30,20 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.MDC;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 
-import java.util.Map;
+import java.util.Map;*/
 
 /**
  * This class provides AspectJ configurations
  */
-@Aspect
+//@Aspect
 public class MethodTimeLogger {
-    private static final Log log = LogFactory.getLog("correlation");
+  /*  private static final Log log = LogFactory.getLog("correlation");
     private static boolean isEnabled = false;
     private static boolean logAllMethods = false;
     private static boolean isSet = false;
     private static boolean isLogAllSet = false;
 
-    /**
+    *//**
      * This is an AspectJ pointcut defined to apply to all methods within the package,
      * org.wso2.carbon.apimgt.impl and consist of the annotation, @MethodStats.
      *
@@ -51,19 +51,19 @@ public class MethodTimeLogger {
      *   1. The annotation can be given to a class too, to enable logging for all methods of the class
      *   2. Here, the org.wso2.carbon.apimgt.tokenmgt.service method is explicitly given because annotations cannot be
      *      added to the service classes
-     */
+     *//*
     @Pointcut("execution(* org.wso2.carbon.apimgt.tokenmgt.service..*(..)) || (execution(* *(..)) &&" +
             " (@annotation(MethodStats) || @target(MethodStats)))")
     public static void pointCut() {
     }
 
-    /**
+    *//**
      * This is an AspectJ pointcut defined to apply to all methods within the package,
      * org.wso2.carbon.apimgt.tokenmgt. Also, the pointcut looks for the system property to enable
      * method time logging for all methods in this package
      *
      * @return true if the property value matches this package name
-     */
+     *//*
     @Pointcut("execution(* *(..)) && if()")
     public static boolean pointCutAll() {
         if (!isLogAllSet) {
@@ -76,11 +76,11 @@ public class MethodTimeLogger {
         return logAllMethods;
     }
 
-    /**
+    *//**
      * This pointcut looks for the system property to enable/ disable timing logs
      *
      * @return true if the property value is given as true
-     */
+     *//*
     @Pointcut("if()")
     public static boolean isConfigEnabled() {
         if (!isSet) {
@@ -93,14 +93,14 @@ public class MethodTimeLogger {
         return isEnabled;
     }
 
-    /**
+    *//**
      * If the pointcuts results true, this method is invoked every time a method satisfies the
      * criteria given in the pointcut.
      *
      * @param point The JoinPoint before method execution
      * @return result of method execution
      * @throws Throwable
-     */
+     *//*
     @Around("isConfigEnabled() && (pointCut() || pointCutAll())")
     public Object log(ProceedingJoinPoint point) throws Throwable {
         long start = System.currentTimeMillis();
@@ -135,5 +135,5 @@ public class MethodTimeLogger {
                 MethodSignature.class.cast(point.getSignature()).getDeclaringTypeName() + "|" +
                 MethodSignature.class.cast(point.getSignature()).getMethod().getName() + "|" + argString);
         return result;
-    }
+    }*/
 }
