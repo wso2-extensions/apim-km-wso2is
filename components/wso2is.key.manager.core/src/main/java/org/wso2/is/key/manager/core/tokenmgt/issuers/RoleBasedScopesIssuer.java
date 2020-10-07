@@ -29,7 +29,6 @@ import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -61,8 +60,8 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -248,17 +247,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 Oauth2ScopeConstants.DEFAULT_SCOPE_BINDING);
     }
 
-    private int getTenantId(User user) throws UserStoreException {
-
-        int tenantId = IdentityTenantUtil.getTenantId(user.getTenantDomain());
-
-        if (tenantId == 0 || tenantId == -1) {
-            tenantId = IdentityTenantUtil.getTenantIdOfUser(user.getUserName());
-        }
-
-        return tenantId;
-    }
-
     @Override
     public String getName() {
         return SCOPE_VALIDATOR_NAME;
@@ -385,7 +373,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 }
             } else {
                 userRoles = getUserRoles(authenticatedUser);
-                log.info("PREQA Authenticated user roles : " + userRoles);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
             log.info("PREQA Authorized scope  : " + authorizedScopes);
