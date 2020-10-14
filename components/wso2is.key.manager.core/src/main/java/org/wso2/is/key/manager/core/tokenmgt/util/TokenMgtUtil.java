@@ -371,7 +371,7 @@ public class TokenMgtUtil {
             return realmService.getTenantManager().getTenantId(tenantDomain);
         } catch (UserStoreException e) {
             String msg = "Failed to get the Tenant Id of the the Tenant Domain : " + tenantDomain;
-            log.error(e.getMessage(), e);
+            log.error(msg, e);
         }
         return -1;
     }

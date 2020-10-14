@@ -110,7 +110,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     private static final String ISSUER_PREFIX = "default";
     OAuthServerConfiguration oAuthServerConfiguration = OAuthServerConfiguration.getInstance();
 
-
     @Override
     public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
             IdentityOAuth2Exception {
@@ -241,8 +240,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 }
                 return false;
             }
-
-
         } catch (Exception e) {
             //Log and return since we do not want to stop issuing the token in case of scope validation failures.
             log.error("Error when getting the tenant's UserStoreManager or when getting roles of user ", e);
@@ -351,10 +348,8 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
 
         List<String> authorizedScopes = null;
         List<String> requestedScopes = Arrays.asList(tokReqMsgCtx.getScope());
-        log.info("PREQA Requested scopes : " + requestedScopes);
         String clientId = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getClientId();
         AuthenticatedUser authenticatedUser = tokReqMsgCtx.getAuthorizedUser();
-        log.info("PREQA Authenticated user name : " + authenticatedUser.getUserName());
         Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
         if (appScopes != null) {
             //If no scopes can be found in the context of the application
@@ -388,7 +383,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 userRoles = getUserRoles(authenticatedUser);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
-            log.info("PREQA Authorized scope  : " + authorizedScopes);
         }
         return authorizedScopes;
     }
@@ -475,7 +469,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
 
         List<String> defaultScope = new ArrayList<>();
         defaultScope.add(DEFAULT_SCOPE_NAME);
-
 
         if (userRoles == null || userRoles.length == 0) {
             userRoles = new String[0];
