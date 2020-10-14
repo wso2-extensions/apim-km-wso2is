@@ -269,7 +269,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         return ISSUER_PREFIX;
     }
 
-
     /**
      * Extract the resource from the access token validation request message
      *

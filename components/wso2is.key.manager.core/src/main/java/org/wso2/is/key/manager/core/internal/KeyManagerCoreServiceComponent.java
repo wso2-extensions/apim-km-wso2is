@@ -58,16 +58,6 @@ public class KeyManagerCoreServiceComponent {
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }
-
-            //TokenMgtDataHolder.addScopesIssuer(roleBasedScopesIssuer.getPrefix(), roleBasedScopesIssuer);
-            if (log.isDebugEnabled()) {
-                log.debug("Permission based scope Issuer and Role based scope issuers are loaded.");
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("Identity API Key Mgt Bundle is started.");
-            }
-
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
         }

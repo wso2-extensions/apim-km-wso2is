@@ -77,7 +77,6 @@ public abstract class AbstractScopesIssuer {
      */
     public abstract String getPrefix();
 
-
     /**
      * Get the set of default scopes. If a requested scope is matches with the patterns specified in the whitelist,
      * then such scopes will be issued without further validation. If the scope list is empty,
@@ -148,7 +147,6 @@ public abstract class AbstractScopesIssuer {
         Map<String, String> appScopes = null;
         Set<Scope> scopes = null;
         String requestedScopesString = String.join(" ", requestedScopes);
-        //Uncomment later
         String tenantDomain;
         if (authenticatedUser.isFederatedUser()) {
             tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
@@ -259,9 +257,4 @@ public abstract class AbstractScopesIssuer {
         return IdentityTenantUtil.getTenantIdOfUser(username);
     }
 
-
-
-
 }
-
-
