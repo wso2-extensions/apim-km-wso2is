@@ -55,7 +55,6 @@ public class KeyManagerCoreServiceComponent {
         try {
             cxt.getBundleContext().registerService(AuthenticationHandler.class, new ExtendedISAuthHandler(), null);
             cxt.getBundleContext().registerService(ScopeValidator.class, new RoleBasedScopesIssuer(), null);
-            log.info("PREQA Scope validator implementation is registered");
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }

@@ -114,7 +114,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     @Override
     public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
             IdentityOAuth2Exception {
-        log.info("PREQA Validate scope method invoked at AuthorizationHandler");
+
         List<String> authScopes = getScopes(oAuthAuthzReqMessageContext, oAuthServerConfiguration.getAllowedScopes());
         oAuthAuthzReqMessageContext.setApprovedScope(authScopes.toArray(new String[authScopes.size()]));
         return true;
@@ -123,7 +123,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     @Override
     public boolean validateScope(OAuthTokenReqMessageContext oAuthTokenReqMessageContext) throws
             IdentityOAuth2Exception {
-        log.info("PREQA Validate scope method invoked at Access Token Issuer");
+
         List<String> authScopes = getScopes(oAuthTokenReqMessageContext, oAuthServerConfiguration.getAllowedScopes());
         oAuthTokenReqMessageContext.setScope(authScopes.toArray(new String[authScopes.size()]));
         return true;
@@ -132,7 +132,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     @Override
     public boolean validateScope(OAuth2TokenValidationMessageContext oAuth2TokenValidationMessageContext) throws
             IdentityOAuth2Exception {
-        log.info("Validate scope method invoked at Access Token Introspection");
+
         AccessTokenDO accessTokenDO = (AccessTokenDO) oAuth2TokenValidationMessageContext.getProperty(ACCESS_TOKEN_DO);
         if (accessTokenDO == null) {
             return false;
@@ -252,17 +252,20 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     }
 
     protected Set<Scope> retrieveScopes(int tenantId) throws IdentityOAuth2ScopeServerException {
+
         return OAuthTokenPersistenceFactory.getInstance().getOAuthScopeDAO().getScopes(tenantId,
                 Oauth2ScopeConstants.DEFAULT_SCOPE_BINDING);
     }
 
     @Override
     public String getName() {
+
         return SCOPE_VALIDATOR_NAME;
     }
 
     @Override
     public String getPrefix() {
+
         return ISSUER_PREFIX;
     }
 
@@ -551,6 +554,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @return String
      */
     protected String addDomainToName(String username, String domainName) {
+
         return UserCoreUtil.addDomainToName(username, domainName);
     }
 
@@ -561,6 +565,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @return String[]
      */
     protected String[] getRolesFromAssertion(Assertion assertion) {
+
         return TokenMgtUtil.getRolesFromAssertion(assertion);
     }
 
@@ -636,6 +641,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @throws IdentityOAuth2Exception exception thrown due to a parsing error
      */
     private SignedJWT getSignedJWT(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception {
+
         RequestParameter[] params = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getRequestParameters();
         String assertion = null;
         SignedJWT signedJWT;
@@ -669,6 +675,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @return JWTClaimsSet Object
      */
     private JWTClaimsSet getClaimSet(SignedJWT signedJWT) {
+
         JWTClaimsSet claimsSet = null;
         try {
             claimsSet = signedJWT.getJWTClaimsSet();
@@ -680,8 +687,8 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
 
     private IdentityProvider getResidentIDPForIssuer(String tenantDomain, String jwtIssuer)
             throws IdentityOAuth2Exception {
-        String issuer = "";
 
+        String issuer = "";
         IdentityProvider residentIdentityProvider;
         try {
             residentIdentityProvider = IdentityProviderManager.getInstance().getResidentIdP(tenantDomain);
