@@ -38,7 +38,6 @@ import org.wso2.carbon.identity.application.common.model.RoleMapping;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.cache.CacheEntry;
@@ -211,38 +210,32 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             return true;
         }
 
-        try {
-            AuthenticatedUser authenticatedUser = OAuthUtil
-                    .getAuthenticatedUser(oAuth2TokenValidationMessageContext.getResponseDTO().getAuthorizedUser());
-            String clientId = accessTokenDO.getConsumerKey();
-            List<String> requestedScopes = Arrays.asList(scopes);
-            List<String> allowedScopes = oAuthServerConfiguration.getAllowedScopes();
-            List<String> authorizedScopes = null;
+        AuthenticatedUser authenticatedUser = OAuthUtil
+                .getAuthenticatedUser(oAuth2TokenValidationMessageContext.getResponseDTO().getAuthorizedUser());
+        String clientId = accessTokenDO.getConsumerKey();
+        List<String> requestedScopes = Arrays.asList(scopes);
+        List<String> allowedScopes = oAuthServerConfiguration.getAllowedScopes();
+        List<String> authorizedScopes = null;
 
-            String[] userRoles = null;
-            Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
-            if (appScopes != null) {
-                //If no scopes can be found in the context of the application
-                if (isAppScopesEmpty(appScopes, clientId)) {
-                    authorizedScopes = getAllowedScopes(allowedScopes, requestedScopes);
-                    oAuth2TokenValidationMessageContext.getResponseDTO().setScope(authorizedScopes.toArray(
-                            new String[authorizedScopes.size()]));
-                    return true;
-                }
-                userRoles = getUserRoles(authenticatedUser);
-                authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
+        String[] userRoles = null;
+        Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
+        if (appScopes != null) {
+            //If no scopes can be found in the context of the application
+            if (isAppScopesEmpty(appScopes, clientId)) {
+                authorizedScopes = getAllowedScopes(allowedScopes, requestedScopes);
                 oAuth2TokenValidationMessageContext.getResponseDTO().setScope(authorizedScopes.toArray(
                         new String[authorizedScopes.size()]));
+                return true;
             }
-            if (ArrayUtils.isEmpty(userRoles)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No roles associated for the user " + authenticatedUser.getUserName());
-                }
-                return false;
+            userRoles = getUserRoles(authenticatedUser);
+            authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
+            oAuth2TokenValidationMessageContext.getResponseDTO().setScope(authorizedScopes.toArray(
+                    new String[authorizedScopes.size()]));
+        }
+        if (ArrayUtils.isEmpty(userRoles)) {
+            if (log.isDebugEnabled()) {
+                log.debug("No roles associated for the user " + authenticatedUser.getUserName());
             }
-        } catch (Exception e) {
-            //Log and return since we do not want to stop issuing the token in case of scope validation failures.
-            log.error("Error when getting the tenant's UserStoreManager or when getting roles of user ", e);
             return false;
         }
         return true;
@@ -385,38 +378,6 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes, allowedScopes);
         }
         return authorizedScopes;
-    }
-
-    protected List<String> getScopewithDefaultBinding(AuthenticatedUser authenticatedUser, String[] requestedScopes)
-            throws IdentityOAuth2Exception {
-
-        String[] scopes = null;
-        List<String> requestedScopesList = Arrays.asList(requestedScopes);
-        List<String> scopesToAuthorize = new ArrayList<>();
-        if (log.isDebugEnabled()) {
-            log.debug("Requested scopes :" + Arrays.toString(requestedScopes));
-        }
-        int tenantId = IdentityTenantUtil.getTenantId(authenticatedUser.getTenantDomain());
-        try {
-            // Get only the scopes with default binding. These scopes are mapped to roles.
-            Set<Scope> retrievedScopes = retrieveScopes(tenantId);
-            if (retrievedScopes == null || retrievedScopes.isEmpty()) {
-                // if there are no scopes with default binding type, no additional validation is done.
-                // This behavior could be changed by configuring KEY_REJECT_UNREGISTERED_SCOPES element
-                if (!rejectUnregisteredScopes) {
-                    return null;
-                }
-            } else {
-                for (Scope scope : retrievedScopes) {
-                    if (requestedScopesList.contains(scope.getName())) {
-                        scopesToAuthorize.add(scope.getName());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error(e);
-        }
-        return scopesToAuthorize;
     }
 
     /**
