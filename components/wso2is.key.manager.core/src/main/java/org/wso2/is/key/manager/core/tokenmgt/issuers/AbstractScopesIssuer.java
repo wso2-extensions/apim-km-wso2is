@@ -37,7 +37,6 @@ import org.wso2.is.key.manager.core.tokenmgt.TokenMgtException;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +59,7 @@ public abstract class AbstractScopesIssuer {
      * @param tokReqMsgCtx      token message context
      * @return authorized scopes list
      */
-    public abstract List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx, List<String> allowedScopes);
+    public abstract List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx);
 
     /**
      * This method is used to retrieve authorized scopes with respect to an authorization callback.
@@ -68,7 +67,7 @@ public abstract class AbstractScopesIssuer {
      * @param scopeValidationCallback Authorization callback to validate scopes
      * @return authorized scopes list
      */
-    public abstract List<String> getScopes(OAuthCallback scopeValidationCallback, List<String> allowedScopes);
+    public abstract List<String> getScopes(OAuthCallback scopeValidationCallback);
 
     /**
      * This method is used to get the prefix of the scope issuer.
@@ -85,35 +84,12 @@ public abstract class AbstractScopesIssuer {
      * @param requestedScopes - The set of requested scopes
      * @return - The subset of scopes that are allowed
      */
-    public List<String> getAllowedScopes(List<String> scopeSkipList, List<String> requestedScopes) {
-        List<String> authorizedScopes = new ArrayList<String>();
+    public List<String> getAllowedScopes(List<String> requestedScopes) {
 
-        //Iterate the requested scopes list.
-        for (String scope : requestedScopes) {
-            if (isAllowedScope(scopeSkipList, scope)) {
-                authorizedScopes.add(scope);
-            }
+        if (requestedScopes.isEmpty()) {
+            requestedScopes.add(DEFAULT_SCOPE_NAME);
         }
-
-        if (authorizedScopes.isEmpty()) {
-            authorizedScopes.add(DEFAULT_SCOPE_NAME);
-        }
-        return authorizedScopes;
-    }
-
-    /**
-     * Determines if the scope is specified in the whitelist.
-     *
-     * @param scope - The scope key to check
-     * @return - 'true' if the scope is white listed. 'false' if not.
-     */
-    public boolean isAllowedScope(List<String> scopeSkipList, String scope) {
-        for (String scopeTobeSkipped : scopeSkipList) {
-            if (scope.matches(scopeTobeSkipped)) {
-                return true;
-            }
-        }
-        return false;
+        return requestedScopes;
     }
 
     /**
