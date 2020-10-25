@@ -24,6 +24,10 @@ public class RegistrationRequestDTO   {
     private String applicationType = null;
     private String tokenTypeExtension = null;
     private String extApplicationOwner = null;
+    private Long extApplicationTokenLifetime = null;
+    private Long extUserTokenLifetime = null;
+    private Long extRefreshTokenLifetime = null;
+    private Long extIdTokenLifetime = null;
     private String jwksUri = null;
     private String url = null;
     private String extParamClientId = null;
@@ -172,6 +176,74 @@ public class RegistrationRequestDTO   {
   }
   public void setExtApplicationOwner(String extApplicationOwner) {
     this.extApplicationOwner = extApplicationOwner;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO extApplicationTokenLifetime(Long extApplicationTokenLifetime) {
+    this.extApplicationTokenLifetime = extApplicationTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_application_token_lifetime")
+  public Long getExtApplicationTokenLifetime() {
+    return extApplicationTokenLifetime;
+  }
+  public void setExtApplicationTokenLifetime(Long extApplicationTokenLifetime) {
+    this.extApplicationTokenLifetime = extApplicationTokenLifetime;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO extUserTokenLifetime(Long extUserTokenLifetime) {
+    this.extUserTokenLifetime = extUserTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_user_token_lifetime")
+  public Long getExtUserTokenLifetime() {
+    return extUserTokenLifetime;
+  }
+  public void setExtUserTokenLifetime(Long extUserTokenLifetime) {
+    this.extUserTokenLifetime = extUserTokenLifetime;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO extRefreshTokenLifetime(Long extRefreshTokenLifetime) {
+    this.extRefreshTokenLifetime = extRefreshTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_refresh_token_lifetime")
+  public Long getExtRefreshTokenLifetime() {
+    return extRefreshTokenLifetime;
+  }
+  public void setExtRefreshTokenLifetime(Long extRefreshTokenLifetime) {
+    this.extRefreshTokenLifetime = extRefreshTokenLifetime;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO extIdTokenLifetime(Long extIdTokenLifetime) {
+    this.extIdTokenLifetime = extIdTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_id_token_lifetime")
+  public Long getExtIdTokenLifetime() {
+    return extIdTokenLifetime;
+  }
+  public void setExtIdTokenLifetime(Long extIdTokenLifetime) {
+    this.extIdTokenLifetime = extIdTokenLifetime;
   }
 
   /**
@@ -379,6 +451,10 @@ public class RegistrationRequestDTO   {
         Objects.equals(applicationType, registrationRequest.applicationType) &&
         Objects.equals(tokenTypeExtension, registrationRequest.tokenTypeExtension) &&
         Objects.equals(extApplicationOwner, registrationRequest.extApplicationOwner) &&
+        Objects.equals(extApplicationTokenLifetime, registrationRequest.extApplicationTokenLifetime) &&
+        Objects.equals(extUserTokenLifetime, registrationRequest.extUserTokenLifetime) &&
+        Objects.equals(extRefreshTokenLifetime, registrationRequest.extRefreshTokenLifetime) &&
+        Objects.equals(extIdTokenLifetime, registrationRequest.extIdTokenLifetime) &&
         Objects.equals(jwksUri, registrationRequest.jwksUri) &&
         Objects.equals(url, registrationRequest.url) &&
         Objects.equals(extParamClientId, registrationRequest.extParamClientId) &&
@@ -394,7 +470,7 @@ public class RegistrationRequestDTO   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationType, tokenTypeExtension, extApplicationOwner, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired);
   }
 
   @Override
@@ -410,6 +486,10 @@ public class RegistrationRequestDTO   {
     sb.append("    applicationType: ").append(toIndentedString(applicationType)).append("\n");
     sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
+    sb.append("    extApplicationTokenLifetime: ").append(toIndentedString(extApplicationTokenLifetime)).append("\n");
+    sb.append("    extUserTokenLifetime: ").append(toIndentedString(extUserTokenLifetime)).append("\n");
+    sb.append("    extRefreshTokenLifetime: ").append(toIndentedString(extRefreshTokenLifetime)).append("\n");
+    sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
     sb.append("    jwksUri: ").append(toIndentedString(jwksUri)).append("\n");
     sb.append("    url: ").append(toIndentedString(url)).append("\n");
     sb.append("    extParamClientId: ").append(toIndentedString(extParamClientId)).append("\n");

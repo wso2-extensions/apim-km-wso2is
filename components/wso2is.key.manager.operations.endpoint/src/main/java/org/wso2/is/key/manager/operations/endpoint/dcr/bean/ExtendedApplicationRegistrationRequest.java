@@ -30,6 +30,50 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private static final long serialVersionUID = -4515815791420125411L;
 
     private String applicationOwner = null;
+    private Long applicationAccessTokenLifeTime;
+    private Long userAccessTokenLifeTime;
+    private Long refreshTokenLifeTime;
+    private Long idTokenLifeTime;
+
+    public Long getApplicationAccessTokenLifeTime() {
+
+        return applicationAccessTokenLifeTime;
+    }
+
+    public void setApplicationAccessTokenLifeTime(Long applicationAccessTokenLifeTime) {
+
+        this.applicationAccessTokenLifeTime = applicationAccessTokenLifeTime;
+    }
+
+    public Long getUserAccessTokenLifeTime() {
+
+        return userAccessTokenLifeTime;
+    }
+
+    public void setUserAccessTokenLifeTime(Long userAccessTokenLifeTime) {
+
+        this.userAccessTokenLifeTime = userAccessTokenLifeTime;
+    }
+
+    public Long getRefreshTokenLifeTime() {
+
+        return refreshTokenLifeTime;
+    }
+
+    public void setRefreshTokenLifeTime(Long refreshTokenLifeTime) {
+
+        this.refreshTokenLifeTime = refreshTokenLifeTime;
+    }
+
+    public Long getIdTokenLifeTime() {
+
+        return idTokenLifeTime;
+    }
+
+    public void setIdTokenLifeTime(Long idTokenLifeTime) {
+
+        this.idTokenLifeTime = idTokenLifeTime;
+    }
 
     /**
      *

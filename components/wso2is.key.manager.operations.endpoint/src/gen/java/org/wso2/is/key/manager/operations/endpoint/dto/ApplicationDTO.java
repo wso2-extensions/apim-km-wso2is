@@ -23,6 +23,10 @@ public class ApplicationDTO   {
     private String clientName = null;
     private List<String> grantTypes = new ArrayList<>();
     private String extApplicationOwner = null;
+    private Long extApplicationTokenLifetime = null;
+    private Long extUserTokenLifetime = null;
+    private Long extRefreshTokenLifetime = null;
+    private Long extIdTokenLifetime = null;
 
   /**
    **/
@@ -143,6 +147,74 @@ public class ApplicationDTO   {
     this.extApplicationOwner = extApplicationOwner;
   }
 
+  /**
+   **/
+  public ApplicationDTO extApplicationTokenLifetime(Long extApplicationTokenLifetime) {
+    this.extApplicationTokenLifetime = extApplicationTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_application_token_lifetime")
+  public Long getExtApplicationTokenLifetime() {
+    return extApplicationTokenLifetime;
+  }
+  public void setExtApplicationTokenLifetime(Long extApplicationTokenLifetime) {
+    this.extApplicationTokenLifetime = extApplicationTokenLifetime;
+  }
+
+  /**
+   **/
+  public ApplicationDTO extUserTokenLifetime(Long extUserTokenLifetime) {
+    this.extUserTokenLifetime = extUserTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_user_token_lifetime")
+  public Long getExtUserTokenLifetime() {
+    return extUserTokenLifetime;
+  }
+  public void setExtUserTokenLifetime(Long extUserTokenLifetime) {
+    this.extUserTokenLifetime = extUserTokenLifetime;
+  }
+
+  /**
+   **/
+  public ApplicationDTO extRefreshTokenLifetime(Long extRefreshTokenLifetime) {
+    this.extRefreshTokenLifetime = extRefreshTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_refresh_token_lifetime")
+  public Long getExtRefreshTokenLifetime() {
+    return extRefreshTokenLifetime;
+  }
+  public void setExtRefreshTokenLifetime(Long extRefreshTokenLifetime) {
+    this.extRefreshTokenLifetime = extRefreshTokenLifetime;
+  }
+
+  /**
+   **/
+  public ApplicationDTO extIdTokenLifetime(Long extIdTokenLifetime) {
+    this.extIdTokenLifetime = extIdTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_id_token_lifetime")
+  public Long getExtIdTokenLifetime() {
+    return extIdTokenLifetime;
+  }
+  public void setExtIdTokenLifetime(Long extIdTokenLifetime) {
+    this.extIdTokenLifetime = extIdTokenLifetime;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -159,12 +231,16 @@ public class ApplicationDTO   {
         Objects.equals(redirectUris, application.redirectUris) &&
         Objects.equals(clientName, application.clientName) &&
         Objects.equals(grantTypes, application.grantTypes) &&
-        Objects.equals(extApplicationOwner, application.extApplicationOwner);
+        Objects.equals(extApplicationOwner, application.extApplicationOwner) &&
+        Objects.equals(extApplicationTokenLifetime, application.extApplicationTokenLifetime) &&
+        Objects.equals(extUserTokenLifetime, application.extUserTokenLifetime) &&
+        Objects.equals(extRefreshTokenLifetime, application.extRefreshTokenLifetime) &&
+        Objects.equals(extIdTokenLifetime, application.extIdTokenLifetime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner);
+    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime);
   }
 
   @Override
@@ -179,6 +255,10 @@ public class ApplicationDTO   {
     sb.append("    clientName: ").append(toIndentedString(clientName)).append("\n");
     sb.append("    grantTypes: ").append(toIndentedString(grantTypes)).append("\n");
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
+    sb.append("    extApplicationTokenLifetime: ").append(toIndentedString(extApplicationTokenLifetime)).append("\n");
+    sb.append("    extUserTokenLifetime: ").append(toIndentedString(extUserTokenLifetime)).append("\n");
+    sb.append("    extRefreshTokenLifetime: ").append(toIndentedString(extRefreshTokenLifetime)).append("\n");
+    sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
     sb.append("}");
     return sb.toString();
   }

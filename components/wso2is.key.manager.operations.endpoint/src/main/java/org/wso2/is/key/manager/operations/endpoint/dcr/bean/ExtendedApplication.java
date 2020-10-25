@@ -33,6 +33,50 @@ public class ExtendedApplication extends Application implements Serializable {
     private String applicationOwner = null;
     private List<String> grantTypes = null;
 
+    private long applicationAccessTokenLifeTime;
+    private long userAccessTokenLifeTime;
+    private long refreshTokenLifeTime;
+    private long idTokenLifeTime;
+
+    public long getApplicationAccessTokenLifeTime() {
+
+        return applicationAccessTokenLifeTime;
+    }
+
+    public void setApplicationAccessTokenLifeTime(long applicationAccessTokenLifeTime) {
+
+        this.applicationAccessTokenLifeTime = applicationAccessTokenLifeTime;
+    }
+
+    public long getUserAccessTokenLifeTime() {
+
+        return userAccessTokenLifeTime;
+    }
+
+    public void setUserAccessTokenLifeTime(long userAccessTokenLifeTime) {
+
+        this.userAccessTokenLifeTime = userAccessTokenLifeTime;
+    }
+
+    public long getRefreshTokenLifeTime() {
+
+        return refreshTokenLifeTime;
+    }
+
+    public void setRefreshTokenLifeTime(long refreshTokenLifeTime) {
+
+        this.refreshTokenLifeTime = refreshTokenLifeTime;
+    }
+
+    public long getIdTokenLifeTime() {
+
+        return idTokenLifeTime;
+    }
+
+    public void setIdTokenLifeTime(long idTokenLifeTime) {
+
+        this.idTokenLifeTime = idTokenLifeTime;
+    }
 
     public String getApplicationOwner() {
 

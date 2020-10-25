@@ -37,7 +37,6 @@ import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientExcepti
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants.ErrorMessages;
-import org.wso2.carbon.identity.oauth.dcr.bean.ApplicationUpdateRequest;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMServerException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRConstants;
@@ -47,6 +46,7 @@ import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,7 +93,7 @@ public class DCRMService {
      * @return ExtendedApplication
      * @throws DCRMException DCRMException
      */
-    public ExtendedApplication updateApplication(ApplicationUpdateRequest updateRequest, String clientId) throws
+    public ExtendedApplication updateApplication(ExtendedApplicationUpdateRequest updateRequest, String clientId) throws
             DCRMException {
 
         OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
@@ -138,6 +138,18 @@ public class DCRMService {
             if (StringUtils.isNotEmpty(updateRequest.getBackchannelLogoutUri())) {
                 String backChannelLogoutUri = validateBackchannelLogoutURI(updateRequest.getBackchannelLogoutUri());
                 appDTO.setBackChannelLogoutUrl(backChannelLogoutUri);
+            }
+            if (updateRequest.getApplicationAccessTokenLifeTime() != null) {
+                appDTO.setApplicationAccessTokenExpiryTime(updateRequest.getApplicationAccessTokenLifeTime());
+            }
+            if (updateRequest.getUserAccessTokenLifeTime() != null) {
+                appDTO.setUserAccessTokenExpiryTime(updateRequest.getUserAccessTokenLifeTime());
+            }
+            if (updateRequest.getRefreshTokenLifeTime() != null) {
+                appDTO.setRefreshTokenExpiryTime(updateRequest.getRefreshTokenLifeTime());
+            }
+            if (updateRequest.getIdTokenLifeTime() != null) {
+                appDTO.setIdTokenExpiryTime(updateRequest.getIdTokenLifeTime());
             }
             oAuthAdminService.updateConsumerApplication(appDTO);
         } catch (IdentityOAuthAdminException e) {
@@ -383,6 +395,10 @@ public class DCRMService {
         application.setRedirectUris(redirectUrisList);
         application.setGrantTypes(grantTypeList);
         application.setApplicationOwner(createdApp.getUsername());
+        application.setApplicationAccessTokenLifeTime(createdApp.getApplicationAccessTokenExpiryTime());
+        application.setUserAccessTokenLifeTime(createdApp.getUserAccessTokenExpiryTime());
+        application.setRefreshTokenLifeTime(createdApp.getRefreshTokenExpiryTime());
+        application.setIdTokenLifeTime(createdApp.getIdTokenExpiryTime());
         return application;
     }
 
@@ -443,7 +459,19 @@ public class DCRMService {
         oAuthConsumerApp.setTokenType(registrationRequest.getTokenType());
         oAuthConsumerApp.setBackChannelLogoutUrl(
                 validateBackchannelLogoutURI(registrationRequest.getBackchannelLogoutUri()));
-
+        if (registrationRequest.getApplicationAccessTokenLifeTime() != null) {
+            oAuthConsumerApp
+                    .setApplicationAccessTokenExpiryTime(registrationRequest.getApplicationAccessTokenLifeTime());
+        }
+        if (registrationRequest.getUserAccessTokenLifeTime() != null) {
+            oAuthConsumerApp.setUserAccessTokenExpiryTime(registrationRequest.getUserAccessTokenLifeTime());
+        }
+        if (registrationRequest.getRefreshTokenLifeTime() != null) {
+            oAuthConsumerApp.setRefreshTokenExpiryTime(registrationRequest.getRefreshTokenLifeTime());
+        }
+        if (registrationRequest.getIdTokenLifeTime() != null) {
+            oAuthConsumerApp.setIdTokenExpiryTime(registrationRequest.getIdTokenLifeTime());
+        }
         if (StringUtils.isNotEmpty(registrationRequest.getConsumerKey())) {
             String clientIdRegex = OAuthServerConfiguration.getInstance().getClientIdValidationRegex();
             if (clientIdMatchesRegex(registrationRequest.getConsumerKey(), clientIdRegex)) {
@@ -761,6 +789,7 @@ public class DCRMService {
      * @return validated or not
      */
     private static boolean clientIdMatchesRegex(String clientId, String clientIdValidatorRegex) {
+
         clientIdRegexPattern = Pattern.compile(clientIdValidatorRegex);
         return clientIdRegexPattern.matcher(clientId).matches();
     }
@@ -773,6 +802,7 @@ public class DCRMService {
      * @throws DCRMServerException DCRMException
      */
     public ExtendedApplication getNewApplicationConsumerSecret(String clientId) throws DCRMServerException {
+
         OAuthConsumerAppDTO appDTO;
         try {
             appDTO = oAuthAdminService.updateAndRetrieveOauthSecretKey(clientId);
@@ -794,6 +824,7 @@ public class DCRMService {
      */
     public ExtendedApplication updateApplicationOwner(String applicationOwner, String clientId) throws
             DCRMException {
+
         OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
 

@@ -21,10 +21,12 @@ package org.wso2.is.client;
 import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
+import org.wso2.carbon.apimgt.impl.DefaultKeyManagerConnectorConfiguration;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 /**
  * Connector configuration for WSO2IS.
  */
@@ -33,7 +35,7 @@ import java.util.List;
         immediate = true,
         service = KeyManagerConnectorConfiguration.class
 )
-public class WSO2ISConnectorConfiguration implements KeyManagerConnectorConfiguration {
+public class WSO2ISConnectorConfiguration extends DefaultKeyManagerConnectorConfiguration {
 
     @Override
     public String getImplementation() {
@@ -57,13 +59,14 @@ public class WSO2ISConnectorConfiguration implements KeyManagerConnectorConfigur
         configurationDtoList
                 .add(new ConfigurationDto("Password", "Password", "input",
                         "Password of Admin user", "", true, true, Collections.emptyList(), false));
+        configurationDtoList.addAll(super.getConnectionConfigurations());
         return configurationDtoList;
     }
 
     @Override
     public List<ConfigurationDto> getApplicationConfigurations() {
 
-       return new ArrayList<>();
+        return super.getApplicationConfigurations();
     }
 
     @Override
