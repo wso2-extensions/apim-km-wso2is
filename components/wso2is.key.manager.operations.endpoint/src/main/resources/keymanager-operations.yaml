@@ -465,6 +465,18 @@ definitions:
         type: string
       ext_application_owner:
         type: string
+      ext_application_token_lifetime:
+        type: integer
+        format: int64
+      ext_user_token_lifetime:
+        type: integer
+        format: int64
+      ext_refresh_token_lifetime:
+        type: integer
+        format: int64
+      ext_id_token_lifetime:
+        type: integer
+        format: int64
       jwks_uri:
         type: string
       url:
@@ -524,6 +536,18 @@ definitions:
           type: string
         backchannel_logout_session_required:
           type: boolean
+        ext_application_token_lifetime:
+          type: integer
+          format: int64
+        ext_user_token_lifetime:
+          type: integer
+          format: int64
+        ext_refresh_token_lifetime:
+          type: integer
+          format: int64
+        ext_id_token_lifetime:
+          type: integer
+          format: int64
     #-----------------------------------------------------
     # The OAuth2 Application Object
     #-----------------------------------------------------
@@ -548,3 +572,15 @@ definitions:
             type: string
         ext_application_owner:
           type: string
+        ext_application_token_lifetime:
+          type: integer
+          format: int64
+        ext_user_token_lifetime:
+          type: integer
+          format: int64
+        ext_refresh_token_lifetime:
+          type: integer
+          format: int64
+        ext_id_token_lifetime:
+          type: integer
+          format: int64
