@@ -19,12 +19,12 @@ package org.wso2.is.key.manager.operations.endpoint.dcr.util;
 
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
-import org.wso2.carbon.identity.oauth.dcr.bean.ApplicationUpdateRequest;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
@@ -56,18 +56,29 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setConsumerSecret(registrationRequestDTO.getExtParamClientSecret());
         appRegistrationRequest.setSpTemplateName(registrationRequestDTO.getExtParamSpTemplate());
         appRegistrationRequest.setBackchannelLogoutUri(registrationRequestDTO.getBackchannelLogoutUri());
+        appRegistrationRequest
+                .setApplicationAccessTokenLifeTime(registrationRequestDTO.getExtApplicationTokenLifetime());
+        appRegistrationRequest.setUserAccessTokenLifeTime(registrationRequestDTO.getExtUserTokenLifetime());
+        appRegistrationRequest.setRefreshTokenLifeTime(registrationRequestDTO.getExtRefreshTokenLifetime());
+        appRegistrationRequest.setIdTokenLifeTime(registrationRequestDTO.getExtIdTokenLifetime());
         return appRegistrationRequest;
 
     }
 
-    public static ApplicationUpdateRequest getApplicationUpdateRequest(UpdateRequestDTO updateRequestDTO) {
+    public static ExtendedApplicationUpdateRequest getApplicationUpdateRequest(UpdateRequestDTO updateRequestDTO) {
 
-        ApplicationUpdateRequest applicationUpdateRequest = new ApplicationUpdateRequest();
+        ExtendedApplicationUpdateRequest applicationUpdateRequest = new ExtendedApplicationUpdateRequest();
         applicationUpdateRequest.setClientName(updateRequestDTO.getClientName());
         applicationUpdateRequest.setRedirectUris(updateRequestDTO.getRedirectUris());
         applicationUpdateRequest.setGrantTypes(updateRequestDTO.getGrantTypes());
         applicationUpdateRequest.setTokenType(updateRequestDTO.getTokenTypeExtension());
         applicationUpdateRequest.setBackchannelLogoutUri(updateRequestDTO.getBackchannelLogoutUri());
+        applicationUpdateRequest
+                .setApplicationAccessTokenLifeTime(updateRequestDTO.getExtApplicationTokenLifetime());
+        applicationUpdateRequest.setUserAccessTokenLifeTime(updateRequestDTO.getExtUserTokenLifetime());
+        applicationUpdateRequest.setRefreshTokenLifeTime(updateRequestDTO.getExtRefreshTokenLifetime());
+        applicationUpdateRequest.setIdTokenLifeTime(updateRequestDTO.getExtIdTokenLifetime());
+
         return applicationUpdateRequest;
 
     }
@@ -141,7 +152,10 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setGrantTypes(application.getGrantTypes());
         applicationDTO.setExtApplicationOwner(MultitenantUtils.
                 getTenantAwareUsername(application.getApplicationOwner()));
-
+        applicationDTO.setExtApplicationTokenLifetime(application.getApplicationAccessTokenLifeTime());
+        applicationDTO.setExtUserTokenLifetime(application.getUserAccessTokenLifeTime());
+        applicationDTO.setExtRefreshTokenLifetime(application.getRefreshTokenLifeTime());
+        applicationDTO.setExtIdTokenLifetime(application.getIdTokenLifeTime());
         return applicationDTO;
     }
 

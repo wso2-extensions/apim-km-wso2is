@@ -25,6 +25,10 @@ public class UpdateRequestDTO   {
     private String extApplicationOwner = null;
     private String backchannelLogoutUri = null;
     private Boolean backchannelLogoutSessionRequired = null;
+    private Long extApplicationTokenLifetime = null;
+    private Long extUserTokenLifetime = null;
+    private Long extRefreshTokenLifetime = null;
+    private Long extIdTokenLifetime = null;
 
   /**
    **/
@@ -179,6 +183,74 @@ public class UpdateRequestDTO   {
     this.backchannelLogoutSessionRequired = backchannelLogoutSessionRequired;
   }
 
+  /**
+   **/
+  public UpdateRequestDTO extApplicationTokenLifetime(Long extApplicationTokenLifetime) {
+    this.extApplicationTokenLifetime = extApplicationTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_application_token_lifetime")
+  public Long getExtApplicationTokenLifetime() {
+    return extApplicationTokenLifetime;
+  }
+  public void setExtApplicationTokenLifetime(Long extApplicationTokenLifetime) {
+    this.extApplicationTokenLifetime = extApplicationTokenLifetime;
+  }
+
+  /**
+   **/
+  public UpdateRequestDTO extUserTokenLifetime(Long extUserTokenLifetime) {
+    this.extUserTokenLifetime = extUserTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_user_token_lifetime")
+  public Long getExtUserTokenLifetime() {
+    return extUserTokenLifetime;
+  }
+  public void setExtUserTokenLifetime(Long extUserTokenLifetime) {
+    this.extUserTokenLifetime = extUserTokenLifetime;
+  }
+
+  /**
+   **/
+  public UpdateRequestDTO extRefreshTokenLifetime(Long extRefreshTokenLifetime) {
+    this.extRefreshTokenLifetime = extRefreshTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_refresh_token_lifetime")
+  public Long getExtRefreshTokenLifetime() {
+    return extRefreshTokenLifetime;
+  }
+  public void setExtRefreshTokenLifetime(Long extRefreshTokenLifetime) {
+    this.extRefreshTokenLifetime = extRefreshTokenLifetime;
+  }
+
+  /**
+   **/
+  public UpdateRequestDTO extIdTokenLifetime(Long extIdTokenLifetime) {
+    this.extIdTokenLifetime = extIdTokenLifetime;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_id_token_lifetime")
+  public Long getExtIdTokenLifetime() {
+    return extIdTokenLifetime;
+  }
+  public void setExtIdTokenLifetime(Long extIdTokenLifetime) {
+    this.extIdTokenLifetime = extIdTokenLifetime;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -197,12 +269,16 @@ public class UpdateRequestDTO   {
         Objects.equals(tokenTypeExtension, updateRequest.tokenTypeExtension) &&
         Objects.equals(extApplicationOwner, updateRequest.extApplicationOwner) &&
         Objects.equals(backchannelLogoutUri, updateRequest.backchannelLogoutUri) &&
-        Objects.equals(backchannelLogoutSessionRequired, updateRequest.backchannelLogoutSessionRequired);
+        Objects.equals(backchannelLogoutSessionRequired, updateRequest.backchannelLogoutSessionRequired) &&
+        Objects.equals(extApplicationTokenLifetime, updateRequest.extApplicationTokenLifetime) &&
+        Objects.equals(extUserTokenLifetime, updateRequest.extUserTokenLifetime) &&
+        Objects.equals(extRefreshTokenLifetime, updateRequest.extRefreshTokenLifetime) &&
+        Objects.equals(extIdTokenLifetime, updateRequest.extIdTokenLifetime);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime);
   }
 
   @Override
@@ -219,6 +295,10 @@ public class UpdateRequestDTO   {
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
     sb.append("    backchannelLogoutUri: ").append(toIndentedString(backchannelLogoutUri)).append("\n");
     sb.append("    backchannelLogoutSessionRequired: ").append(toIndentedString(backchannelLogoutSessionRequired)).append("\n");
+    sb.append("    extApplicationTokenLifetime: ").append(toIndentedString(extApplicationTokenLifetime)).append("\n");
+    sb.append("    extUserTokenLifetime: ").append(toIndentedString(extUserTokenLifetime)).append("\n");
+    sb.append("    extRefreshTokenLifetime: ").append(toIndentedString(extRefreshTokenLifetime)).append("\n");
+    sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
     sb.append("}");
     return sb.toString();
   }

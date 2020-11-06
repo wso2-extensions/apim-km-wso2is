@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.wso2.km.ext.wso2is</groupId>
         <artifactId>wso2is.auth.client</artifactId>
-        <version>1.0.17-SNAPSHOT</version>
+        <version>1.0.19-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -23,6 +23,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
+                <version>2.2</version>
                 <configuration>
                     <webResources>
                         <resource>
@@ -33,15 +34,20 @@
                     <warName>keymanager-operations</warName>
                 </configuration>
             </plugin>
-
-            <!--<plugin>
-                <groupId>org.wso2.maven.plugins</groupId>
-                <artifactId>swagger2cxf-maven-plugin</artifactId>
-                <version>1.0-SNAPSHOT</version>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
-                    <inputSpec>${project.basedir}/src/main/resources/keymanager-operations.yaml</inputSpec>
+                    <filesets>
+                        <fileset>
+                            <directory>src/gen/java</directory>
+                            <includes>
+                                <include>**/*</include>
+                            </includes>
+                            <followSymlinks>false</followSymlinks>
+                        </fileset>
+                    </filesets>
                 </configuration>
-            </plugin>-->
+            </plugin>
             <plugin>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
@@ -71,6 +77,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
+                <version>1.9.1</version>
                 <executions>
                     <execution>
                         <id>add-source</id>

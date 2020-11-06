@@ -25,7 +25,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.km.ext.wso2is</groupId>
     <artifactId>wso2is.auth.client</artifactId>
-    <version>1.0.17-SNAPSHOT</version>
+    <version>1.0.19-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -65,7 +65,7 @@
                     <executions>
                         <execution>
                             <id>validate</id>
-                            <phase>validate</phase>
+                            <phase>compile</phase>
                             <configuration>
                                 <configLocation>checkstyle/checkstyle.xml</configLocation>
                                 <suppressionsLocation>checkstyle/suppressions.xml</suppressionsLocation>
@@ -209,11 +209,7 @@
                 <artifactId>org.wso2.carbon.user.core</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.wso2.carbon.identity.inbound.auth.oauth2</groupId>
-                <artifactId>org.wso2.carbon.identity.oauth</artifactId>
-                <version>${carbon.identity-inbound-auth-oauth.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
                 <artifactId>org.wso2.carbon.identity.data.publisher.application.authentication</artifactId>
@@ -236,6 +232,11 @@
                 <version>${carbon.identity-inbound-auth-oauth.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wso2.carbon.extension.identity.oauth2.grantType.jwt</groupId>
+                <artifactId>org.wso2.carbon.identity.oauth2.grant.jwt</artifactId>
+                <version>${carbon.identity-oauth2-grant-jwt.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wso2.carbon.identity.framework</groupId>
                 <artifactId>org.wso2.carbon.claim.mgt</artifactId>
                 <version>${carbon.identity.version}</version>
@@ -255,6 +256,11 @@
                 <artifactId>org.wso2.is.key.manager.operations.endpoint</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
+            </dependency>
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjrt</artifactId>
+                <version>${aspectj.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -350,8 +356,11 @@
         <carbon.apimgt.version>6.7.165</carbon.apimgt.version>
         <carbon.identity.version>5.17.5</carbon.identity.version>
         <carbon.identity-inbound-auth-oauth.version>6.4.2</carbon.identity-inbound-auth-oauth.version>
+        <carbon.identity-oauth2-grant-jwt.version>1.0.26</carbon.identity-oauth2-grant-jwt.version>
         <json.simple.version>1.1</json.simple.version>
+        <json-simple.wso2.version>1.1.wso2v1</json-simple.wso2.version>
         <cxf.version>3.3.6</cxf.version>
+        <aspectj.version>1.9.5</aspectj.version>
         <spring-web.version>5.1.13.RELEASE</spring-web.version>
         <json.orbit.version>3.0.0.wso2v1</json.orbit.version>
         <swagger-jaxrs.version>1.6.1</swagger-jaxrs.version>
@@ -375,7 +384,7 @@
         <maven.spotbugsplugin.version>3.1.10</maven.spotbugsplugin.version>
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <version.checkstyle>8.34</version.checkstyle>
-        <io.swagger.codegen.version>2.3.1</io.swagger.codegen.version>
+        <io.swagger.codegen.version>2.4.11</io.swagger.codegen.version>
         <identity.auth.rest.version>1.4.0</identity.auth.rest.version>
         <carbon.apimgt.imp.pkg.version>[6.0.0, 7.0.0)</carbon.apimgt.imp.pkg.version>
     </properties>
