@@ -30,16 +30,13 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.auth.service.handler.AuthenticationHandler;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
+import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.key.manager.core.handlers.ExtendedISAuthHandler;
-import org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer;
-import org.wso2.is.key.manager.core.tokenmgt.issuers.AbstractScopesIssuer;
-import org.wso2.is.key.manager.core.tokenmgt.issuers.PermissionBasedScopeIssuer;
 import org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer;
-import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder;
 
 /**
  * KeyManager core component to handle authentication
@@ -57,22 +54,10 @@ public class KeyManagerCoreServiceComponent {
 
         try {
             cxt.getBundleContext().registerService(AuthenticationHandler.class, new ExtendedISAuthHandler(), null);
+            cxt.getBundleContext().registerService(ScopeValidator.class, new RoleBasedScopesIssuer(), null);
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }
-
-            PermissionBasedScopeIssuer permissionBasedScopeIssuer = new PermissionBasedScopeIssuer();
-            RoleBasedScopesIssuer roleBasedScopesIssuer = new RoleBasedScopesIssuer();
-            TokenMgtDataHolder.addScopesIssuer(permissionBasedScopeIssuer.getPrefix(), permissionBasedScopeIssuer);
-            TokenMgtDataHolder.addScopesIssuer(roleBasedScopesIssuer.getPrefix(), roleBasedScopesIssuer);
-            if (log.isDebugEnabled()) {
-                log.debug("Permission based scope Issuer and Role based scope issuers are loaded.");
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("Identity API Key Mgt Bundle is started.");
-            }
-
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
         }
@@ -143,56 +128,6 @@ public class KeyManagerCoreServiceComponent {
         }
     }
 
-    /**
-     * Add scope issuer to the map.
-     * @param scopesIssuer scope issuer.
-     */
-    @Reference(
-            name = "scope.issuer.main.service",
-            service = org.wso2.is.key.manager.core.tokenmgt.ScopesIssuer.class,
-            cardinality = ReferenceCardinality.OPTIONAL,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetScopeIssuer")
-    protected void setScopeIssuer(ScopesIssuer scopesIssuer) {
-
-        if (scopesIssuer != null && log.isDebugEnabled()) {
-            log.debug("Scope issuer initialized");
-            ServiceReferenceHolder.getInstance().setScopesIssuer(scopesIssuer);
-        }
-    }
-
-    /**
-     * unset scope issuer.
-     * @param scopesIssuer
-     */
-    protected void unsetScopeIssuer(ScopesIssuer scopesIssuer) {
-
-        ServiceReferenceHolder.getInstance().setScopesIssuer(null);
-    }
-
-    /**
-     * Add scope issuer to the map.
-     * @param scopesIssuer scope issuer.
-     */
-    @Reference(
-            name = "scope.issuer.service",
-            service = org.wso2.is.key.manager.core.tokenmgt.issuers.AbstractScopesIssuer.class,
-            cardinality = ReferenceCardinality.MULTIPLE,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "removeScopeIssuer")
-    protected void addScopeIssuer(AbstractScopesIssuer scopesIssuer) {
-
-        TokenMgtDataHolder.addScopesIssuer(scopesIssuer.getPrefix(), scopesIssuer);
-    }
-
-    /**
-     * unset scope issuer.
-     * @param scopesIssuer
-     */
-    protected void removeScopeIssuer(AbstractScopesIssuer scopesIssuer) {
-
-        TokenMgtDataHolder.setScopesIssuers(null);
-    }
 
     @Reference(
             name = "tenant.registryloader",

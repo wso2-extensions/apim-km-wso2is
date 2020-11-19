@@ -123,7 +123,6 @@ public abstract class AbstractScopesIssuer {
         Map<String, String> appScopes = null;
         Set<Scope> scopes = null;
         String requestedScopesString = String.join(" ", requestedScopes);
-        //Uncomment later
         String tenantDomain;
         if (authenticatedUser.isFederatedUser()) {
             tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
@@ -234,9 +233,4 @@ public abstract class AbstractScopesIssuer {
         return IdentityTenantUtil.getTenantIdOfUser(username);
     }
 
-
-
-
 }
-
-
