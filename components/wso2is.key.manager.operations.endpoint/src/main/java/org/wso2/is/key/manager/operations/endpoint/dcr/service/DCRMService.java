@@ -691,13 +691,25 @@ public class DCRMService {
             }
         } else if (redirectUris.size() == 1) {
             String redirectUri = redirectUris.get(0);
-            if (DCRMUtils.isRedirectionUriValid(redirectUri)) {
+            // handle If callback url is provided as regexp=(url1|url2|..) format
+            if (redirectUri.contains(OAuthConstants.CALLBACK_URL_REGEXP_PREFIX)) {
+                String[] uris = redirectUri.replace(OAuthConstants.CALLBACK_URL_REGEXP_PREFIX, "")
+                        .replace("(", "").replace(")", "").split("\\|");
+                for (String uri : uris) {
+                    if (!DCRMUtils.isRedirectionUriValid(uri)) {
+                        throw DCRMUtils.generateClientException(
+                                ErrorMessages.BAD_REQUEST_INVALID_REDIRECT_URI, redirectUri);
+                    }
+                }
                 return redirectUri;
             } else {
-                throw DCRMUtils.generateClientException(
-                        ErrorMessages.BAD_REQUEST_INVALID_REDIRECT_URI, redirectUri);
+                if (DCRMUtils.isRedirectionUriValid(redirectUri)) {
+                    return redirectUri;
+                } else {
+                    throw DCRMUtils.generateClientException(
+                            ErrorMessages.BAD_REQUEST_INVALID_REDIRECT_URI, redirectUri);
+                }
             }
-
         } else {
             return OAuthConstants.CALLBACK_URL_REGEXP_PREFIX + createRegexPattern(redirectUris);
         }
