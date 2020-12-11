@@ -25,6 +25,7 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth.callback.OAuthCallback;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2ScopeServerException;
 import org.wso2.carbon.identity.oauth2.bean.Scope;
 import org.wso2.carbon.identity.oauth2.bean.ScopeBinding;
@@ -59,7 +60,7 @@ public abstract class AbstractScopesIssuer {
      * @param tokReqMsgCtx      token message context
      * @return authorized scopes list
      */
-    public abstract List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx);
+    public abstract List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception;
 
     /**
      * This method is used to retrieve authorized scopes with respect to an authorization callback.
