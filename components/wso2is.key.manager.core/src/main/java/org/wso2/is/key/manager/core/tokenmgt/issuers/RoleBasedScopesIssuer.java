@@ -364,7 +364,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @return authorized scopes list
      */
     @Override
-    public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) throws IdentityOAuth2Exception {
+    public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) {
 
         List<String> authorizedScopes = null;
         List<String> requestedScopes = Arrays.asList(tokReqMsgCtx.getScope());
@@ -413,11 +413,19 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 federated user doesn't have any association in localIDP, to handle this case we check for 'Assert
                 identity using mapped local subject identifier' flag and get roles from userStore.
                  */
-                if (isSPAlwaysSendMappedLocalSubjectId(clientId)) {
-                    userRoles = getUserRoles(authenticatedUser);
-                } else {
-                    // Handle not account associated federated users.
-                    userRoles = getUserRolesForNotAssociatedFederatedUser(authenticatedUser);
+                try {
+                    if (isSPAlwaysSendMappedLocalSubjectId(clientId)) {
+                        userRoles = getUserRoles(authenticatedUser);
+                    } else {
+                        // Handle not account associated federated users.
+                        userRoles = getUserRolesForNotAssociatedFederatedUser(authenticatedUser);
+                    }
+                } catch (IdentityOAuth2Exception e) {
+                    /*
+                     Log and return since we do not want to stop issuing the token in case of scope validation failures.
+                     */
+                    log.error("Error when getting the Identity provider configuration when getting roles of " +
+                            "federated user. ", e);
                 }
             } else {
                 userRoles = getUserRoles(authenticatedUser);
