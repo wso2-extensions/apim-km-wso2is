@@ -17,7 +17,9 @@
  */
 package org.wso2.is.key.manager.operations.endpoint.dcr.util;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.wso2.carbon.identity.oauth.OAuthAdminService;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
@@ -30,6 +32,10 @@ import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.ws.rs.core.Response;
 
@@ -134,6 +140,30 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     }
 
     /**
+     * Validate grant types of application with the authorized grant types of toml configuration
+     *
+     * @param requestedGrantTypes String of requested grant types
+     * @return String
+     */
+    public static List<String> validateGrantTypes(List<String> requestedGrantTypes) {
+        OAuthAdminService oAuthAdminService = new OAuthAdminService();
+        List<String> allowedGrantTypes = Arrays.asList(oAuthAdminService.getAllowedGrantTypes());
+        List<String> validGrantTypes = new ArrayList<>();
+
+        for (String requestedGrant : requestedGrantTypes) {
+            if (StringUtils.isBlank(requestedGrant)) {
+                continue;
+            }
+
+            if (allowedGrantTypes.contains(requestedGrant)) {
+                validGrantTypes.add(requestedGrant);
+            }
+        }
+
+        return validGrantTypes;
+    }
+
+    /**
      * Convert the Application object to the ApplicationDTO object.
      * @param application Instance of an @see Application class.
      * @return Instance of @see ApplicationDTO
@@ -149,7 +179,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setClientName(application.getClientName());
         applicationDTO.setClientSecret(application.getClientSecret());
         applicationDTO.setRedirectUris(application.getRedirectUris());
-        applicationDTO.setGrantTypes(application.getGrantTypes());
+        applicationDTO.setGrantTypes(validateGrantTypes(application.getGrantTypes()));
         applicationDTO.setExtApplicationOwner(MultitenantUtils.
                 getTenantAwareUsername(application.getApplicationOwner()));
         applicationDTO.setExtApplicationTokenLifetime(application.getApplicationAccessTokenLifeTime());
