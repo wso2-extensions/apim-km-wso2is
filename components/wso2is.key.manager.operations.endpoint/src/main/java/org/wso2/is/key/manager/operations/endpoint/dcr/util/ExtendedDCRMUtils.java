@@ -142,8 +142,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     /**
      * Validate grant types of application with the authorized grant types of toml configuration
      *
-     * @param requestedGrantTypes String of requested grant types
-     * @return String
+     * @param requestedGrantTypes List<String> of requested grant types
+     * @return List<String>validGrantTypes
      */
     public static List<String> validateGrantTypes(List<String> requestedGrantTypes) {
         OAuthAdminService oAuthAdminService = new OAuthAdminService();
