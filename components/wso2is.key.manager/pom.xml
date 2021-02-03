@@ -43,6 +43,7 @@
                             org.wso2.is.client.*;version="1.0.0"
                         </Export-Package>
                         <Import-Package>
+                            org.wso2.carbon.apimgt.api.*;version="${carbon.apimgt.imp.pkg.version}",
                             org.wso2.carbon.apimgt.impl.*;version="${carbon.apimgt.imp.pkg.version}",
                             org.wso2.carbon.apimgt.notification.*;version="${carbon.apimgt.imp.pkg.version}",
                             org.apache.commons.codec.*,
