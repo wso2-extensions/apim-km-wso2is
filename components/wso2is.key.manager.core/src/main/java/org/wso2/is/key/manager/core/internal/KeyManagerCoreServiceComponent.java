@@ -58,10 +58,11 @@ public class KeyManagerCoreServiceComponent {
         try {
             cxt.getBundleContext().registerService(AuthenticationHandler.class, new ExtendedISAuthHandler(), null);
             cxt.getBundleContext().registerService(ScopeValidator.class, new RoleBasedScopesIssuer(), null);
+            ReservedUserCreationObserver reservedUserCreationObserver = new ReservedUserCreationObserver();
             cxt.getBundleContext().registerService(Axis2ConfigurationContextObserver.class.getName(),
-                    new ReservedUserCreationObserver(), null);
+                    reservedUserCreationObserver, null);
             cxt.getBundleContext().registerService(ServerStartupObserver.class.getName(),
-                    new ReservedUserCreationObserver(), null);
+                    reservedUserCreationObserver, null);
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }
