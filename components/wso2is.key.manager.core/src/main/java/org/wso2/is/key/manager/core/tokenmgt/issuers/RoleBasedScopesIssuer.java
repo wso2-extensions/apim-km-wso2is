@@ -585,11 +585,13 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         for (Iterator<Map.Entry<ClaimMapping, String>> iterator = userAttributes.entrySet().iterator(); iterator
                 .hasNext(); ) {
             Map.Entry<ClaimMapping, String> entry = iterator.next();
-            if (roleClaim.equals(entry.getKey().getLocalClaim().getClaimUri()) && StringUtils
-                    .isNotBlank(entry.getValue())) {
-                return entry.getValue().replace("\\/", "/").
-                        replace("[", "").replace("]", "").
-                        replace("\"", "").split(FrameworkUtils.getMultiAttributeSeparator());
+            if (null != entry.getKey().getLocalClaim()) {
+                if (roleClaim.equals(entry.getKey().getLocalClaim().getClaimUri()) && StringUtils
+                        .isNotBlank(entry.getValue())) {
+                    return entry.getValue().replace("\\/", "/").
+                            replace("[", "").replace("]", "").
+                            replace("\"", "").split(FrameworkUtils.getMultiAttributeSeparator());
+                }
             }
         }
         return new String[0];
