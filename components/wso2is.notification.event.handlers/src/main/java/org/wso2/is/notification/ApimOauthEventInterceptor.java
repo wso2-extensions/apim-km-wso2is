@@ -85,18 +85,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
 
         if (enabled && accessTokenDO != null) {
             try {
-                long expiryTime = accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis();
-                String accessToken = accessTokenDO.getAccessToken();
-                String user = accessTokenDO.getAuthzUser().getUserName();
-                int tenantID = accessTokenDO.getTenantID();
-                String tenantDomain =
-                        ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getDomain(tenantID);
-                OAuthAppDO oauthApp = OAuth2Util.getAppInformationByClientId(accessTokenDO.getConsumerKey());
-                String tokenType = oauthApp.getTokenType();
-                TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(accessToken, expiryTime, user,
-                        accessTokenDO.getConsumerKey(), tokenType);
-                tokenRevocationEvent.setTenantId(tenantID);
-                tokenRevocationEvent.setTenantDomain(tenantDomain);
+                TokenRevocationEvent tokenRevocationEvent = toTokenRevocationEvent(accessTokenDO);
                 publishEvent(tokenRevocationEvent);
             } catch (InvalidOAuthClientException e) {
                 log.error("Error while retrieving token type", e);
@@ -105,6 +94,24 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             }
         }
 
+    }
+
+    private TokenRevocationEvent toTokenRevocationEvent(AccessTokenDO accessTokenDO)
+            throws IdentityOAuth2Exception, InvalidOAuthClientException, UserStoreException {
+
+        long expiryTime = accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis();
+        String accessToken = accessTokenDO.getAccessToken();
+        String user = accessTokenDO.getAuthzUser().getUserName();
+        int tenantID = accessTokenDO.getTenantID();
+        String tenantDomain =
+                ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getDomain(tenantID);
+        OAuthAppDO oauthApp = OAuth2Util.getAppInformationByClientId(accessTokenDO.getConsumerKey());
+        String tokenType = oauthApp.getTokenType();
+        TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(accessToken, expiryTime, user,
+                accessTokenDO.getConsumerKey(), tokenType);
+        tokenRevocationEvent.setTenantId(tenantID);
+        tokenRevocationEvent.setTenantDomain(tenantDomain);
+        return tokenRevocationEvent;
     }
 
     @Override
@@ -126,6 +133,27 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                 publishEvent(tokenRevocationEvent);
             } catch (InvalidOAuthClientException e) {
                 log.error("Error while retrieving token type", e);
+            }
+        }
+    }
+
+    @Override
+    public void onPreTokenRevocationBySystem(AccessTokenDO accessTokenDO, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+    }
+
+    @Override
+    public void onPostTokenRevocationBySystem(AccessTokenDO accessTokenDO, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+
+        if (enabled && accessTokenDO != null) {
+            try {
+                TokenRevocationEvent tokenRevocationEvent = toTokenRevocationEvent(accessTokenDO);
+                publishEvent(tokenRevocationEvent);
+            } catch (InvalidOAuthClientException e) {
+                log.error("Error while retrieving token type", e);
+            } catch (UserStoreException e) {
+                log.error("Error while resolving tenantDomain", e);
             }
         }
     }
@@ -154,7 +182,6 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             } catch (UserStoreException e) {
                 log.error("Error while finding tenant id", e);
             }
-
             publishEvent(tokenRevocationEvent);
         }
     }
