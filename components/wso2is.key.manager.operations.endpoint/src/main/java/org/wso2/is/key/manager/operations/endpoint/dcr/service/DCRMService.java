@@ -104,6 +104,8 @@ public class DCRMService {
 
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
+        // We are setting this to true in order to support cross tenant subscriptions.
+        sp.setSaasApp(true);
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
             if (!DCRMUtils.isRegexValidated(clientName)) {
@@ -538,6 +540,8 @@ public class DCRMService {
         user.setUserName(applicationOwner);
         user.setTenantDomain(tenantDomain);
         sp.setOwner(user);
+        // We are setting this to true in order to support cross tenant subscriptions.
+        sp.setSaasApp(true);
         sp.setDescription("Service Provider for application " + spName);
 
         createServiceProvider(sp, tenantDomain, applicationOwner, templateName);
