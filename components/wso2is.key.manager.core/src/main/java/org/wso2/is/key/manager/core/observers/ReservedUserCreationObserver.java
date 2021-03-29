@@ -42,6 +42,7 @@ public class ReservedUserCreationObserver extends AbstractAxis2ConfigurationCont
     private static final Log log = LogFactory.getLog(ReservedUserCreationObserver.class);
     private static final String DEFAULT_RESERVED_USERNAME = "apim_reserved_user";
     private static final String EVERYONE_ROLE = "internal/everyone";
+    private static final String USERSTORE_USERNALE_VALIDATION_EXCEPTION_CODE = "31301";
 
     public void createdConfigurationContext(ConfigurationContext configurationContext) {
         createReservedUser();
@@ -66,9 +67,17 @@ public class ReservedUserCreationObserver extends AbstractAxis2ConfigurationCont
                 }
                 boolean isReservedUserCreated = userStoreManager.isExistingUser(DEFAULT_RESERVED_USERNAME);
                 if (!isReservedUserCreated) {
-                    userStoreManager.addUser(DEFAULT_RESERVED_USERNAME, getSaltString(),
-                            new String[]{EVERYONE_ROLE},
-                            new HashMap<>(), DEFAULT_RESERVED_USERNAME, false);
+                    try {
+                        userStoreManager.addUser(DEFAULT_RESERVED_USERNAME, getSaltString(),
+                                new String[]{EVERYONE_ROLE},
+                                new HashMap<>(), DEFAULT_RESERVED_USERNAME, false);
+                    } catch (UserStoreException ex) {
+                        if (ex.getMessage().contains(USERSTORE_USERNALE_VALIDATION_EXCEPTION_CODE)) {
+                            log.warn("Unable to create the reserved user. " + ex.getMessage());
+                            return;
+                        }
+                        throw new UserStoreException(ex);
+                    }
                 }
             }
         } catch (UserStoreException e) {
