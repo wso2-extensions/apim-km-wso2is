@@ -192,9 +192,7 @@ public class TokenMgtUtil {
     public static Map<String, String> getRESTAPIScopesForTenant(String tenantDomain) throws TokenMgtException {
 
         Map<String, String> restAPIScopes;
-        restAPIScopes = (Map) Caching.getCacheManager(ResourceConstants.EXTENTIONS_CACHE_MANAGER)
-                .getCache(ResourceConstants.REST_API_SCOPE_CACHE)
-                .get(tenantDomain);
+        restAPIScopes = (Map) CacheProvider.getRESTAPIScopeCache().get(tenantDomain);
         if (restAPIScopes == null) {
 
             restAPIScopes = getRESTAPIScopesFromConfig(getTenantRESTAPIScopesConfig(tenantDomain),
@@ -291,45 +289,47 @@ public class TokenMgtUtil {
     public static JSONObject getTenantConfig(String tenantDomain) throws TokenMgtException {
 
         int tenantId = getTenantIdFromTenantDomain(tenantDomain);
-        return getTenantConfig(tenantId);
-    }
-
-    /**
-     * Returns the tenant-conf.json in JSONObject format for the given tenant(id) from the registry.
-     *
-     * @param tenantId tenant ID
-     * @return tenant-conf.json in JSONObject format for the given tenant(id)
-     * @throws  TokenMgtException
-     */
-    private static JSONObject getTenantConfig(int tenantId) throws TokenMgtException {
-
+        boolean tenantFlowStarted = false;
         try {
-            Cache tenantConfigCache = Caching.getCacheManager(ResourceConstants.EXTENTIONS_CACHE_MANAGER)
-                    .getCache(ResourceConstants.TENANT_CONFIG_CACHE_NAME);
+            Cache tenantConfigCache = CacheProvider.getTenantConfigCache();
             String cacheName = tenantId + "_" + ResourceConstants.TENANT_CONFIG_CACHE_NAME;
             if (tenantConfigCache.containsKey(cacheName)) {
                 return (JSONObject) tenantConfigCache.get(cacheName);
             } else {
+                Resource resource = null;
                 if (tenantId != MultitenantConstants.SUPER_TENANT_ID) {
                     loadTenantRegistry(tenantId);
                 }
-                RegistryService registryService = ServiceReferenceHolder.getInstance().getRegistryService();
-                UserRegistry registry = registryService.getConfigSystemRegistry(tenantId);
-                Resource resource;
-                if (registry.resourceExists(ResourceConstants.API_TENANT_CONF_LOCATION)) {
-                    resource = registry.get(ResourceConstants.API_TENANT_CONF_LOCATION);
+                try {
+                    // If a tenant flow start is not started here, registry.get will retrieve a stale state of
+                    // the tenant-conf, not the updated one.
+                    PrivilegedCarbonContext.startTenantFlow();
+                    tenantFlowStarted = true;
+                    PrivilegedCarbonContext carbonContext = PrivilegedCarbonContext.getThreadLocalCarbonContext();
+                    carbonContext.setTenantDomain(tenantDomain);
+                    carbonContext.setTenantId(tenantId);
+                    RegistryService registryService = ServiceReferenceHolder.getInstance().getRegistryService();
+                    UserRegistry registry = registryService.getConfigSystemRegistry(tenantId);
+                    if (registry.resourceExists(ResourceConstants.API_TENANT_CONF_LOCATION)) {
+                        resource = registry.get(ResourceConstants.API_TENANT_CONF_LOCATION);
+                    }
+                } finally {
+                    if (tenantFlowStarted) {
+                        PrivilegedCarbonContext.endTenantFlow();
+                    }
+                }
+                if (resource != null) {
                     String content = new String((byte[]) resource.getContent(), Charset.defaultCharset());
                     JSONParser parser = new JSONParser();
                     JSONObject tenantConfig = (JSONObject) parser.parse(content);
                     tenantConfigCache.put(cacheName, tenantConfig);
                     return tenantConfig;
                 }
+                return null;
             }
         } catch (RegistryException | ParseException e) {
-            throw new TokenMgtException("Error while getting tenant config from registry for tenant: "
-                    + tenantId, e);
+            throw new TokenMgtException("Error while getting tenant config from registry for tenant: " + tenantId, e);
         }
-        return null;
     }
 
     public static void loadTenantRegistry(int tenantId) throws RegistryException {
