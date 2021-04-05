@@ -27,7 +27,7 @@ import javax.cache.Caching;
  */
 public class CacheProvider {
 
-    private static CacheProvider INSTANCE = null;
+    private static final CacheProvider instance = new CacheProvider();
 
     private CacheProvider() {
     }
@@ -38,11 +38,7 @@ public class CacheProvider {
      * @return {@link CacheProvider} instance
      */
     public static CacheProvider getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new CacheProvider();
-        }
-
-        return INSTANCE;
+        return instance;
     }
 
     /**
