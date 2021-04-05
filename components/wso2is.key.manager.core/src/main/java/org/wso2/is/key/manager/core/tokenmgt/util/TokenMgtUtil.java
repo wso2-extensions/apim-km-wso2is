@@ -192,7 +192,7 @@ public class TokenMgtUtil {
     public static Map<String, String> getRESTAPIScopesForTenant(String tenantDomain) throws TokenMgtException {
 
         Map<String, String> restAPIScopes;
-        restAPIScopes = (Map) CacheProvider.getRESTAPIScopeCache().get(tenantDomain);
+        restAPIScopes = (Map) CacheProvider.getInstance().getRESTAPIScopeCache().get(tenantDomain);
         if (restAPIScopes == null) {
 
             restAPIScopes = getRESTAPIScopesFromConfig(getTenantRESTAPIScopesConfig(tenantDomain),
@@ -298,7 +298,7 @@ public class TokenMgtUtil {
         int tenantId = getTenantIdFromTenantDomain(tenantDomain);
         boolean tenantFlowStarted = false;
         try {
-            Cache tenantConfigCache = CacheProvider.getTenantConfigCache();
+            Cache tenantConfigCache = CacheProvider.getInstance().getTenantConfigCache();
             String cacheName = tenantId + "_" + ResourceConstants.TENANT_CONFIG_CACHE_NAME;
             if (tenantConfigCache.containsKey(cacheName)) {
                 return (JSONObject) tenantConfigCache.get(cacheName);

@@ -27,6 +27,24 @@ import javax.cache.Caching;
  */
 public class CacheProvider {
 
+    private static CacheProvider INSTANCE = null;
+
+    private CacheProvider() {
+    }
+
+    /**
+     * Method to get the instance of the CacheProvider.
+     *
+     * @return {@link CacheProvider} instance
+     */
+    public static CacheProvider getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new CacheProvider();
+        }
+
+        return INSTANCE;
+    }
+
     /**
      * @return Tenant Config cache
      */

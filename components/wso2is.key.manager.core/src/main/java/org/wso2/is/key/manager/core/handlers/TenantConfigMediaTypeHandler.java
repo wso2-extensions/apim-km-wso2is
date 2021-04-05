@@ -67,11 +67,11 @@ public class TenantConfigMediaTypeHandler extends Handler {
 
     private void clearExtensionsManagerCaches(String cacheKey, String tenantDomain) {
         // Clear the tenant-config cache of the extensions
-        Cache tenantConfigCache = CacheProvider.getTenantConfigCache();
+        Cache tenantConfigCache = CacheProvider.getInstance().getTenantConfigCache();
         tenantConfigCache.remove(cacheKey);
 
         // Clear the REST API Scope cache of the extensions
-        Cache restApiScopesCache = CacheProvider.getRESTAPIScopeCache();
+        Cache restApiScopesCache = CacheProvider.getInstance().getRESTAPIScopeCache();
         restApiScopesCache.remove(tenantDomain);
     }
 }
