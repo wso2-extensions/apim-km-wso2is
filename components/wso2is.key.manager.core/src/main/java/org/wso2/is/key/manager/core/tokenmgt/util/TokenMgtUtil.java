@@ -286,7 +286,14 @@ public class TokenMgtUtil {
         return restAPIConfigJSON;
     }
 
-    public static JSONObject getTenantConfig(String tenantDomain) throws TokenMgtException {
+    /**
+     * Returns the tenant-conf.json in JSONObject format for the given tenant domain from the registry.
+     *
+     * @param tenantDomain Tenant domain
+     * @return tenant-conf.json in JSONObject format for the given tenant domain
+     * @throws TokenMgtException If an error occurs while getting the tenant config from registry for tenant
+     */
+    private static JSONObject getTenantConfig(String tenantDomain) throws TokenMgtException {
 
         int tenantId = getTenantIdFromTenantDomain(tenantDomain);
         boolean tenantFlowStarted = false;
