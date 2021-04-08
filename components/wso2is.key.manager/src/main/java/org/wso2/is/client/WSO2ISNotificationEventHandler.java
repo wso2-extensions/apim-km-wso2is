@@ -19,17 +19,11 @@
 
 package org.wso2.is.client;
 
-import org.osgi.service.component.annotations.Component;
-import org.wso2.carbon.apimgt.impl.keymgt.KeyManagerEventHandler;
 import org.wso2.carbon.apimgt.notification.DefaultKeyManagerEventHandlerImpl;
 
 /**
  * This Implementation used to handle WSO2 IS related notification Events.
  */
-@Component(
-        immediate = true,
-        service = KeyManagerEventHandler.class
-)
 public class WSO2ISNotificationEventHandler extends DefaultKeyManagerEventHandlerImpl {
 
     @Override
