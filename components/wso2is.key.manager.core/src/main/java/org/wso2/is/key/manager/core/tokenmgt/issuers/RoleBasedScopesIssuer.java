@@ -28,7 +28,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.opensaml.saml.saml2.core.Assertion;
-import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
 import org.wso2.carbon.identity.application.common.model.ClaimConfig;
@@ -90,7 +89,6 @@ import static org.wso2.carbon.registry.core.jdbc.DumpConstants.RESOURCE;
  * This class implements Scope Validator which represents the functions related to an scope issuer which
  * issues scopes based on user roles.
  */
-@Component(name = "RoleBasedScopesIssuer", immediate = true, service = ScopeValidator.class)
 public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements ScopeValidator {
 
     private static Log log = LogFactory.getLog(RoleBasedScopesIssuer.class);
