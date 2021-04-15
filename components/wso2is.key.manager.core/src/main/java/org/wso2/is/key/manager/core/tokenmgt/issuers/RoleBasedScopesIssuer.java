@@ -21,7 +21,6 @@ package org.wso2.is.key.manager.core.tokenmgt.issuers;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.axis2.util.JavaUtils;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -30,13 +29,11 @@ import org.apache.commons.logging.LogFactory;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
-import org.wso2.carbon.identity.application.common.model.ClaimConfig;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.PermissionsAndRoleConfig;
 import org.wso2.carbon.identity.application.common.model.RoleMapping;
-import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
@@ -60,7 +57,6 @@ import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RequestParameter;
 import org.wso2.carbon.identity.oauth2.model.ResourceScopeCacheEntry;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
-import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.oauth2.validators.OAuth2TokenValidationMessageContext;
 import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -283,8 +279,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         return resource;
     }
 
-    public List<String> getScopes(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext)
-            throws IdentityOAuth2Exception {
+    public List<String> getScopes(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) {
 
         List<String> authorizedScopes = null;
         List<String> requestedScopes = new ArrayList<>();
@@ -300,30 +295,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             if (isAppScopesEmpty(appScopes, clientId)) {
                 return getAllowedScopes(requestedScopes);
             }
-            String[] userRoles;
-            /*
-            Here we handle scope validation for federated user and local user separately.
-            For local users - user store is used to get user roles.
-            For not account associated federated users - get user roles from user attributes.
-            Note that if there is association between a federated user and local user () 'Assert identity using
-            mapped local subject identifier' flag will be set as true. So authenticated user will be associated
-            local user not federated user.
-             */
-            if (authenticatedUser.isFederatedUser()) {
-            /*
-            There is a flow where 'Assert identity using mapped local subject identifier' flag enabled but the
-            federated user doesn't have any association in localIDP, to handle this case we check for 'Assert
-            identity using mapped local subject identifier' flag and get roles from userStore.
-             */
-                if (isSPAlwaysSendMappedLocalSubjectId(clientId)) {
-                    userRoles = getUserRoles(authenticatedUser);
-                } else {
-                    // Handle not account associated federated users.
-                    userRoles = getUserRolesForNotAssociatedFederatedUser(authenticatedUser);
-                }
-            } else {
-                userRoles = getUserRoles(authenticatedUser);
-            }
+            String[] userRoles = getUserRoles(authenticatedUser);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
         return authorizedScopes;
@@ -397,85 +369,12 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                     userRoles = getRolesFromUserAttribute(userAttributes,
                             tokReqMsgCtx.getProperty(ResourceConstants.ROLE_CLAIM).toString());
                 }
-            } else if (authenticatedUser.isFederatedUser()) {
-                /*
-                Here we handle scope validation for federated user and local user separately.
-                For not account associated federated users - get user roles from user attributes.
-                Note that if there is association between a federated user and local user () 'Assert identity using
-                mapped local subject identifier' flag will be set as true. So authenticated user will be associated
-                local user not federated user.
-                 */
-
-                /*
-                There is a flow where 'Assert identity using mapped local subject identifier' flag enabled but the
-                federated user doesn't have any association in localIDP, to handle this case we check for 'Assert
-                identity using mapped local subject identifier' flag and get roles from userStore.
-                 */
-                try {
-                    if (isSPAlwaysSendMappedLocalSubjectId(clientId)) {
-                        userRoles = getUserRoles(authenticatedUser);
-                    } else {
-                        // Handle not account associated federated users.
-                        userRoles = getUserRolesForNotAssociatedFederatedUser(authenticatedUser);
-                    }
-                } catch (IdentityOAuth2Exception e) {
-                    /*
-                     Log and return since we do not want to stop issuing the token in case of scope validation failures.
-                     */
-                    log.error("Error when getting the Identity provider configuration when getting roles of " +
-                            "federated user. ", e);
-                }
             } else {
                 userRoles = getUserRoles(authenticatedUser);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
         return authorizedScopes;
-    }
-
-    private boolean isSPAlwaysSendMappedLocalSubjectId(String clientId) throws IdentityOAuth2Exception {
-
-        ServiceProvider serviceProvider = OAuth2Util.getServiceProvider(clientId);
-        if (serviceProvider != null) {
-            ClaimConfig claimConfig = serviceProvider.getClaimConfig();
-            if (claimConfig != null) {
-                return claimConfig.isAlwaysSendMappedLocalSubjectId();
-            }
-            throw new IdentityOAuth2Exception("Unable to find claim configuration for service provider of client id "
-                    + clientId);
-        }
-        throw new IdentityOAuth2Exception("Unable to find service provider for client id " + clientId);
-    }
-
-    private String[] getUserRolesForNotAssociatedFederatedUser(AuthenticatedUser user)
-            throws IdentityOAuth2Exception {
-
-        List<String> userRolesList = new ArrayList<>();
-        IdentityProvider identityProvider =
-                OAuth2Util.getIdentityProvider(user.getFederatedIdPName(), user.getTenantDomain());
-        /*
-        Values of Groups consists unmapped federated roles, mapped local roles and Internal/everyone corresponding to
-        authenticated user.
-        Role mapping consists mapped federated roles with local roles corresponding to IDP.
-        By cross checking federated role mapped local roles and values of groups we can filter valid local roles which
-        mapped to the federated role of authenticated user.
-         */
-        List<String> valuesOfGroups = Arrays.asList(getRolesFromUserAttribute(user.getUserAttributes(),
-                ResourceConstants.GROUPS));
-        if (CollectionUtils.isNotEmpty(valuesOfGroups)) {
-            for (RoleMapping roleMapping : identityProvider.getPermissionAndRoleConfig().getRoleMappings()) {
-                if (roleMapping != null && roleMapping.getLocalRole() != null &&
-                        (valuesOfGroups.contains(roleMapping.getLocalRole().getLocalRoleName()))) {
-                    userRolesList.add(roleMapping.getLocalRole().getLocalRoleName());
-                }
-            }
-        }
-        // By default we provide Internal/everyone role for all users.
-        String internalEveryoneRole = OAuth2Util.getInternalEveryoneRole(user);
-        if (StringUtils.isNotBlank(internalEveryoneRole)) {
-            userRolesList.add(internalEveryoneRole);
-        }
-        return userRolesList.toArray(new String[0]);
     }
 
     /**
