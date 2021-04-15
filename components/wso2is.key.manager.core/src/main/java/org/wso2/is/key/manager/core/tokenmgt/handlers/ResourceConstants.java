@@ -43,7 +43,6 @@ public final class ResourceConstants {
     public static final String REST_API_SCOPE_ROLE = "Roles";
     public static final String REST_API_SCOPES_CONFIG = "RESTAPIScopes";
     public static final String REST_API_ROLE_MAPPINGS_CONFIG = "RoleMappings";
-    public static final String GROUPS = "groups";
 
     //governance registry apimgt root location
     public static final String APIMGT_REGISTRY_LOCATION = "/apimgt";
