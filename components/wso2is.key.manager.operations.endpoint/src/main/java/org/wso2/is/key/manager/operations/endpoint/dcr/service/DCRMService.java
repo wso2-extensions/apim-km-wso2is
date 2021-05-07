@@ -705,6 +705,9 @@ public class DCRMService {
             }
         } else if (redirectUris.size() == 1) {
             String redirectUri = redirectUris.get(0);
+            if (StringUtils.equalsIgnoreCase(redirectUri, "null")) {
+                return StringUtils.EMPTY;
+            }
             // handle If callback url is provided as regexp=(url1|url2|..) format
             if (redirectUri.contains(OAuthConstants.CALLBACK_URL_REGEXP_PREFIX)) {
                 String[] uris = redirectUri.replace(OAuthConstants.CALLBACK_URL_REGEXP_PREFIX, "")
