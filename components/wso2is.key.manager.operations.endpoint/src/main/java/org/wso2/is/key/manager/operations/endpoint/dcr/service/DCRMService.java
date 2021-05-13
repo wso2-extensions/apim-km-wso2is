@@ -430,7 +430,7 @@ public class DCRMService {
                 .toArray(new InboundAuthenticationRequestConfig[0]));
         serviceProvider.setInboundAuthenticationConfig(inboundAuthenticationConfig);
         //Set SaaS app option
-        serviceProvider.setSaasApp(false);
+        serviceProvider.setSaasApp(true);
 
         // Update the Service Provider app to add OAuthApp as an Inbound Authentication Config
         updateServiceProvider(serviceProvider, tenantDomain, applicationOwner);
