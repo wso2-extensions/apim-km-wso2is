@@ -337,7 +337,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) {
 
         List<String> authorizedScopes = null;
-        List<String> requestedScopes = Arrays.asList(tokReqMsgCtx.getScope());
+        List<String> requestedScopes = new ArrayList<>(Arrays.asList(tokReqMsgCtx.getScope()));
         String clientId = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getClientId();
         AuthenticatedUser authenticatedUser = tokReqMsgCtx.getAuthorizedUser();
         Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
