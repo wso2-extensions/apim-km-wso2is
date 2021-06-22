@@ -125,7 +125,7 @@ public abstract class AbstractScopesIssuer {
         String requestedScopesString = String.join(" ", requestedScopes);
         String tenantDomain;
         if (authenticatedUser.isFederatedUser()) {
-            tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
+            tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.toFullQualifiedUsername());
         } else {
             tenantDomain = authenticatedUser.getTenantDomain();
         }
