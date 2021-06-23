@@ -25,13 +25,14 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth.callback.OAuthCallback;
+import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2ScopeServerException;
 import org.wso2.carbon.identity.oauth2.bean.Scope;
 import org.wso2.carbon.identity.oauth2.bean.ScopeBinding;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.core.tokenmgt.TokenMgtException;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
@@ -44,6 +45,7 @@ import java.util.Set;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 
+import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.getAppInformationByClientId;
 
 /**
  * This abstract class represents the basic requirements of a scope issuer.
@@ -123,20 +125,18 @@ public abstract class AbstractScopesIssuer {
         Map<String, String> appScopes = null;
         Set<Scope> scopes = null;
         String requestedScopesString = String.join(" ", requestedScopes);
-        String tenantDomain;
-        if (authenticatedUser.isFederatedUser()) {
-            tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
-        } else {
-            tenantDomain = authenticatedUser.getTenantDomain();
-        }
-        if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
-            isTenantFlowStarted = true;
-            PrivilegedCarbonContext.startTenantFlow();
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
-            TokenMgtUtil.loadTenantConfigBlockingMode(tenantDomain);
-        }
+        String tenantDomain = null;
         try {
+            tenantDomain = getAppInformationByClientId(consumerKey).getAppOwner().getTenantDomain();
+            if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
+                isTenantFlowStarted = true;
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                TokenMgtUtil.loadTenantConfigBlockingMode(tenantDomain);
+            }
             scopes = TokenMgtUtil.getOAuth2ScopeService().getScopes(null, null, true, requestedScopesString);
+        } catch (InvalidOAuthClientException | IdentityOAuth2Exception e) {
+            log.error("Error when retrieving the tenant domain " + e.getMessage(), e);
         } catch (IdentityOAuth2ScopeServerException e) {
             log.error("Error while getting scopes " + e.getMessage(), e);
         } finally {
