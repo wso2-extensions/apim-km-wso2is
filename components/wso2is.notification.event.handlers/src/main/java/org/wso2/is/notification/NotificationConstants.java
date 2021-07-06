@@ -35,4 +35,25 @@ public class NotificationConstants {
     public static final String ADMIN_USER_NAME_SYSTEM_PROPERTY = "admin.username";
     public static final String ADMIN_PASSWORD_SYSTEM_PROPERTY = "admin.password";
     public static final String CARBON_HOME_SYSTEM_PROPERTY = "carbon.home";
+
+    /**
+     * Audit Log Constants
+     */
+    static class AuditLogConstants {
+
+        static final String ACCESS_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:access_token";
+        static final String AUDIENCE = "audience";
+        static final String CLIENT_ID = "client_id";
+        static final String GRANT_TYPE = "grant_type";
+        static final String ISSUER = "issuer";
+        static final String ISSUED_AT = "iat";
+        static final String JWT_ID = "jti";
+        static final String JWT_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:jwt";
+        static final String REQUESTED_TOKEN_TYPE = "requested_token_type";
+        static final String SUBJECT_TOKEN = "subject_token";
+        static final String SUBJECT_TOKEN_TYPE = "subject_token_type";
+        static final String TOKEN_EXCHANGE = "Token Exchange";
+        static final String TOKEN_EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange";
+        static final String TOKEN_GENERATION = "Token Generation";
+    }
 }
