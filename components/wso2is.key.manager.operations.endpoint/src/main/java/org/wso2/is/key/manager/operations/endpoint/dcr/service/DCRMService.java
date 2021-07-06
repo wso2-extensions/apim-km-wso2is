@@ -850,8 +850,19 @@ public class DCRMService {
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
         sp.setOwner(User.getUserFromUserName(applicationOwner));
+        String previousOwner = MultitenantUtils.getTenantAwareUsername(appDTO.getUsername());
         updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()));
         appDTO.setUsername(applicationOwner);
+
+        String newApplicationName = "";
+        if (!previousOwner.equals(applicationOwner)) {
+            String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
+            String appName = StringUtils.substringBetween(appDTO.getApplicationName(), previousOwner, keyType);
+            newApplicationName = MultitenantUtils.getTenantAwareUsername(applicationOwner) + appName + keyType;
+            sp.setApplicationName(newApplicationName);
+        }
+        updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(applicationOwner));
+        appDTO.setApplicationName(newApplicationName);
 
         // Update application
         try {
