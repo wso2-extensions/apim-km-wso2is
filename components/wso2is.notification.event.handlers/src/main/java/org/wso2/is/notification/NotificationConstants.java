@@ -55,5 +55,7 @@ public class NotificationConstants {
         static final String TOKEN_EXCHANGE = "Token Exchange";
         static final String TOKEN_EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange";
         static final String TOKEN_GENERATION = "Token Generation";
+        static final String SUBJECT_TOKEN_INFO = "subject_token_info";
+        static final String ISSUED_TOKEN_INFO = "issued_token_info";
     }
 }

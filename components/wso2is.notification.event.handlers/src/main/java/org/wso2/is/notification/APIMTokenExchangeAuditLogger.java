@@ -98,12 +98,15 @@ public class APIMTokenExchangeAuditLogger extends AbstractOAuthEventInterceptor 
                 if (signedJWT.getJWTClaimsSet() != null) {
                     JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
                     entityInfo.put(AuditLogConstants.ISSUER, claimsSet.getIssuer());
-                    entityInfo.put(AuditLogConstants.AUDIENCE, claimsSet.getAudience());
-                    entityInfo.put(AuditLogConstants.JWT_ID, claimsSet.getJWTID());
+                    entityInfo.put(AuditLogConstants.AUDIENCE, claimsSet.getAudience() != null ?
+                            claimsSet.getAudience() : StringUtils.EMPTY);
+                    entityInfo.put(AuditLogConstants.JWT_ID, claimsSet.getJWTID() != null ? claimsSet.getJWTID() :
+                            StringUtils.EMPTY);
                     entityInfo.put(AuditLogConstants.ISSUED_AT, claimsSet.getIssueTime().getTime());
                 }
             }
         } catch (ParseException ignore) {
+            // Ignoring the exception as the JWT validation is already handled in the Grant Handler
         }
         return entityInfo;
     }
@@ -144,9 +147,10 @@ public class APIMTokenExchangeAuditLogger extends AbstractOAuthEventInterceptor 
         entityInfo.put(AuditLogConstants.REQUESTED_TOKEN_TYPE, getRequestedTokenType(requestParams));
         if (isJWT(requestParams.get(AuditLogConstants.SUBJECT_TOKEN_TYPE), requestParams
                 .get(AuditLogConstants.SUBJECT_TOKEN))) {
-            entityInfo.put("subject_token_info", getJWTClaims(requestParams.get(AuditLogConstants.SUBJECT_TOKEN)));
+            entityInfo.put(AuditLogConstants.SUBJECT_TOKEN_INFO,
+                    getJWTClaims(requestParams.get(AuditLogConstants.SUBJECT_TOKEN)));
         }
-        entityInfo.put("issued_token_info", getJWTClaims(tokenRespDTO.getAccessToken()));
+        entityInfo.put(AuditLogConstants.ISSUED_TOKEN_INFO, getJWTClaims(tokenRespDTO.getAccessToken()));
         return entityInfo;
     }
 }
