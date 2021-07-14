@@ -29,14 +29,19 @@ import org.apache.commons.logging.LogFactory;
 import org.opensaml.saml.saml2.core.Assertion;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
+import org.wso2.carbon.identity.application.common.model.ClaimConfig;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.PermissionsAndRoleConfig;
 import org.wso2.carbon.identity.application.common.model.RoleMapping;
+import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
+import org.wso2.carbon.identity.claim.metadata.mgt.ClaimMetadataManagementServiceImpl;
+import org.wso2.carbon.identity.claim.metadata.mgt.exception.ClaimMetadataException;
+import org.wso2.carbon.identity.claim.metadata.mgt.model.ExternalClaim;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.cache.CacheEntry;
@@ -57,6 +62,7 @@ import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RequestParameter;
 import org.wso2.carbon.identity.oauth2.model.ResourceScopeCacheEntry;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.oauth2.validators.OAuth2TokenValidationMessageContext;
 import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -74,6 +80,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -224,7 +231,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                         new String[authorizedScopes.size()]));
                 return true;
             }
-            userRoles = getUserRoles(authenticatedUser);
+            userRoles = getUserRoles(authenticatedUser, requestedScopes, clientId);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
             oAuth2TokenValidationMessageContext.getResponseDTO().setScope(authorizedScopes.toArray(
                     new String[authorizedScopes.size()]));
@@ -295,7 +302,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             if (isAppScopesEmpty(appScopes, clientId)) {
                 return getAllowedScopes(requestedScopes);
             }
-            String[] userRoles = getUserRoles(authenticatedUser);
+            String[] userRoles = getUserRoles(authenticatedUser, requestedScopes, clientId);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
         return authorizedScopes;
@@ -321,7 +328,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             if (isAppScopesEmpty(appScopes, clientId)) {
                 return getAllowedScopes(requestedScopes);
             }
-            String[] userRoles = getUserRoles(authenticatedUser);
+            String[] userRoles = getUserRoles(authenticatedUser, requestedScopes, clientId);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
         return authorizedScopes;
@@ -370,7 +377,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                             tokReqMsgCtx.getProperty(ResourceConstants.ROLE_CLAIM).toString());
                 }
             } else {
-                userRoles = getUserRoles(authenticatedUser);
+                userRoles = getUserRoles(authenticatedUser, requestedScopes, clientId);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
@@ -383,7 +390,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @param authenticatedUser Authenticated user
      * @return roles list
      */
-    private String[] getUserRoles(AuthenticatedUser authenticatedUser) {
+    private String[] getUserRoles(AuthenticatedUser authenticatedUser, List<String> requestedScopes, String clientId) {
 
         String[] userRoles = null;
         String tenantDomain;
@@ -397,6 +404,11 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         }
         String userStoreDomain = authenticatedUser.getUserStoreDomain();
         RealmService realmService = getRealmService();
+
+        Map<ClaimMapping, String> userAttributes = authenticatedUser.getUserAttributes();
+        String[] federatedUserRoles = getRolesFromUserAttribute(userAttributes, getRoleClaimURI(tenantDomain,
+                requestedScopes, clientId));
+
         try {
             int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
             // If tenant Id is not set in the tokenReqContext, deriving it from username.
@@ -405,7 +417,16 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             }
             UserStoreManager userStoreManager = realmService.getTenantUserRealm(tenantId).getUserStoreManager();
             String endUsernameWithDomain = addDomainToName(username, userStoreDomain);
-            userRoles = userStoreManager.getRoleListOfUser(endUsernameWithDomain);
+            String[] provisionedUserRoles = userStoreManager.getRoleListOfUser(endUsernameWithDomain);
+
+            if (provisionedUserRoles != null) {
+                Set<String> roleList = new LinkedHashSet<String>();
+                roleList.addAll(Arrays.asList(federatedUserRoles));
+                roleList.addAll(Arrays.asList(provisionedUserRoles));
+                userRoles = roleList.toArray(new String[roleList.size()]);
+            } else {
+                userRoles = federatedUserRoles;
+            }
 
         } catch (UserStoreException e) {
             //Log and return since we do not want to stop issuing the token in case of scope validation failures.
@@ -706,5 +727,52 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             return currentRoleClaimValue;
         }
         return null;
+    }
+
+    private String getRoleClaimURI(String tenantDomain, List<String> requestedScopes, String clientId) {
+
+        if (requestedScopes != null && requestedScopes.contains(OPENID)) {
+            return getOIDCMappedLocalClaimURI(tenantDomain);
+        } else {
+            return getSPMappedLocalRoleClaimURI(clientId, tenantDomain);
+        }
+    }
+
+    private String getSPMappedLocalRoleClaimURI(String clientId, String tenantDomain) {
+
+        try {
+            ServiceProvider serviceProvider = OAuth2Util.getServiceProvider(clientId, tenantDomain);
+            ClaimConfig claimConfig = serviceProvider.getClaimConfig();
+            if (claimConfig != null && !claimConfig.isLocalClaimDialect()) {
+                for (ClaimMapping claimMapping : claimConfig.getClaimMappings()) {
+                    if (claimMapping.getLocalClaim() != null) {
+                        if (ResourceConstants.ROLE_ATTRIBUTE_NAME.equals(claimMapping.getLocalClaim().getClaimUri()) &&
+                                claimMapping.getRemoteClaim() != null) {
+                            return claimMapping.getRemoteClaim().getClaimUri();
+                        }
+                    }
+                }
+            }
+        } catch (IdentityOAuth2Exception e) {
+            log.warn("Error while retrieving the service provider with client Id - " + clientId);
+        }
+        return ResourceConstants.ROLE_ATTRIBUTE_NAME;
+    }
+
+    private String getOIDCMappedLocalClaimURI(String tenantDomain) {
+
+        try {
+            ClaimMetadataManagementServiceImpl claimMetadataService = new ClaimMetadataManagementServiceImpl();
+            List<ExternalClaim> externalClaims = claimMetadataService
+                    .getExternalClaims(ResourceConstants.OPEN_ID_ROLE_CLAIM_URI, tenantDomain);
+            for (ExternalClaim claim : externalClaims) {
+                if (ResourceConstants.ROLE_ATTRIBUTE_NAME.equals(claim.getMappedLocalClaim())) {
+                    return claim.getClaimURI();
+                }
+            }
+        } catch (ClaimMetadataException e) {
+            log.warn("Error while retrieving OIDC claim mapping");
+        }
+        return ResourceConstants.ROLE_ATTRIBUTE_NAME;
     }
 }

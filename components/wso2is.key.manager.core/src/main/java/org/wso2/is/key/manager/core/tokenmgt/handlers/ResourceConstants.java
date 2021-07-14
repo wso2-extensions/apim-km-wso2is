@@ -35,6 +35,7 @@ public final class ResourceConstants {
             RETRIEVE_ROLES_FROM_USERSTORE_FOR_SCOPE_VALIDATION = "retrieveRolesFromUserStoreForScopeValidation";
     public static final String ROLE_CLAIM = "ROLE_CLAIM";
     public static final String OAUTH2_DEFAULT_SCOPE = "default";
+    public static final String OPEN_ID_ROLE_CLAIM_URI = "http://wso2.org/oidc/claim";
     public static final String REST_API_SCOPE_CACHE = "REST_API_SCOPE_CACHE";
     public static final String EXTENTIONS_CACHE_MANAGER = "EXTENTIONS_CACHE_MANAGER";
     public static final String TENANT_CONFIG_CACHE_NAME = "tenantConfigCache";
