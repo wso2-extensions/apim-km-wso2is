@@ -49,6 +49,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,7 @@ import java.util.regex.Pattern;
 public class DCRMService {
 
     private static final Log log = LogFactory.getLog(DCRMService.class);
+    public static final String OVERRIDE_SP_NAME = "override.sp.name";
     private static OAuthAdminService oAuthAdminService = new OAuthAdminService();
     private ApplicationManagementService appMgtService;
 
@@ -103,10 +105,17 @@ public class DCRMService {
         OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String applicationOwner = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String overrideSpNameProp = System.getProperty(OVERRIDE_SP_NAME);
+        boolean overrideSpName = StringUtils.isEmpty(overrideSpNameProp) || Boolean.parseBoolean(overrideSpNameProp);
+
         String clientName = updateRequest.getClientName();
 
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
+        if (sp == null) {
+            throw DCRMUtils.generateClientException(DCRMConstants.ErrorMessages.FAILED_TO_GET_SP,
+                    appDTO.getApplicationName(), null);
+        }
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
 
@@ -119,8 +128,13 @@ public class DCRMService {
                 throw DCRMUtils.generateClientException(ErrorMessages.BAD_REQUEST_INVALID_SP_NAME,
                         DCRMUtils.getSPValidatorRegex());
             }
-            sp.setApplicationName(clientName);
-            updateServiceProvider(sp, tenantDomain, applicationOwner);
+            // Need to create a deep clone, since modifying the fields of the original object,
+            // will modify the cached SP object.
+            ServiceProvider clonedSP = ExtendedDCRMUtils.cloneServiceProvider(sp);
+            if (overrideSpName) {
+                clonedSP.setApplicationName(clientName);
+            }
+            updateServiceProvider(clonedSP, tenantDomain, applicationOwner);
         }
 
         // Update application
