@@ -30,6 +30,8 @@ public class UpdateRequestDTO   {
     private Long extUserTokenLifetime = null;
     private Long extRefreshTokenLifetime = null;
     private Long extIdTokenLifetime = null;
+    private Boolean pkceMandatory = null;
+    private Boolean pkceSupportPlain = null;
 
   /**
    **/
@@ -123,7 +125,7 @@ public class UpdateRequestDTO   {
     return this;
   }
 
-  
+
   @ApiModelProperty(value = "")
   @JsonProperty("application_display_name")
   public String getApplicationDisplayName() {
@@ -269,6 +271,40 @@ public class UpdateRequestDTO   {
     this.extIdTokenLifetime = extIdTokenLifetime;
   }
 
+  /**
+   **/
+  public UpdateRequestDTO pkceMandatory(Boolean pkceMandatory) {
+    this.pkceMandatory = pkceMandatory;
+    return this;
+  }
+
+
+  @ApiModelProperty(value = "")
+  @JsonProperty("pkceMandatory")
+  public Boolean isPkceMandatory() {
+    return pkceMandatory;
+  }
+  public void setPkceMandatory(Boolean pkceMandatory) {
+    this.pkceMandatory = pkceMandatory;
+  }
+
+  /**
+   **/
+  public UpdateRequestDTO pkceSupportPlain(Boolean pkceSupportPlain) {
+    this.pkceSupportPlain = pkceSupportPlain;
+    return this;
+  }
+
+
+  @ApiModelProperty(value = "")
+  @JsonProperty("pkceSupportPlain")
+  public Boolean isPkceSupportPlain() {
+    return pkceSupportPlain;
+  }
+  public void setPkceSupportPlain(Boolean pkceSupportPlain) {
+    this.pkceSupportPlain = pkceSupportPlain;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -292,12 +328,14 @@ public class UpdateRequestDTO   {
         Objects.equals(extApplicationTokenLifetime, updateRequest.extApplicationTokenLifetime) &&
         Objects.equals(extUserTokenLifetime, updateRequest.extUserTokenLifetime) &&
         Objects.equals(extRefreshTokenLifetime, updateRequest.extRefreshTokenLifetime) &&
-        Objects.equals(extIdTokenLifetime, updateRequest.extIdTokenLifetime);
+        Objects.equals(extIdTokenLifetime, updateRequest.extIdTokenLifetime) &&
+        Objects.equals(pkceMandatory, updateRequest.pkceMandatory) &&
+        Objects.equals(pkceSupportPlain, updateRequest.pkceSupportPlain);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain);
   }
 
   @Override
@@ -319,6 +357,8 @@ public class UpdateRequestDTO   {
     sb.append("    extUserTokenLifetime: ").append(toIndentedString(extUserTokenLifetime)).append("\n");
     sb.append("    extRefreshTokenLifetime: ").append(toIndentedString(extRefreshTokenLifetime)).append("\n");
     sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
+    sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
+    sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("}");
     return sb.toString();
   }

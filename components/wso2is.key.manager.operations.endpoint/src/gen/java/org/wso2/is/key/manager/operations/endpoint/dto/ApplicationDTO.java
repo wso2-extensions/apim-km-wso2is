@@ -27,6 +27,8 @@ public class ApplicationDTO   {
     private Long extUserTokenLifetime = null;
     private Long extRefreshTokenLifetime = null;
     private Long extIdTokenLifetime = null;
+    private Boolean pkceMandatory = null;
+    private Boolean pkceSupportPlain = null;
 
   /**
    **/
@@ -215,6 +217,40 @@ public class ApplicationDTO   {
     this.extIdTokenLifetime = extIdTokenLifetime;
   }
 
+  /**
+   **/
+  public ApplicationDTO pkceMandatory(Boolean pkceMandatory) {
+    this.pkceMandatory = pkceMandatory;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("pkceMandatory")
+  public Boolean isPkceMandatory() {
+    return pkceMandatory;
+  }
+  public void setPkceMandatory(Boolean pkceMandatory) {
+    this.pkceMandatory = pkceMandatory;
+  }
+
+  /**
+   **/
+  public ApplicationDTO pkceSupportPlain(Boolean pkceSupportPlain) {
+    this.pkceSupportPlain = pkceSupportPlain;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("pkceSupportPlain")
+  public Boolean isPkceSupportPlain() {
+    return pkceSupportPlain;
+  }
+  public void setPkceSupportPlain(Boolean pkceSupportPlain) {
+    this.pkceSupportPlain = pkceSupportPlain;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -235,12 +271,14 @@ public class ApplicationDTO   {
         Objects.equals(extApplicationTokenLifetime, application.extApplicationTokenLifetime) &&
         Objects.equals(extUserTokenLifetime, application.extUserTokenLifetime) &&
         Objects.equals(extRefreshTokenLifetime, application.extRefreshTokenLifetime) &&
-        Objects.equals(extIdTokenLifetime, application.extIdTokenLifetime);
+        Objects.equals(extIdTokenLifetime, application.extIdTokenLifetime) &&
+        Objects.equals(pkceMandatory, application.pkceMandatory) &&
+        Objects.equals(pkceSupportPlain, application.pkceSupportPlain);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime);
+    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain);
   }
 
   @Override
@@ -259,6 +297,8 @@ public class ApplicationDTO   {
     sb.append("    extUserTokenLifetime: ").append(toIndentedString(extUserTokenLifetime)).append("\n");
     sb.append("    extRefreshTokenLifetime: ").append(toIndentedString(extRefreshTokenLifetime)).append("\n");
     sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
+    sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
+    sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("}");
     return sb.toString();
   }

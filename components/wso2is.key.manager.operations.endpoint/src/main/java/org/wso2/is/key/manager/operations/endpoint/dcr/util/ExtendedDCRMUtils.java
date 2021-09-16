@@ -68,6 +68,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setRefreshTokenLifeTime(registrationRequestDTO.getExtRefreshTokenLifetime());
         appRegistrationRequest.setIdTokenLifeTime(registrationRequestDTO.getExtIdTokenLifetime());
         appRegistrationRequest.setApplicationDisplayName(registrationRequestDTO.getApplicationDisplayName());
+        appRegistrationRequest.setPkceMandatory(registrationRequestDTO.isPkceMandatory());
+        appRegistrationRequest.setPkceSupportPlain(registrationRequestDTO.isPkceSupportPlain());
         return appRegistrationRequest;
 
     }

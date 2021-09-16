@@ -35,6 +35,8 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private Long refreshTokenLifeTime;
     private Long idTokenLifeTime;
     private String applicationDisplayName;
+    private Boolean pkceMandatory = false;
+    private Boolean pkceSupportPlain = false;
 
     public Long getApplicationAccessTokenLifeTime() {
 
@@ -102,6 +104,22 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     public void setApplicationDisplayName(String applicationDisplayName) {
 
         this.applicationDisplayName = applicationDisplayName;
+    }
+
+    public Boolean getPkceMandatory() {
+        return pkceMandatory;
+    }
+
+    public void setPkceMandatory(Boolean pkceMandatory) {
+        this.pkceMandatory = pkceMandatory;
+    }
+
+    public Boolean getPkceSupportPlain() {
+        return pkceSupportPlain;
+    }
+
+    public void setPkceSupportPlain(Boolean pkceSupportPlain) {
+        this.pkceSupportPlain = pkceSupportPlain;
     }
 
 }

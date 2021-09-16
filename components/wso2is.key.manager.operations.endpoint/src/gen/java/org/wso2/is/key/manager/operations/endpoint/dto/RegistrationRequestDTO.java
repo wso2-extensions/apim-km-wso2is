@@ -40,6 +40,8 @@ public class RegistrationRequestDTO   {
     private String extParamSpTemplate = null;
     private String backchannelLogoutUri = null;
     private Boolean backchannelLogoutSessionRequired = null;
+    private Boolean pkceMandatory = null;
+    private Boolean pkceSupportPlain = null;
 
   /**
    **/
@@ -135,7 +137,7 @@ public class RegistrationRequestDTO   {
     return this;
   }
 
-  
+
   @ApiModelProperty(value = "")
   @JsonProperty("application_display_name")
   public String getApplicationDisplayName() {
@@ -451,6 +453,40 @@ public class RegistrationRequestDTO   {
     this.backchannelLogoutSessionRequired = backchannelLogoutSessionRequired;
   }
 
+  /**
+   **/
+  public RegistrationRequestDTO pkceMandatory(Boolean pkceMandatory) {
+    this.pkceMandatory = pkceMandatory;
+    return this;
+  }
+
+
+  @ApiModelProperty(value = "")
+  @JsonProperty("pkceMandatory")
+  public Boolean isPkceMandatory() {
+    return pkceMandatory;
+  }
+  public void setPkceMandatory(Boolean pkceMandatory) {
+    this.pkceMandatory = pkceMandatory;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO pkceSupportPlain(Boolean pkceSupportPlain) {
+    this.pkceSupportPlain = pkceSupportPlain;
+    return this;
+  }
+
+
+  @ApiModelProperty(value = "")
+  @JsonProperty("pkceSupportPlain")
+  public Boolean isPkceSupportPlain() {
+    return pkceSupportPlain;
+  }
+  public void setPkceSupportPlain(Boolean pkceSupportPlain) {
+    this.pkceSupportPlain = pkceSupportPlain;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -484,12 +520,14 @@ public class RegistrationRequestDTO   {
         Objects.equals(responseTypes, registrationRequest.responseTypes) &&
         Objects.equals(extParamSpTemplate, registrationRequest.extParamSpTemplate) &&
         Objects.equals(backchannelLogoutUri, registrationRequest.backchannelLogoutUri) &&
-        Objects.equals(backchannelLogoutSessionRequired, registrationRequest.backchannelLogoutSessionRequired);
+        Objects.equals(backchannelLogoutSessionRequired, registrationRequest.backchannelLogoutSessionRequired) &&
+        Objects.equals(pkceMandatory, registrationRequest.pkceMandatory) &&
+        Objects.equals(pkceSupportPlain, registrationRequest.pkceSupportPlain);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain);
   }
 
   @Override
@@ -521,6 +559,8 @@ public class RegistrationRequestDTO   {
     sb.append("    extParamSpTemplate: ").append(toIndentedString(extParamSpTemplate)).append("\n");
     sb.append("    backchannelLogoutUri: ").append(toIndentedString(backchannelLogoutUri)).append("\n");
     sb.append("    backchannelLogoutSessionRequired: ").append(toIndentedString(backchannelLogoutSessionRequired)).append("\n");
+    sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
+    sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("}");
     return sb.toString();
   }
