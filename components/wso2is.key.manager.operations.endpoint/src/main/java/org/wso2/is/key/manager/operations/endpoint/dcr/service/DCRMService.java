@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.application.common.IdentityApplicationManagement
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationRequestConfig;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.application.common.model.ServiceProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
@@ -65,6 +66,7 @@ public class DCRMService {
     private static final String AUTH_TYPE_OAUTH_2 = "oauth2";
     private static final String OAUTH_VERSION = "OAuth-2.0";
     private static final String GRANT_TYPE_SEPARATOR = " ";
+    private static final String APP_DISPLAY_NAME = "DisplayName";
     private static Pattern clientIdRegexPattern = null;
 
     public DCRMService() {
@@ -105,6 +107,14 @@ public class DCRMService {
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
+
+        // Set application name as the display name in the consent page
+        ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
+        serviceProviderProperty.setName(APP_DISPLAY_NAME);
+        serviceProviderProperty.setValue(updateRequest.getApplicationDisplayName());
+        ServiceProviderProperty[] serviceProviderProperties = {serviceProviderProperty};
+        sp.setSpProperties(serviceProviderProperties);
+
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
             if (!DCRMUtils.isRegexValidated(clientName)) {
@@ -364,6 +374,13 @@ public class DCRMService {
             deleteServiceProvider(spName, tenantDomain, applicationOwner);
             throw ex;
         }
+
+        // Set application name as the display name in the consent page
+        ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
+        serviceProviderProperty.setName(APP_DISPLAY_NAME);
+        serviceProviderProperty.setValue(registrationRequest.getApplicationDisplayName());
+        ServiceProviderProperty[] serviceProviderProperties = {serviceProviderProperty};
+        serviceProvider.setSpProperties(serviceProviderProperties);
 
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);

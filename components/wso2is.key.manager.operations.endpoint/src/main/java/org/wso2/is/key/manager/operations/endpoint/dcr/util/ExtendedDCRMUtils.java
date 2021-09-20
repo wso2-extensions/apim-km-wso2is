@@ -67,6 +67,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setUserAccessTokenLifeTime(registrationRequestDTO.getExtUserTokenLifetime());
         appRegistrationRequest.setRefreshTokenLifeTime(registrationRequestDTO.getExtRefreshTokenLifetime());
         appRegistrationRequest.setIdTokenLifeTime(registrationRequestDTO.getExtIdTokenLifetime());
+        appRegistrationRequest.setApplicationDisplayName(registrationRequestDTO.getApplicationDisplayName());
         return appRegistrationRequest;
 
     }
@@ -84,7 +85,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationUpdateRequest.setUserAccessTokenLifeTime(updateRequestDTO.getExtUserTokenLifetime());
         applicationUpdateRequest.setRefreshTokenLifeTime(updateRequestDTO.getExtRefreshTokenLifetime());
         applicationUpdateRequest.setIdTokenLifeTime(updateRequestDTO.getExtIdTokenLifetime());
-
+        applicationUpdateRequest.setApplicationDisplayName(updateRequestDTO.getApplicationDisplayName());
         return applicationUpdateRequest;
 
     }

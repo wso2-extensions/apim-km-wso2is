@@ -459,6 +459,8 @@ definitions:
         type: array
         items:
           type: string
+      application_display_name:
+        type: string
       application_type:
         type: string
       token_type_extension:
@@ -528,6 +530,8 @@ definitions:
           type: array
           items:
             type: string
+        application_display_name:
+          type: string
         token_type_extension:
           type: string
         ext_application_owner:

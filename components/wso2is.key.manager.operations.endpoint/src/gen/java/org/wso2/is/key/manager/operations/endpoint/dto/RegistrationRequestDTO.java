@@ -21,6 +21,7 @@ public class RegistrationRequestDTO   {
     private String clientId = null;
     private String clientSecret = null;
     private List<String> grantTypes = new ArrayList<>();
+    private String applicationDisplayName = null;
     private String applicationType = null;
     private String tokenTypeExtension = null;
     private String extApplicationOwner = null;
@@ -125,6 +126,23 @@ public class RegistrationRequestDTO   {
   }
   public void setGrantTypes(List<String> grantTypes) {
     this.grantTypes = grantTypes;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO applicationDisplayName(String applicationDisplayName) {
+    this.applicationDisplayName = applicationDisplayName;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("application_display_name")
+  public String getApplicationDisplayName() {
+    return applicationDisplayName;
+  }
+  public void setApplicationDisplayName(String applicationDisplayName) {
+    this.applicationDisplayName = applicationDisplayName;
   }
 
   /**
@@ -448,6 +466,7 @@ public class RegistrationRequestDTO   {
         Objects.equals(clientId, registrationRequest.clientId) &&
         Objects.equals(clientSecret, registrationRequest.clientSecret) &&
         Objects.equals(grantTypes, registrationRequest.grantTypes) &&
+        Objects.equals(applicationDisplayName, registrationRequest.applicationDisplayName) &&
         Objects.equals(applicationType, registrationRequest.applicationType) &&
         Objects.equals(tokenTypeExtension, registrationRequest.tokenTypeExtension) &&
         Objects.equals(extApplicationOwner, registrationRequest.extApplicationOwner) &&
@@ -470,7 +489,7 @@ public class RegistrationRequestDTO   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired);
   }
 
   @Override
@@ -483,6 +502,7 @@ public class RegistrationRequestDTO   {
     sb.append("    clientId: ").append(toIndentedString(clientId)).append("\n");
     sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("    grantTypes: ").append(toIndentedString(grantTypes)).append("\n");
+    sb.append("    applicationDisplayName: ").append(toIndentedString(applicationDisplayName)).append("\n");
     sb.append("    applicationType: ").append(toIndentedString(applicationType)).append("\n");
     sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
