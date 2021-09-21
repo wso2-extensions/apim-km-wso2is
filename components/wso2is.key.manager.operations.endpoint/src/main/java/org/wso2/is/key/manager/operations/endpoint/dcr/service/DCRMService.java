@@ -112,7 +112,7 @@ public class DCRMService {
         ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
         serviceProviderProperty.setName(APP_DISPLAY_NAME);
         serviceProviderProperty.setValue(updateRequest.getApplicationDisplayName());
-        ServiceProviderProperty[] serviceProviderProperties = {serviceProviderProperty};
+        ServiceProviderProperty[] serviceProviderProperties = { serviceProviderProperty };
         sp.setSpProperties(serviceProviderProperties);
 
         if (StringUtils.isNotEmpty(clientName)) {
@@ -379,7 +379,7 @@ public class DCRMService {
         ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
         serviceProviderProperty.setName(APP_DISPLAY_NAME);
         serviceProviderProperty.setValue(registrationRequest.getApplicationDisplayName());
-        ServiceProviderProperty[] serviceProviderProperties = {serviceProviderProperty};
+        ServiceProviderProperty[] serviceProviderProperties = { serviceProviderProperty };
         serviceProvider.setSpProperties(serviceProviderProperties);
 
         try {
