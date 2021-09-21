@@ -108,12 +108,8 @@ public class DCRMService {
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
 
-        // Set application name as the display name in the consent page
-        ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
-        serviceProviderProperty.setName(APP_DISPLAY_NAME);
-        serviceProviderProperty.setValue(updateRequest.getApplicationDisplayName());
-        ServiceProviderProperty[] serviceProviderProperties = { serviceProviderProperty };
-        sp.setSpProperties(serviceProviderProperties);
+        // Set service provider properties
+        sp.setSpProperties(getServiceProviderPropertyList(updateRequest.getApplicationDisplayName()));
 
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
@@ -170,6 +166,23 @@ public class DCRMService {
         }
 
         return buildResponse(getApplicationById(clientId));
+    }
+
+    /**
+     * Get service provider property list
+     *
+     * @param applicationDisplayName Display name of the application
+     * @return ServiceProviderProperty[]
+     */
+    public ServiceProviderProperty[] getServiceProviderPropertyList(String applicationDisplayName) {
+
+        // Set application display name. This property is used when displaying the app name within the consent page.
+        ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
+        serviceProviderProperty.setName(APP_DISPLAY_NAME);
+        serviceProviderProperty.setValue(applicationDisplayName);
+        ServiceProviderProperty[] serviceProviderProperties = { serviceProviderProperty };
+
+        return serviceProviderProperties;
     }
 
     /**
@@ -375,12 +388,9 @@ public class DCRMService {
             throw ex;
         }
 
-        // Set application name as the display name in the consent page
-        ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
-        serviceProviderProperty.setName(APP_DISPLAY_NAME);
-        serviceProviderProperty.setValue(registrationRequest.getApplicationDisplayName());
-        ServiceProviderProperty[] serviceProviderProperties = { serviceProviderProperty };
-        serviceProvider.setSpProperties(serviceProviderProperties);
+        // Set service provider properties
+        serviceProvider.setSpProperties(
+                getServiceProviderPropertyList(registrationRequest.getApplicationDisplayName()));
 
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);
