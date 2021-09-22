@@ -109,7 +109,9 @@ public class DCRMService {
         sp.setSaasApp(true);
 
         // Set service provider properties
-        sp.setSpProperties(getServiceProviderPropertyList(updateRequest.getApplicationDisplayName()));
+        ServiceProviderProperty[] spProperties = getServiceProviderPropertyList(
+                updateRequest.getApplicationDisplayName());
+        sp.setSpProperties(spProperties);
 
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
@@ -389,8 +391,9 @@ public class DCRMService {
         }
 
         // Set service provider properties
-        serviceProvider.setSpProperties(
-                getServiceProviderPropertyList(registrationRequest.getApplicationDisplayName()));
+        ServiceProviderProperty[] spProperties = getServiceProviderPropertyList(
+                registrationRequest.getApplicationDisplayName());
+        serviceProvider.setSpProperties(spProperties);
 
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);
