@@ -18,6 +18,7 @@
 
 package org.wso2.is.key.manager.operations.endpoint.dcr.service;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +51,7 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationR
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -108,10 +110,8 @@ public class DCRMService {
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
 
-        // Set service provider properties
-        ServiceProviderProperty[] spProperties = getServiceProviderPropertyList(
-                updateRequest.getApplicationDisplayName());
-        sp.setSpProperties(spProperties);
+        // Update service provider property list with display name property
+        updateServiceProviderPropertyList(sp, updateRequest.getApplicationDisplayName());
 
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
@@ -171,20 +171,31 @@ public class DCRMService {
     }
 
     /**
-     * Get service provider property list
+     * Update service provider property list
      *
+     * @param sp                     Service provider
      * @param applicationDisplayName Display name of the application
-     * @return ServiceProviderProperty[]
      */
-    public ServiceProviderProperty[] getServiceProviderPropertyList(String applicationDisplayName) {
+    public void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
 
-        // Set application display name. This property is used when displaying the app name within the consent page.
-        ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
-        serviceProviderProperty.setName(APP_DISPLAY_NAME);
-        serviceProviderProperty.setValue(applicationDisplayName);
-        ServiceProviderProperty[] serviceProviderProperties = { serviceProviderProperty };
+        // Retrieve existing service provider properties
+        ServiceProviderProperty[] serviceProviderProperties = sp.getSpProperties();
 
-        return serviceProviderProperties;
+        boolean isDisplayNameSet = Arrays.stream(serviceProviderProperties)
+                .anyMatch(property -> property.getName().equals(APP_DISPLAY_NAME));
+        if (!isDisplayNameSet) {
+            // Append application display name related property
+            // This property is used when displaying the app name within the consent page
+            ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
+            serviceProviderProperty.setName(APP_DISPLAY_NAME);
+            serviceProviderProperty.setValue(applicationDisplayName);
+            serviceProviderProperties = (ServiceProviderProperty[]) ArrayUtils.add(serviceProviderProperties,
+                    serviceProviderProperty);
+
+            // Update service provider property list
+            sp.setSpProperties(serviceProviderProperties);
+        }
+
     }
 
     /**
@@ -390,10 +401,8 @@ public class DCRMService {
             throw ex;
         }
 
-        // Set service provider properties
-        ServiceProviderProperty[] spProperties = getServiceProviderPropertyList(
-                registrationRequest.getApplicationDisplayName());
-        serviceProvider.setSpProperties(spProperties);
+        // Update service provider property list with display name property
+        updateServiceProviderPropertyList(serviceProvider, registrationRequest.getApplicationDisplayName());
 
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);
