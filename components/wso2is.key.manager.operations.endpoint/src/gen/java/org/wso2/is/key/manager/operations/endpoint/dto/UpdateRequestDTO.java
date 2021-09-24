@@ -21,6 +21,7 @@ public class UpdateRequestDTO   {
     private String clientId = null;
     private String clientSecret = null;
     private List<String> grantTypes = new ArrayList<>();
+    private String applicationDisplayName = null;
     private String tokenTypeExtension = null;
     private String extApplicationOwner = null;
     private String backchannelLogoutUri = null;
@@ -113,6 +114,23 @@ public class UpdateRequestDTO   {
   }
   public void setGrantTypes(List<String> grantTypes) {
     this.grantTypes = grantTypes;
+  }
+
+  /**
+   **/
+  public UpdateRequestDTO applicationDisplayName(String applicationDisplayName) {
+    this.applicationDisplayName = applicationDisplayName;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("application_display_name")
+  public String getApplicationDisplayName() {
+    return applicationDisplayName;
+  }
+  public void setApplicationDisplayName(String applicationDisplayName) {
+    this.applicationDisplayName = applicationDisplayName;
   }
 
   /**
@@ -266,6 +284,7 @@ public class UpdateRequestDTO   {
         Objects.equals(clientId, updateRequest.clientId) &&
         Objects.equals(clientSecret, updateRequest.clientSecret) &&
         Objects.equals(grantTypes, updateRequest.grantTypes) &&
+        Objects.equals(applicationDisplayName, updateRequest.applicationDisplayName) &&
         Objects.equals(tokenTypeExtension, updateRequest.tokenTypeExtension) &&
         Objects.equals(extApplicationOwner, updateRequest.extApplicationOwner) &&
         Objects.equals(backchannelLogoutUri, updateRequest.backchannelLogoutUri) &&
@@ -278,7 +297,7 @@ public class UpdateRequestDTO   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime);
   }
 
   @Override
@@ -291,6 +310,7 @@ public class UpdateRequestDTO   {
     sb.append("    clientId: ").append(toIndentedString(clientId)).append("\n");
     sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("    grantTypes: ").append(toIndentedString(grantTypes)).append("\n");
+    sb.append("    applicationDisplayName: ").append(toIndentedString(applicationDisplayName)).append("\n");
     sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("    extApplicationOwner: ").append(toIndentedString(extApplicationOwner)).append("\n");
     sb.append("    backchannelLogoutUri: ").append(toIndentedString(backchannelLogoutUri)).append("\n");

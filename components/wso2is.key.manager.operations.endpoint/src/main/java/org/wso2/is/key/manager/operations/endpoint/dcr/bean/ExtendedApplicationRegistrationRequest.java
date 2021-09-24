@@ -34,6 +34,7 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private Long userAccessTokenLifeTime;
     private Long refreshTokenLifeTime;
     private Long idTokenLifeTime;
+    private String applicationDisplayName;
 
     public Long getApplicationAccessTokenLifeTime() {
 
@@ -87,6 +88,20 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     public void setApplicationOwner(String applicationOwner) {
 
         this.applicationOwner = applicationOwner;
+    }
+
+    /**
+     *
+     * @return applicationDisplayName
+     */
+    public String getApplicationDisplayName() {
+
+        return applicationDisplayName;
+    }
+
+    public void setApplicationDisplayName(String applicationDisplayName) {
+
+        this.applicationDisplayName = applicationDisplayName;
     }
 
 }

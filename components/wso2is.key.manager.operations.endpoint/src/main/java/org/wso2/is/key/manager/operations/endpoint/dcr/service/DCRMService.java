@@ -18,6 +18,7 @@
 
 package org.wso2.is.key.manager.operations.endpoint.dcr.service;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,6 +28,7 @@ import org.wso2.carbon.identity.application.common.IdentityApplicationManagement
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationRequestConfig;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.application.common.model.ServiceProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
@@ -49,6 +51,7 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationR
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -65,6 +68,7 @@ public class DCRMService {
     private static final String AUTH_TYPE_OAUTH_2 = "oauth2";
     private static final String OAUTH_VERSION = "OAuth-2.0";
     private static final String GRANT_TYPE_SEPARATOR = " ";
+    private static final String APP_DISPLAY_NAME = "DisplayName";
     private static Pattern clientIdRegexPattern = null;
 
     public DCRMService() {
@@ -105,6 +109,10 @@ public class DCRMService {
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
+
+        // Update service provider property list with display name property
+        updateServiceProviderPropertyList(sp, updateRequest.getApplicationDisplayName());
+
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
             if (!DCRMUtils.isRegexValidated(clientName)) {
@@ -160,6 +168,34 @@ public class DCRMService {
         }
 
         return buildResponse(getApplicationById(clientId));
+    }
+
+    /**
+     * Update service provider property list
+     *
+     * @param sp                     Service provider
+     * @param applicationDisplayName Display name of the application
+     */
+    public void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
+
+        // Retrieve existing service provider properties
+        ServiceProviderProperty[] serviceProviderProperties = sp.getSpProperties();
+
+        boolean isDisplayNameSet = Arrays.stream(serviceProviderProperties)
+                .anyMatch(property -> property.getName().equals(APP_DISPLAY_NAME));
+        if (!isDisplayNameSet) {
+            // Append application display name related property
+            // This property is used when displaying the app name within the consent page
+            ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
+            serviceProviderProperty.setName(APP_DISPLAY_NAME);
+            serviceProviderProperty.setValue(applicationDisplayName);
+            serviceProviderProperties = (ServiceProviderProperty[]) ArrayUtils.add(serviceProviderProperties,
+                    serviceProviderProperty);
+
+            // Update service provider property list
+            sp.setSpProperties(serviceProviderProperties);
+        }
+
     }
 
     /**
@@ -364,6 +400,9 @@ public class DCRMService {
             deleteServiceProvider(spName, tenantDomain, applicationOwner);
             throw ex;
         }
+
+        // Update service provider property list with display name property
+        updateServiceProviderPropertyList(serviceProvider, registrationRequest.getApplicationDisplayName());
 
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);
