@@ -70,6 +70,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setApplicationDisplayName(registrationRequestDTO.getApplicationDisplayName());
         appRegistrationRequest.setPkceMandatory(registrationRequestDTO.isPkceMandatory());
         appRegistrationRequest.setPkceSupportPlain(registrationRequestDTO.isPkceSupportPlain());
+        appRegistrationRequest.setBypassClientCredentials(registrationRequestDTO.isBypassClientCredentials());
         return appRegistrationRequest;
 
     }
@@ -88,6 +89,9 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationUpdateRequest.setRefreshTokenLifeTime(updateRequestDTO.getExtRefreshTokenLifetime());
         applicationUpdateRequest.setIdTokenLifeTime(updateRequestDTO.getExtIdTokenLifetime());
         applicationUpdateRequest.setApplicationDisplayName(updateRequestDTO.getApplicationDisplayName());
+        applicationUpdateRequest.setPkceMandatory(updateRequestDTO.isPkceMandatory());
+        applicationUpdateRequest.setPkceSupportPlain(updateRequestDTO.isPkceSupportPlain());
+        applicationUpdateRequest.setBypassClientCredentials(updateRequestDTO.isBypassClientCredentials());
         return applicationUpdateRequest;
 
     }
@@ -189,6 +193,9 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setExtUserTokenLifetime(application.getUserAccessTokenLifeTime());
         applicationDTO.setExtRefreshTokenLifetime(application.getRefreshTokenLifeTime());
         applicationDTO.setExtIdTokenLifetime(application.getIdTokenLifeTime());
+        applicationDTO.setPkceMandatory(application.getPkceMandatory());
+        applicationDTO.setPkceMandatory(application.getPkceSupportPlain());
+        applicationDTO.setPkceMandatory(application.getBypassClientCredentials());
         return applicationDTO;
     }
 

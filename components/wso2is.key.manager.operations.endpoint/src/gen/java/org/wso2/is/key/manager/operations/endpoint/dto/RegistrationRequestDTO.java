@@ -42,6 +42,7 @@ public class RegistrationRequestDTO   {
     private Boolean backchannelLogoutSessionRequired = null;
     private Boolean pkceMandatory = null;
     private Boolean pkceSupportPlain = null;
+    private Boolean bypassClientCredentials = null;
 
   /**
    **/
@@ -137,7 +138,7 @@ public class RegistrationRequestDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("application_display_name")
   public String getApplicationDisplayName() {
@@ -460,7 +461,7 @@ public class RegistrationRequestDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("pkceMandatory")
   public Boolean isPkceMandatory() {
@@ -477,7 +478,7 @@ public class RegistrationRequestDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("pkceSupportPlain")
   public Boolean isPkceSupportPlain() {
@@ -485,6 +486,23 @@ public class RegistrationRequestDTO   {
   }
   public void setPkceSupportPlain(Boolean pkceSupportPlain) {
     this.pkceSupportPlain = pkceSupportPlain;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO bypassClientCredentials(Boolean bypassClientCredentials) {
+    this.bypassClientCredentials = bypassClientCredentials;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("bypassClientCredentials")
+  public Boolean isBypassClientCredentials() {
+    return bypassClientCredentials;
+  }
+  public void setBypassClientCredentials(Boolean bypassClientCredentials) {
+    this.bypassClientCredentials = bypassClientCredentials;
   }
 
 
@@ -522,12 +540,13 @@ public class RegistrationRequestDTO   {
         Objects.equals(backchannelLogoutUri, registrationRequest.backchannelLogoutUri) &&
         Objects.equals(backchannelLogoutSessionRequired, registrationRequest.backchannelLogoutSessionRequired) &&
         Objects.equals(pkceMandatory, registrationRequest.pkceMandatory) &&
-        Objects.equals(pkceSupportPlain, registrationRequest.pkceSupportPlain);
+        Objects.equals(pkceSupportPlain, registrationRequest.pkceSupportPlain) &&
+        Objects.equals(bypassClientCredentials, registrationRequest.bypassClientCredentials);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain, bypassClientCredentials);
   }
 
   @Override
@@ -561,6 +580,7 @@ public class RegistrationRequestDTO   {
     sb.append("    backchannelLogoutSessionRequired: ").append(toIndentedString(backchannelLogoutSessionRequired)).append("\n");
     sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
+    sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -161,12 +161,10 @@ public class DCRMService {
             if (updateRequest.getIdTokenLifeTime() != null) {
                 appDTO.setIdTokenExpiryTime(updateRequest.getIdTokenLifeTime());
             }
-            if (updateRequest.getPkceMandatory() != null) {
-                appDTO.setPkceMandatory(updateRequest.getPkceMandatory());
-            }
-            if (updateRequest.getPkceSupportPlain() != null) {
-                appDTO.setPkceMandatory(updateRequest.getPkceSupportPlain());
-            }
+            appDTO.setPkceMandatory(updateRequest.getPkceMandatory());
+            appDTO.setPkceSupportPlain(updateRequest.getPkceSupportPlain());
+            appDTO.setBypassClientCredentials(updateRequest.getBypassClientCredentials());
+
             oAuthAdminService.updateConsumerApplication(appDTO);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
@@ -535,6 +533,7 @@ public class DCRMService {
         }
         oAuthConsumerApp.setPkceMandatory(registrationRequest.getPkceMandatory());
         oAuthConsumerApp.setPkceSupportPlain(registrationRequest.getPkceSupportPlain());
+        oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
         if (log.isDebugEnabled()) {
             log.debug("Creating OAuth Application: " + spName + " in tenant: " + tenantDomain);
         }

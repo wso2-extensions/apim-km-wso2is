@@ -29,6 +29,7 @@ public class ApplicationDTO   {
     private Long extIdTokenLifetime = null;
     private Boolean pkceMandatory = null;
     private Boolean pkceSupportPlain = null;
+    private Boolean bypassClientCredentials = null;
 
   /**
    **/
@@ -251,6 +252,23 @@ public class ApplicationDTO   {
     this.pkceSupportPlain = pkceSupportPlain;
   }
 
+  /**
+   **/
+  public ApplicationDTO bypassClientCredentials(Boolean bypassClientCredentials) {
+    this.bypassClientCredentials = bypassClientCredentials;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("bypassClientCredentials")
+  public Boolean isBypassClientCredentials() {
+    return bypassClientCredentials;
+  }
+  public void setBypassClientCredentials(Boolean bypassClientCredentials) {
+    this.bypassClientCredentials = bypassClientCredentials;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -273,12 +291,13 @@ public class ApplicationDTO   {
         Objects.equals(extRefreshTokenLifetime, application.extRefreshTokenLifetime) &&
         Objects.equals(extIdTokenLifetime, application.extIdTokenLifetime) &&
         Objects.equals(pkceMandatory, application.pkceMandatory) &&
-        Objects.equals(pkceSupportPlain, application.pkceSupportPlain);
+        Objects.equals(pkceSupportPlain, application.pkceSupportPlain) &&
+        Objects.equals(bypassClientCredentials, application.bypassClientCredentials);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain);
+    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain, bypassClientCredentials);
   }
 
   @Override
@@ -299,6 +318,7 @@ public class ApplicationDTO   {
     sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
     sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
+    sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
     sb.append("}");
     return sb.toString();
   }

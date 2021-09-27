@@ -37,6 +37,7 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private String applicationDisplayName;
     private Boolean pkceMandatory = false;
     private Boolean pkceSupportPlain = false;
+    private Boolean bypassClientCredentials = false;
 
     public Long getApplicationAccessTokenLifeTime() {
 
@@ -122,4 +123,11 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
         this.pkceSupportPlain = pkceSupportPlain;
     }
 
+    public Boolean getBypassClientCredentials() {
+        return bypassClientCredentials;
+    }
+
+    public void setBypassClientCredentials(Boolean bypassClientCredentials) {
+        this.bypassClientCredentials = bypassClientCredentials;
+    }
 }

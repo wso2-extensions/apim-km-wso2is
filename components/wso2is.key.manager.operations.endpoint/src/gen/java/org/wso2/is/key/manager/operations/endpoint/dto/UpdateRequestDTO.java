@@ -32,6 +32,7 @@ public class UpdateRequestDTO   {
     private Long extIdTokenLifetime = null;
     private Boolean pkceMandatory = null;
     private Boolean pkceSupportPlain = null;
+    private Boolean bypassClientCredentials = null;
 
   /**
    **/
@@ -125,7 +126,7 @@ public class UpdateRequestDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("application_display_name")
   public String getApplicationDisplayName() {
@@ -278,7 +279,7 @@ public class UpdateRequestDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("pkceMandatory")
   public Boolean isPkceMandatory() {
@@ -295,7 +296,7 @@ public class UpdateRequestDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("pkceSupportPlain")
   public Boolean isPkceSupportPlain() {
@@ -303,6 +304,23 @@ public class UpdateRequestDTO   {
   }
   public void setPkceSupportPlain(Boolean pkceSupportPlain) {
     this.pkceSupportPlain = pkceSupportPlain;
+  }
+
+  /**
+   **/
+  public UpdateRequestDTO bypassClientCredentials(Boolean bypassClientCredentials) {
+    this.bypassClientCredentials = bypassClientCredentials;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("bypassClientCredentials")
+  public Boolean isBypassClientCredentials() {
+    return bypassClientCredentials;
+  }
+  public void setBypassClientCredentials(Boolean bypassClientCredentials) {
+    this.bypassClientCredentials = bypassClientCredentials;
   }
 
 
@@ -330,12 +348,13 @@ public class UpdateRequestDTO   {
         Objects.equals(extRefreshTokenLifetime, updateRequest.extRefreshTokenLifetime) &&
         Objects.equals(extIdTokenLifetime, updateRequest.extIdTokenLifetime) &&
         Objects.equals(pkceMandatory, updateRequest.pkceMandatory) &&
-        Objects.equals(pkceSupportPlain, updateRequest.pkceSupportPlain);
+        Objects.equals(pkceSupportPlain, updateRequest.pkceSupportPlain) &&
+        Objects.equals(bypassClientCredentials, updateRequest.bypassClientCredentials);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain, bypassClientCredentials);
   }
 
   @Override
@@ -359,6 +378,7 @@ public class UpdateRequestDTO   {
     sb.append("    extIdTokenLifetime: ").append(toIndentedString(extIdTokenLifetime)).append("\n");
     sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
+    sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
     sb.append("}");
     return sb.toString();
   }
