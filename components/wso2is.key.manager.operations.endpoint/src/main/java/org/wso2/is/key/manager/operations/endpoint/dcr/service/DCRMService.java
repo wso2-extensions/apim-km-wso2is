@@ -161,10 +161,15 @@ public class DCRMService {
             if (updateRequest.getIdTokenLifeTime() != null) {
                 appDTO.setIdTokenExpiryTime(updateRequest.getIdTokenLifeTime());
             }
-            appDTO.setPkceMandatory(updateRequest.getPkceMandatory());
-            appDTO.setPkceSupportPlain(updateRequest.getPkceSupportPlain());
-            appDTO.setBypassClientCredentials(updateRequest.getBypassClientCredentials());
-
+            if (updateRequest.getPkceMandatory() != null) {
+                appDTO.setPkceMandatory(updateRequest.getPkceMandatory());
+            }
+            if (updateRequest.getPkceSupportPlain() != null) {
+                appDTO.setPkceSupportPlain(updateRequest.getPkceSupportPlain());
+            }
+            if (updateRequest.getBypassClientCredentials() != null) {
+                appDTO.setBypassClientCredentials(updateRequest.getBypassClientCredentials());
+            }
             oAuthAdminService.updateConsumerApplication(appDTO);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
@@ -444,6 +449,9 @@ public class DCRMService {
         application.setUserAccessTokenLifeTime(createdApp.getUserAccessTokenExpiryTime());
         application.setRefreshTokenLifeTime(createdApp.getRefreshTokenExpiryTime());
         application.setIdTokenLifeTime(createdApp.getIdTokenExpiryTime());
+        application.setPkceMandatory(createdApp.getPkceMandatory());
+        application.setPkceSupportPlain(createdApp.getPkceSupportPlain());
+        application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
         return application;
     }
 

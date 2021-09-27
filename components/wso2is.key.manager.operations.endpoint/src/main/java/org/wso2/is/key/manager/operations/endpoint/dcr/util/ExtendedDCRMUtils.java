@@ -194,8 +194,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setExtRefreshTokenLifetime(application.getRefreshTokenLifeTime());
         applicationDTO.setExtIdTokenLifetime(application.getIdTokenLifeTime());
         applicationDTO.setPkceMandatory(application.getPkceMandatory());
-        applicationDTO.setPkceMandatory(application.getPkceSupportPlain());
-        applicationDTO.setPkceMandatory(application.getBypassClientCredentials());
+        applicationDTO.setPkceSupportPlain(application.getPkceSupportPlain());
+        applicationDTO.setBypassClientCredentials(application.getBypassClientCredentials());
         return applicationDTO;
     }
 
