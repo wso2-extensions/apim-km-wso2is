@@ -509,6 +509,12 @@ definitions:
         type: string
       backchannel_logout_session_required:
         type: boolean
+      pkceMandatory:
+        type: boolean
+      pkceSupportPlain:
+        type: boolean
+      bypassClientCredentials:
+        type: boolean
 
     #-----------------------------------------------------
     # The Application Update Request Object
@@ -552,6 +558,12 @@ definitions:
         ext_id_token_lifetime:
           type: integer
           format: int64
+        pkceMandatory:
+          type: boolean
+        pkceSupportPlain:
+          type: boolean
+        bypassClientCredentials:
+          type: boolean
     #-----------------------------------------------------
     # The OAuth2 Application Object
     #-----------------------------------------------------
@@ -588,3 +600,9 @@ definitions:
         ext_id_token_lifetime:
           type: integer
           format: int64
+        pkceMandatory:
+          type: boolean
+        pkceSupportPlain:
+          type: boolean
+        bypassClientCredentials:
+          type: boolean

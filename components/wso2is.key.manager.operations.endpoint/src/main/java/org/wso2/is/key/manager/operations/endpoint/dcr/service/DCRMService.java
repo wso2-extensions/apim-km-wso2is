@@ -161,6 +161,15 @@ public class DCRMService {
             if (updateRequest.getIdTokenLifeTime() != null) {
                 appDTO.setIdTokenExpiryTime(updateRequest.getIdTokenLifeTime());
             }
+            if (updateRequest.getPkceMandatory() != null) {
+                appDTO.setPkceMandatory(updateRequest.getPkceMandatory());
+            }
+            if (updateRequest.getPkceSupportPlain() != null) {
+                appDTO.setPkceSupportPlain(updateRequest.getPkceSupportPlain());
+            }
+            if (updateRequest.getBypassClientCredentials() != null) {
+                appDTO.setBypassClientCredentials(updateRequest.getBypassClientCredentials());
+            }
             oAuthAdminService.updateConsumerApplication(appDTO);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
@@ -440,6 +449,9 @@ public class DCRMService {
         application.setUserAccessTokenLifeTime(createdApp.getUserAccessTokenExpiryTime());
         application.setRefreshTokenLifeTime(createdApp.getRefreshTokenExpiryTime());
         application.setIdTokenLifeTime(createdApp.getIdTokenExpiryTime());
+        application.setPkceMandatory(createdApp.getPkceMandatory());
+        application.setPkceSupportPlain(createdApp.getPkceSupportPlain());
+        application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
         return application;
     }
 
@@ -527,6 +539,9 @@ public class DCRMService {
         if (StringUtils.isNotEmpty(registrationRequest.getConsumerSecret())) {
             oAuthConsumerApp.setOauthConsumerSecret(registrationRequest.getConsumerSecret());
         }
+        oAuthConsumerApp.setPkceMandatory(registrationRequest.getPkceMandatory());
+        oAuthConsumerApp.setPkceSupportPlain(registrationRequest.getPkceSupportPlain());
+        oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
         if (log.isDebugEnabled()) {
             log.debug("Creating OAuth Application: " + spName + " in tenant: " + tenantDomain);
         }
