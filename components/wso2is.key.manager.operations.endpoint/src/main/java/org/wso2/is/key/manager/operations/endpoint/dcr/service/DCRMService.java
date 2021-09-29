@@ -539,9 +539,15 @@ public class DCRMService {
         if (StringUtils.isNotEmpty(registrationRequest.getConsumerSecret())) {
             oAuthConsumerApp.setOauthConsumerSecret(registrationRequest.getConsumerSecret());
         }
-        oAuthConsumerApp.setPkceMandatory(registrationRequest.getPkceMandatory());
-        oAuthConsumerApp.setPkceSupportPlain(registrationRequest.getPkceSupportPlain());
-        oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
+        if (registrationRequest.getPkceMandatory() != null) {
+            oAuthConsumerApp.setPkceMandatory(registrationRequest.getPkceMandatory());
+        }
+        if (registrationRequest.getPkceSupportPlain() != null) {
+            oAuthConsumerApp.setPkceSupportPlain(registrationRequest.getPkceSupportPlain());
+        }
+        if (registrationRequest.getBypassClientCredentials() != null) {
+            oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
+        }
         if (log.isDebugEnabled()) {
             log.debug("Creating OAuth Application: " + spName + " in tenant: " + tenantDomain);
         }
