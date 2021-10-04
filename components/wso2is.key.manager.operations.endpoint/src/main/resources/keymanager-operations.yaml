@@ -438,6 +438,8 @@ definitions:
         type: string
       domain:
         type: string
+      bindFederatedUserClaims:
+        type: boolean
 
   RegistrationRequest:
     type: object
