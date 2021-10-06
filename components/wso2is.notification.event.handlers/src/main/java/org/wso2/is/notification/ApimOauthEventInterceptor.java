@@ -19,6 +19,7 @@
 
 package org.wso2.is.notification;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -131,7 +132,12 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
         if (JWT.equalsIgnoreCase(oauthApp.getTokenType())
                 && StringUtils.countMatches(accessToken, NotificationConstants.DOT) == 2) {
             try {
-                accessToken = SignedJWT.parse(accessToken).getJWTClaimsSet().getJWTID();
+                JWTClaimsSet payload = SignedJWT.parse(accessToken).getJWTClaimsSet();
+                if (payload.getJWTID() != null) {
+                    accessToken = payload.getJWTID();
+                } else {
+                    accessToken = StringUtils.substringBefore(accessToken, NotificationConstants.DOT);
+                }
             } catch (ParseException e) {
                 log.error("Error while extracting the JTI from JWT token, for token revocation", e);
             }
