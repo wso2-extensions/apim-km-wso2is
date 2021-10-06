@@ -128,7 +128,8 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
      * @throws IdentityOAuth2Exception
      */
     private String getJWTid(String accessToken, OAuthAppDO oauthApp) {
-        if (JWT.equalsIgnoreCase(oauthApp.getTokenType()) && StringUtils.countMatches(accessToken, NotificationConstants.DOT) == 2) {
+        if (JWT.equalsIgnoreCase(oauthApp.getTokenType())
+                && StringUtils.countMatches(accessToken, NotificationConstants.DOT) == 2) {
             try {
                 accessToken = SignedJWT.parse(accessToken).getJWTClaimsSet().getJWTID();
             } catch (ParseException e) {
