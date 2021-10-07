@@ -132,11 +132,12 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
         if (JWT.equalsIgnoreCase(oauthApp.getTokenType())
                 && StringUtils.countMatches(accessToken, NotificationConstants.DOT) == 2) {
             try {
-                JWTClaimsSet payload = SignedJWT.parse(accessToken).getJWTClaimsSet();
+                SignedJWT signedJWT = SignedJWT.parse(accessToken);
+                JWTClaimsSet payload = signedJWT.getJWTClaimsSet();
                 if (payload.getJWTID() != null) {
                     accessToken = payload.getJWTID();
                 } else {
-                    accessToken = StringUtils.substringBefore(accessToken, NotificationConstants.DOT);
+                    accessToken = signedJWT.getSignature().toString();
                 }
             } catch (ParseException e) {
                 log.error("Error while extracting the JTI from JWT token, for token revocation", e);
