@@ -18,6 +18,7 @@ public class ClaimRequestDTO   {
     private String accessToken = null;
     private String dialect = null;
     private String domain = null;
+    private Boolean bindFederatedUserClaims = null;
 
   /**
    **/
@@ -87,6 +88,23 @@ public class ClaimRequestDTO   {
     this.domain = domain;
   }
 
+  /**
+   **/
+  public ClaimRequestDTO bindFederatedUserClaims(Boolean bindFederatedUserClaims) {
+    this.bindFederatedUserClaims = bindFederatedUserClaims;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("bindFederatedUserClaims")
+  public Boolean isBindFederatedUserClaims() {
+    return bindFederatedUserClaims;
+  }
+  public void setBindFederatedUserClaims(Boolean bindFederatedUserClaims) {
+    this.bindFederatedUserClaims = bindFederatedUserClaims;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -100,12 +118,13 @@ public class ClaimRequestDTO   {
     return Objects.equals(username, claimRequest.username) &&
         Objects.equals(accessToken, claimRequest.accessToken) &&
         Objects.equals(dialect, claimRequest.dialect) &&
-        Objects.equals(domain, claimRequest.domain);
+        Objects.equals(domain, claimRequest.domain) &&
+        Objects.equals(bindFederatedUserClaims, claimRequest.bindFederatedUserClaims);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(username, accessToken, dialect, domain);
+    return Objects.hash(username, accessToken, dialect, domain, bindFederatedUserClaims);
   }
 
   @Override
@@ -117,6 +136,7 @@ public class ClaimRequestDTO   {
     sb.append("    accessToken: ").append(toIndentedString(accessToken)).append("\n");
     sb.append("    dialect: ").append(toIndentedString(dialect)).append("\n");
     sb.append("    domain: ").append(toIndentedString(domain)).append("\n");
+    sb.append("    bindFederatedUserClaims: ").append(toIndentedString(bindFederatedUserClaims)).append("\n");
     sb.append("}");
     return sb.toString();
   }

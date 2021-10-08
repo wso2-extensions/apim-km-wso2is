@@ -26,6 +26,9 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.ClaimMapping;
 import org.wso2.carbon.user.api.UserRealmService;
@@ -71,7 +74,7 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
         Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping =
                 new HashMap<>();
         String username = properties.getUsername();
-        String accessToken;
+        String accessToken =  null;
         String dialect = DEFAULT_DIALECT_URI;
         if (!StringUtils.isEmpty(properties.getAccessToken())) {
             accessToken = properties.getAccessToken();
@@ -109,6 +112,25 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                         + "retrieved from the user store for user : " + userNameWithTenantDomain);
             }
         }
+
+        if (!StringUtils.isEmpty(accessToken)) {
+            try {
+                AccessTokenDO accessTokenDO = OAuth2Util.findAccessToken(accessToken, false);
+
+                // If the authenticated user is a federated user and not needed to bind federated user claims,
+                // no requirement to retrieve claims from local user store.
+                if (accessTokenDO.getAuthzUser() != null && accessTokenDO.getAuthzUser().isFederatedUser() &&
+                        !properties.isBindFederatedUserClaims()) {
+                    return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
+                }
+            } catch (IdentityOAuth2Exception e) {
+                log.error("Error while retrieving authenticated userinfo from token identifier. ", e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(UserInfoUtil
+                        .getError(Response.Status.INTERNAL_SERVER_ERROR.toString(), "Internal server error",
+                                "Error while retrieving the authenticated " + "userinfo")).build();
+            }
+        }
+
         RealmService realm = (RealmService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(RealmService.class, null);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
