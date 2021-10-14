@@ -70,6 +70,11 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                             "Payload not found in Request body"))
                     .build();
         }
+
+        if (properties.isBindFederatedUserClaims() == null) {
+            properties.setBindFederatedUserClaims(true);
+        }
+
         Map<String, String> customClaims = new HashMap<>();
         Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping =
                 new HashMap<>();
