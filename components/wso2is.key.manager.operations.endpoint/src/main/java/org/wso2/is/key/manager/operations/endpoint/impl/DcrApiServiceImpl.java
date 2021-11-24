@@ -30,6 +30,7 @@ import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
+import java.util.Base64;
 import javax.ws.rs.core.Response;
 
 /**
@@ -38,6 +39,7 @@ import javax.ws.rs.core.Response;
 public class DcrApiServiceImpl implements DcrApiService {
 
     private static final Log LOG = LogFactory.getLog(DcrApiServiceImpl.class);
+    private static final String encodeConsumerKey = "encodeConsumerKey";
 
     private DCRMService service = new DCRMService();
 
@@ -74,6 +76,10 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response getApplication(String clientId, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
+            String isConsumerKeyEncoded = System.getProperty(encodeConsumerKey, "false");
+            if (isConsumerKeyEncoded.equalsIgnoreCase("true")) {
+                clientId = new String(Base64.getDecoder().decode(clientId), "UTF-8");
+            }
             ExtendedApplication application = service.getApplication(clientId);
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (DCRMClientException e) {
