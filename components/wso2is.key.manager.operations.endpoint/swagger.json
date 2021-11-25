@@ -167,9 +167,9 @@
           "required" : true,
           "type" : "string"
         }, {
-          "name" : "decodeKey",
+          "name" : "encoded",
           "in" : "query",
-          "description" : "Describe whether the consumer key should be decoded or not",
+          "description" : "Describe whether the consumer key is encoded or not",
           "required" : false,
           "type" : "boolean"
         } ],

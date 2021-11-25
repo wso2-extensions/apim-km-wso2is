@@ -205,9 +205,9 @@ paths:
           in: path
           description: Unique identifier of the OAuth2 client application.
           required: true
-        - name: decodeKey
+        - name: encoded
           in: query
-          description: Describe whether the consumer key should be decoded or not
+          description: Describe whether the consumer key is encoded or not
           type: boolean
         responses:
           '200':

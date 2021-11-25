@@ -72,10 +72,10 @@ public class DcrApiServiceImpl implements DcrApiService {
     }
 
     @Override
-    public Response getApplication(String clientId, Boolean decodeKey, MessageContext messageContext) {
+    public Response getApplication(String clientId, Boolean encoded, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
-            if (decodeKey == true) {
+            if (encoded == true) {
                 clientId = new String(Base64.getUrlDecoder().decode(clientId), "UTF-8");
             }
             ExtendedApplication application = service.getApplication(clientId);

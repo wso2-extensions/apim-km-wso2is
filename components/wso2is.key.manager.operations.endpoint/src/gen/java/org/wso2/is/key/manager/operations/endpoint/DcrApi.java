@@ -72,8 +72,8 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 200, message = "Successfully Retrieved", response = ApplicationDTO.class),
         @ApiResponse(code = 404, message = "Not Found", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
-    public Response getApplication(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("client_id") String clientId,  @ApiParam(value = "Describe whether the consumer key should be decoded or not")  @QueryParam("decodeKey") Boolean decodeKey){
-        return delegate.getApplication(clientId, decodeKey, securityContext);
+    public Response getApplication(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("client_id") String clientId,  @ApiParam(value = "Describe whether the consumer key is encoded or not")  @QueryParam("encoded") Boolean encoded){
+        return delegate.getApplication(clientId, encoded, securityContext);
     }
 
     @POST
