@@ -73,12 +73,11 @@ public class DcrApiServiceImpl implements DcrApiService {
     }
 
     @Override
-    public Response getApplication(String clientId, MessageContext messageContext) {
+    public Response getApplication(String clientId, Boolean decodeKey, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
-            String isConsumerKeyEncoded = System.getProperty(encodeConsumerKey, "false");
-            if (isConsumerKeyEncoded.equalsIgnoreCase("true")) {
-                clientId = new String(Base64.getDecoder().decode(clientId), "UTF-8");
+            if (decodeKey == true) {
+                clientId = new String(Base64.getUrlDecoder().decode(clientId), "UTF-8");
             }
             ExtendedApplication application = service.getApplication(clientId);
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
