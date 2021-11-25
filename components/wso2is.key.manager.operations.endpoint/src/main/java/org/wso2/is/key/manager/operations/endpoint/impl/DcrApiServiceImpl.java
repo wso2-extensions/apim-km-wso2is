@@ -39,7 +39,6 @@ import javax.ws.rs.core.Response;
 public class DcrApiServiceImpl implements DcrApiService {
 
     private static final Log LOG = LogFactory.getLog(DcrApiServiceImpl.class);
-    private static final String encodeConsumerKey = "encodeConsumerKey";
 
     private DCRMService service = new DCRMService();
 
