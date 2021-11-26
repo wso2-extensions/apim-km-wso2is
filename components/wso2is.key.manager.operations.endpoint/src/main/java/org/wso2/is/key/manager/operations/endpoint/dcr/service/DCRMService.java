@@ -199,7 +199,7 @@ public class DCRMService {
      * @param sp                     Service provider
      * @param applicationDisplayName Display name of the application
      */
-    public void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
+    private void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
 
         // Retrieve existing service provider properties
         ServiceProviderProperty[] serviceProviderProperties = sp.getSpProperties();
