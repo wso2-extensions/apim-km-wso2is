@@ -30,6 +30,7 @@ import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
+import java.util.Base64;
 import javax.ws.rs.core.Response;
 
 /**
@@ -74,7 +75,8 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response getApplication(String clientId, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
-            ExtendedApplication application = service.getApplication(clientId);
+            ExtendedApplication application = service.getApplication(new String(Base64.getUrlDecoder().decode(
+                    clientId), "UTF-8"));
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
