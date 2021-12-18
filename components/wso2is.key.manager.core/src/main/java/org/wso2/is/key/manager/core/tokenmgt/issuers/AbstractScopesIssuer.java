@@ -34,7 +34,6 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
-import org.wso2.is.key.manager.core.tokenmgt.TokenMgtException;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 
@@ -148,16 +147,6 @@ public abstract class AbstractScopesIssuer {
         //Need to get app scopes via IS tables or service
         if (scopes != null) {
             appScopes = getAppScopes(scopes);
-        }
-        //Add API Manager rest API scopes set. This list should be loaded at server start up and keep
-        //in memory and add it to each and every request coming.
-        try {
-            Map<String, String> restAPIScopes = TokenMgtUtil.getRESTAPIScopesForTenant(tenantDomain);
-            if (!restAPIScopes.isEmpty()) {
-                appScopes.putAll(restAPIScopes);
-            }
-        } catch (TokenMgtException e) {
-            log.error("Error while getting scopes of application " + e.getMessage(), e);
         }
         return appScopes;
     }
