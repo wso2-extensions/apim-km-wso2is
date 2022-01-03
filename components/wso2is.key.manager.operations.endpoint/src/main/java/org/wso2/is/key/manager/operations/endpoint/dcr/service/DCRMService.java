@@ -930,7 +930,7 @@ public class DCRMService {
         appDTO.setUsername(applicationOwner);
 
         String newApplicationName = "";
-        if (!previousOwner.equals(applicationOwner)) {
+        if (!StringUtils.equals(previousOwner, applicationOwner)) {
             String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
             String appName = StringUtils.substringBetween(appDTO.getApplicationName(), previousOwner.replace("/", "_"),
                     keyType);
