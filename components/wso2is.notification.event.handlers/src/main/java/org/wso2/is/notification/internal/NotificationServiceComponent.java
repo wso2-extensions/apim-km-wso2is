@@ -15,6 +15,7 @@ import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.oauth.event.OAuthEventInterceptor;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import org.wso2.is.notification.APIMTokenExchangeAuditLogger;
 import org.wso2.is.notification.ApimOauthEventInterceptor;
 
 /**
@@ -25,6 +26,7 @@ public class NotificationServiceComponent {
 
     private static final Log log = LogFactory.getLog(NotificationServiceComponent.class);
     ServiceRegistration<OAuthEventInterceptor> serviceRegistration;
+    private ServiceRegistration<OAuthEventInterceptor> auditLoggerServiceRegistration;
 
     @Activate
     protected void activate(ComponentContext componentContext) throws Exception {
@@ -32,6 +34,8 @@ public class NotificationServiceComponent {
         BundleContext bundleContext = componentContext.getBundleContext();
         serviceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new ApimOauthEventInterceptor(), null);
+        auditLoggerServiceRegistration =
+                bundleContext.registerService(OAuthEventInterceptor.class, new APIMTokenExchangeAuditLogger(), null);
     }
 
     @Reference(
@@ -88,6 +92,9 @@ public class NotificationServiceComponent {
 
         if (serviceRegistration != null) {
             serviceRegistration.unregister();
+        }
+        if (auditLoggerServiceRegistration != null) {
+            auditLoggerServiceRegistration.unregister();
         }
         if (log.isDebugEnabled()) {
             log.info("Oauth Listeners disabled");

@@ -34,6 +34,10 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private Long userAccessTokenLifeTime;
     private Long refreshTokenLifeTime;
     private Long idTokenLifeTime;
+    private String applicationDisplayName;
+    private Boolean pkceMandatory = false;
+    private Boolean pkceSupportPlain = false;
+    private Boolean bypassClientCredentials = false;
 
     public Long getApplicationAccessTokenLifeTime() {
 
@@ -89,4 +93,41 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
         this.applicationOwner = applicationOwner;
     }
 
+    /**
+     *
+     * @return applicationDisplayName
+     */
+    public String getApplicationDisplayName() {
+
+        return applicationDisplayName;
+    }
+
+    public void setApplicationDisplayName(String applicationDisplayName) {
+
+        this.applicationDisplayName = applicationDisplayName;
+    }
+
+    public Boolean getPkceMandatory() {
+        return pkceMandatory;
+    }
+
+    public void setPkceMandatory(Boolean pkceMandatory) {
+        this.pkceMandatory = pkceMandatory;
+    }
+
+    public Boolean getPkceSupportPlain() {
+        return pkceSupportPlain;
+    }
+
+    public void setPkceSupportPlain(Boolean pkceSupportPlain) {
+        this.pkceSupportPlain = pkceSupportPlain;
+    }
+
+    public Boolean getBypassClientCredentials() {
+        return bypassClientCredentials;
+    }
+
+    public void setBypassClientCredentials(Boolean bypassClientCredentials) {
+        this.bypassClientCredentials = bypassClientCredentials;
+    }
 }

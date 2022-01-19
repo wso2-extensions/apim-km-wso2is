@@ -17,8 +17,10 @@
  */
 package org.wso2.is.key.manager.operations.endpoint.dcr.util;
 
+import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
+import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.oauth.OAuthAdminService;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
@@ -67,6 +69,10 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setUserAccessTokenLifeTime(registrationRequestDTO.getExtUserTokenLifetime());
         appRegistrationRequest.setRefreshTokenLifeTime(registrationRequestDTO.getExtRefreshTokenLifetime());
         appRegistrationRequest.setIdTokenLifeTime(registrationRequestDTO.getExtIdTokenLifetime());
+        appRegistrationRequest.setApplicationDisplayName(registrationRequestDTO.getApplicationDisplayName());
+        appRegistrationRequest.setPkceMandatory(registrationRequestDTO.isPkceMandatory());
+        appRegistrationRequest.setPkceSupportPlain(registrationRequestDTO.isPkceSupportPlain());
+        appRegistrationRequest.setBypassClientCredentials(registrationRequestDTO.isBypassClientCredentials());
         return appRegistrationRequest;
 
     }
@@ -84,7 +90,10 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationUpdateRequest.setUserAccessTokenLifeTime(updateRequestDTO.getExtUserTokenLifetime());
         applicationUpdateRequest.setRefreshTokenLifeTime(updateRequestDTO.getExtRefreshTokenLifetime());
         applicationUpdateRequest.setIdTokenLifeTime(updateRequestDTO.getExtIdTokenLifetime());
-
+        applicationUpdateRequest.setApplicationDisplayName(updateRequestDTO.getApplicationDisplayName());
+        applicationUpdateRequest.setPkceMandatory(updateRequestDTO.isPkceMandatory());
+        applicationUpdateRequest.setPkceSupportPlain(updateRequestDTO.isPkceSupportPlain());
+        applicationUpdateRequest.setBypassClientCredentials(updateRequestDTO.isBypassClientCredentials());
         return applicationUpdateRequest;
 
     }
@@ -186,6 +195,9 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setExtUserTokenLifetime(application.getUserAccessTokenLifeTime());
         applicationDTO.setExtRefreshTokenLifetime(application.getRefreshTokenLifeTime());
         applicationDTO.setExtIdTokenLifetime(application.getIdTokenLifeTime());
+        applicationDTO.setPkceMandatory(application.getPkceMandatory());
+        applicationDTO.setPkceSupportPlain(application.getPkceSupportPlain());
+        applicationDTO.setBypassClientCredentials(application.getBypassClientCredentials());
         return applicationDTO;
     }
 
@@ -216,4 +228,17 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         }
     }
 
+
+    /**
+     * Create a deep copy of the input Service Provider.
+     *
+     * @param serviceProvider Service Provider.
+     * @return Clone of serviceProvider.
+     */
+    public static ServiceProvider cloneServiceProvider(ServiceProvider serviceProvider) {
+
+        Gson gson = new Gson();
+        ServiceProvider clonedServiceProvider = gson.fromJson(gson.toJson(serviceProvider), ServiceProvider.class);
+        return clonedServiceProvider;
+    }
 }

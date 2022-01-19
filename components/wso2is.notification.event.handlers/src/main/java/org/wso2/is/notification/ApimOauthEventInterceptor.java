@@ -19,6 +19,8 @@
 
 package org.wso2.is.notification;
 
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,6 +42,7 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.is.notification.event.TokenRevocationEvent;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,6 +57,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     String username;
     char[] password;
     private EventSender eventSender;
+    private static final String JWT = "JWT";
 
     public ApimOauthEventInterceptor() {
 
@@ -107,11 +111,39 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                 ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getDomain(tenantID);
         OAuthAppDO oauthApp = OAuth2Util.getAppInformationByClientId(accessTokenDO.getConsumerKey());
         String tokenType = oauthApp.getTokenType();
+        accessToken = getJWTid(accessToken, oauthApp);
         TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(accessToken, expiryTime, user,
                 accessTokenDO.getConsumerKey(), tokenType);
         tokenRevocationEvent.setTenantId(tenantID);
         tokenRevocationEvent.setTenantDomain(tenantDomain);
         return tokenRevocationEvent;
+    }
+
+    /**
+     * If the usePersistedAccessTokenAlias is set to false in KM, full JWT token is saved in the DB.
+     * The JTI should be extracted and used within the revocation event.
+     *
+     * @param accessToken
+     * @param oauthApp
+     * @return Extracted JTI if the full accessToken is given.
+     * @throws IdentityOAuth2Exception
+     */
+    private String getJWTid(String accessToken, OAuthAppDO oauthApp) {
+        if (JWT.equalsIgnoreCase(oauthApp.getTokenType())
+                && StringUtils.countMatches(accessToken, NotificationConstants.DOT) == 2) {
+            try {
+                SignedJWT signedJWT = SignedJWT.parse(accessToken);
+                JWTClaimsSet payload = signedJWT.getJWTClaimsSet();
+                if (payload.getJWTID() != null) {
+                    accessToken = payload.getJWTID();
+                } else {
+                    accessToken = signedJWT.getSignature().toString();
+                }
+            } catch (ParseException e) {
+                log.error("Error while extracting the JTI from JWT token, for token revocation", e);
+            }
+        }
+        return accessToken;
     }
 
     @Override
@@ -128,6 +160,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                 String user = accessTokenDO.getAuthzUser().getUserName();
                 OAuthAppDO oauthApp = OAuth2Util.getAppInformationByClientId(accessTokenDO.getConsumerKey());
                 String tokenType = oauthApp.getTokenType();
+                accessToken = getJWTid(accessToken, oauthApp);
                 TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(accessToken, expiryTime, user,
                         accessTokenDO.getConsumerKey(), tokenType);
                 publishEvent(tokenRevocationEvent);
@@ -169,7 +202,8 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                     (RefreshTokenValidationDataDO) tokReqMsgCtx.getProperty(RefreshGrantHandler.PREV_ACCESS_TOKEN);
             OAuthAppDO oAuthAppDO =
                     (OAuthAppDO) tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
-            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(previousAccessToken.getAccessToken()
+            String tokenToRevoke = getJWTid(previousAccessToken.getAccessToken(), oAuthAppDO);
+            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke
                     , previousAccessToken.getIssuedTime().getTime() + previousAccessToken.getValidityPeriodInMillis()
                     , previousAccessToken.getAuthorizedUser().getUserName(), oAuthAppDO.getOauthConsumerKey(),
                     oAuthAppDO.getTokenType());

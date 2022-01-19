@@ -26,6 +26,9 @@ import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.ClaimMapping;
 import org.wso2.carbon.user.api.UserRealmService;
@@ -41,7 +44,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
 import javax.ws.rs.core.Response;
 
 import static org.apache.commons.collections.MapUtils.isNotEmpty;
@@ -68,11 +70,16 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                             "Payload not found in Request body"))
                     .build();
         }
-        Map<String, String> customClaims = null;
+
+        if (properties.isBindFederatedUserClaims() == null) {
+            properties.setBindFederatedUserClaims(true);
+        }
+
+        Map<String, String> customClaims = new HashMap<>();
         Map<org.wso2.carbon.identity.application.common.model.ClaimMapping, String> customClaimsWithMapping =
                 new HashMap<>();
         String username = properties.getUsername();
-        String accessToken;
+        String accessToken =  null;
         String dialect = DEFAULT_DIALECT_URI;
         if (!StringUtils.isEmpty(properties.getAccessToken())) {
             accessToken = properties.getAccessToken();
@@ -94,8 +101,8 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
         String userNameWithTenantDomain = username + "@" + tenantDomain;
 
         try {
-            customClaims = UserInfoUtil.convertClaimMap(customClaimsWithMapping, userNameWithTenantDomain, dialect,
-                    convertDialect);
+            customClaims.putAll(UserInfoUtil.convertClaimMap(customClaimsWithMapping, userNameWithTenantDomain, dialect,
+                    convertDialect));
         } catch (Exception e) {
             log.error("Error while retrieving user claims from AuthorizationGrantCache ", e);
         }
@@ -110,27 +117,38 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                         + "retrieved from the user store for user : " + userNameWithTenantDomain);
             }
         }
+
+        if (!StringUtils.isEmpty(accessToken)) {
+            try {
+                AccessTokenDO accessTokenDO = OAuth2Util.findAccessToken(accessToken, false);
+
+                // If the authenticated user is a federated user and not needed to bind federated user claims,
+                // no requirement to retrieve claims from local user store.
+                if (accessTokenDO.getAuthzUser() != null && accessTokenDO.getAuthzUser().isFederatedUser() &&
+                        !properties.isBindFederatedUserClaims()) {
+                    return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
+                }
+            } catch (IdentityOAuth2Exception e) {
+                log.error("Error while retrieving authenticated userinfo from token identifier. ", e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(UserInfoUtil
+                        .getError(Response.Status.INTERNAL_SERVER_ERROR.toString(), "Internal server error",
+                                "Error while retrieving the authenticated " + "userinfo")).build();
+            }
+        }
+
         RealmService realm = (RealmService) PrivilegedCarbonContext.getThreadLocalCarbonContext()
                 .getOSGiService(RealmService.class, null);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         try {
             if (!realm.getTenantUserRealm(tenantId).getUserStoreManager().isExistingUser(username)) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(UserInfoUtil.getError(Response.Status.NOT_FOUND.toString(), "User not found",
-                                "Requested user " + username + " does not exist."))
-                        .build();
+                log.warn("Requested user " + username + " does not exist.");
+            } else {
+                customClaims.putAll(getClaims(username, tenantId, dialect, realm));
             }
-            if (customClaims == null) {
-                customClaims = new HashMap<>();
-            }
-            customClaims.putAll(getClaims(username, tenantId, dialect, realm));
-            return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
         } catch (UserStoreException e) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(UserInfoUtil.getError(Response.Status.INTERNAL_SERVER_ERROR.toString(),
-                            "Internal server error", "Error while accessing the user store"))
-                    .build();
+            log.error("Error while accessing the user store", e);
         }
+        return Response.ok().entity(UserInfoUtil.getListDTOfromClaimsMap(customClaims)).build();
     }
 
     @Override

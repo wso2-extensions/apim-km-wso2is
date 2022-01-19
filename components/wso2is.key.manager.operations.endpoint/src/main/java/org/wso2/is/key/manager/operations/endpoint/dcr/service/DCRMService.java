@@ -18,6 +18,7 @@
 
 package org.wso2.is.key.manager.operations.endpoint.dcr.service;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,6 +29,7 @@ import org.wso2.carbon.identity.application.common.model.InboundAuthenticationCo
 import org.wso2.carbon.identity.application.common.model.InboundAuthenticationRequestConfig;
 import org.wso2.carbon.identity.application.common.model.LocalAndOutboundAuthenticationConfig;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.application.common.model.ServiceProviderProperty;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.application.mgt.ApplicationMgtUtil;
@@ -48,8 +50,10 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -60,12 +64,14 @@ import java.util.regex.Pattern;
 public class DCRMService {
 
     private static final Log log = LogFactory.getLog(DCRMService.class);
+    public static final String OVERRIDE_SP_NAME = "override.sp.name";
     private static OAuthAdminService oAuthAdminService = new OAuthAdminService();
     private ApplicationManagementService appMgtService;
 
     private static final String AUTH_TYPE_OAUTH_2 = "oauth2";
     private static final String OAUTH_VERSION = "OAuth-2.0";
     private static final String GRANT_TYPE_SEPARATOR = " ";
+    private static final String APP_DISPLAY_NAME = "DisplayName";
     private static Pattern clientIdRegexPattern = null;
 
     public DCRMService() {
@@ -100,20 +106,36 @@ public class DCRMService {
         OAuthConsumerAppDTO appDTO = getApplicationById(clientId);
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         String applicationOwner = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
+        String overrideSpNameProp = System.getProperty(OVERRIDE_SP_NAME);
+        boolean overrideSpName = StringUtils.isEmpty(overrideSpNameProp) || Boolean.parseBoolean(overrideSpNameProp);
+
         String clientName = updateRequest.getClientName();
 
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
+        if (sp == null) {
+            throw DCRMUtils.generateClientException(DCRMConstants.ErrorMessages.FAILED_TO_GET_SP,
+                    appDTO.getApplicationName(), null);
+        }
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
+
+        // Update service provider property list with display name property
+        updateServiceProviderPropertyList(sp, updateRequest.getApplicationDisplayName());
+
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
             if (!DCRMUtils.isRegexValidated(clientName)) {
                 throw DCRMUtils.generateClientException(ErrorMessages.BAD_REQUEST_INVALID_SP_NAME,
                         DCRMUtils.getSPValidatorRegex());
             }
-            sp.setApplicationName(clientName);
-            updateServiceProvider(sp, tenantDomain, applicationOwner);
+            // Need to create a deep clone, since modifying the fields of the original object,
+            // will modify the cached SP object.
+            ServiceProvider clonedSP = ExtendedDCRMUtils.cloneServiceProvider(sp);
+            if (overrideSpName) {
+                clonedSP.setApplicationName(clientName);
+            }
+            updateServiceProvider(clonedSP, tenantDomain, applicationOwner);
         }
 
         // Update application
@@ -154,6 +176,15 @@ public class DCRMService {
             if (updateRequest.getIdTokenLifeTime() != null) {
                 appDTO.setIdTokenExpiryTime(updateRequest.getIdTokenLifeTime());
             }
+            if (updateRequest.getPkceMandatory() != null) {
+                appDTO.setPkceMandatory(updateRequest.getPkceMandatory());
+            }
+            if (updateRequest.getPkceSupportPlain() != null) {
+                appDTO.setPkceSupportPlain(updateRequest.getPkceSupportPlain());
+            }
+            if (updateRequest.getBypassClientCredentials() != null) {
+                appDTO.setBypassClientCredentials(updateRequest.getBypassClientCredentials());
+            }
             oAuthAdminService.updateConsumerApplication(appDTO);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
@@ -161,6 +192,34 @@ public class DCRMService {
         }
 
         return buildResponse(getApplicationById(clientId));
+    }
+
+    /**
+     * Update service provider property list
+     *
+     * @param sp                     Service provider
+     * @param applicationDisplayName Display name of the application
+     */
+    private void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
+
+        // Retrieve existing service provider properties
+        ServiceProviderProperty[] serviceProviderProperties = sp.getSpProperties();
+
+        boolean isDisplayNameSet = Arrays.stream(serviceProviderProperties)
+                .anyMatch(property -> property.getName().equals(APP_DISPLAY_NAME));
+        if (!isDisplayNameSet) {
+            // Append application display name related property
+            // This property is used when displaying the app name within the consent page
+            ServiceProviderProperty serviceProviderProperty = new ServiceProviderProperty();
+            serviceProviderProperty.setName(APP_DISPLAY_NAME);
+            serviceProviderProperty.setValue(applicationDisplayName);
+            serviceProviderProperties = (ServiceProviderProperty[]) ArrayUtils.add(serviceProviderProperties,
+                    serviceProviderProperty);
+
+            // Update service provider property list
+            sp.setSpProperties(serviceProviderProperties);
+        }
+
     }
 
     /**
@@ -366,6 +425,9 @@ public class DCRMService {
             throw ex;
         }
 
+        // Update service provider property list with display name property
+        updateServiceProviderPropertyList(serviceProvider, registrationRequest.getApplicationDisplayName());
+
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);
         } catch (DCRMException ex) {
@@ -402,6 +464,9 @@ public class DCRMService {
         application.setUserAccessTokenLifeTime(createdApp.getUserAccessTokenExpiryTime());
         application.setRefreshTokenLifeTime(createdApp.getRefreshTokenExpiryTime());
         application.setIdTokenLifeTime(createdApp.getIdTokenExpiryTime());
+        application.setPkceMandatory(createdApp.getPkceMandatory());
+        application.setPkceSupportPlain(createdApp.getPkceSupportPlain());
+        application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
         return application;
     }
 
@@ -431,7 +496,7 @@ public class DCRMService {
                 .toArray(new InboundAuthenticationRequestConfig[0]));
         serviceProvider.setInboundAuthenticationConfig(inboundAuthenticationConfig);
         //Set SaaS app option
-        serviceProvider.setSaasApp(false);
+        serviceProvider.setSaasApp(true);
 
 
         // set tenant domain in local subject identifier true, so that the authenticated subject identifier of auth
@@ -497,6 +562,15 @@ public class DCRMService {
 
         if (StringUtils.isNotEmpty(registrationRequest.getConsumerSecret())) {
             oAuthConsumerApp.setOauthConsumerSecret(registrationRequest.getConsumerSecret());
+        }
+        if (registrationRequest.getPkceMandatory() != null) {
+            oAuthConsumerApp.setPkceMandatory(registrationRequest.getPkceMandatory());
+        }
+        if (registrationRequest.getPkceSupportPlain() != null) {
+            oAuthConsumerApp.setPkceSupportPlain(registrationRequest.getPkceSupportPlain());
+        }
+        if (registrationRequest.getBypassClientCredentials() != null) {
+            oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
         }
         if (log.isDebugEnabled()) {
             log.debug("Creating OAuth Application: " + spName + " in tenant: " + tenantDomain);
@@ -860,8 +934,22 @@ public class DCRMService {
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
         sp.setOwner(User.getUserFromUserName(applicationOwner));
+
+        String previousOwner = MultitenantUtils.getTenantAwareUsername(appDTO.getUsername());
         updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()));
         appDTO.setUsername(applicationOwner);
+
+        String newApplicationName = "";
+        if (!StringUtils.equals(previousOwner, applicationOwner)) {
+            String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
+            String appName = StringUtils.substringBetween(appDTO.getApplicationName(), previousOwner.replace("/", "_"),
+                    keyType);
+            newApplicationName = MultitenantUtils.getTenantAwareUsername(applicationOwner.replace("/", "_")) + appName
+                    + keyType;
+            sp.setApplicationName(newApplicationName);
+        }
+        updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(applicationOwner));
+        appDTO.setApplicationName(newApplicationName);
 
         // Update application
         try {

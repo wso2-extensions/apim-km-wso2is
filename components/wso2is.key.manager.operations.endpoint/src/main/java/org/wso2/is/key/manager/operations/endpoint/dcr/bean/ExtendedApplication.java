@@ -37,6 +37,9 @@ public class ExtendedApplication extends Application implements Serializable {
     private long userAccessTokenLifeTime;
     private long refreshTokenLifeTime;
     private long idTokenLifeTime;
+    private Boolean pkceMandatory = false;
+    private Boolean pkceSupportPlain = false;
+    private Boolean bypassClientCredentials = false;
 
     public long getApplicationAccessTokenLifeTime() {
 
@@ -94,6 +97,30 @@ public class ExtendedApplication extends Application implements Serializable {
 
     public void setGrantTypes(List<String> grantTypes) {
         this.grantTypes = grantTypes;
+    }
+
+    public Boolean getPkceMandatory() {
+        return pkceMandatory;
+    }
+
+    public void setPkceMandatory(Boolean pkceMandatory) {
+        this.pkceMandatory = pkceMandatory;
+    }
+
+    public Boolean getPkceSupportPlain() {
+        return pkceSupportPlain;
+    }
+
+    public void setPkceSupportPlain(Boolean pkceSupportPlain) {
+        this.pkceSupportPlain = pkceSupportPlain;
+    }
+
+    public Boolean getBypassClientCredentials() {
+        return bypassClientCredentials;
+    }
+
+    public void setBypassClientCredentials(Boolean bypassClientCredentials) {
+        this.bypassClientCredentials = bypassClientCredentials;
     }
 
 }
