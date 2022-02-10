@@ -199,7 +199,7 @@ public class DCRMService {
      * @param sp                     Service provider
      * @param applicationDisplayName Display name of the application
      */
-    public void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
+    private void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
 
         // Retrieve existing service provider properties
         ServiceProviderProperty[] serviceProviderProperties = sp.getSpProperties();
@@ -930,7 +930,7 @@ public class DCRMService {
         appDTO.setUsername(applicationOwner);
 
         String newApplicationName = "";
-        if (!previousOwner.equals(applicationOwner)) {
+        if (!StringUtils.equals(previousOwner, applicationOwner)) {
             String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
             String appName = StringUtils.substringBetween(appDTO.getApplicationName(), previousOwner.replace("/", "_"),
                     keyType);

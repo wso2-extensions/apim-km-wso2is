@@ -30,6 +30,8 @@ import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import javax.ws.rs.core.Response;
 
 /**
@@ -45,6 +47,7 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response changeApplicationOwner(String applicationOwner, String clientId, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
             ExtendedApplication application = service.updateApplicationOwner(applicationOwner, clientId);
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (Throwable throwable) {
@@ -57,6 +60,7 @@ public class DcrApiServiceImpl implements DcrApiService {
     @Override
     public Response deleteApplication(String clientId, MessageContext messageContext) {
         try {
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
             service.deleteApplication(clientId);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
@@ -74,6 +78,7 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response getApplication(String clientId, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
             ExtendedApplication application = service.getApplication(clientId);
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (DCRMClientException e) {
@@ -92,6 +97,7 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response regenerateConsumerSecret(String clientId, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
             ExtendedApplication application = service.getNewApplicationConsumerSecret(clientId);
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (Throwable throwable) {
@@ -126,8 +132,9 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response updateApplication(UpdateRequestDTO updateRequest, String clientId, MessageContext messageContext) {
         ApplicationDTO applicationDTO = null;
         try {
-            ExtendedApplication application = service
-                    .updateApplication(ExtendedDCRMUtils.getApplicationUpdateRequest(updateRequest), clientId);
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+            ExtendedApplication application = service.updateApplication(ExtendedDCRMUtils.getApplicationUpdateRequest(
+                    updateRequest), clientId);
 
             applicationDTO = ExtendedDCRMUtils.getApplicationDTOFromApplication(application);
         } catch (DCRMClientException e) {
