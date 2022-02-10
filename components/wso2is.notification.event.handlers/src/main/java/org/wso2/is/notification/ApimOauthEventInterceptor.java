@@ -203,10 +203,10 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             OAuthAppDO oAuthAppDO =
                     (OAuthAppDO) tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
             String tokenToRevoke = getJWTid(previousAccessToken.getAccessToken(), oAuthAppDO);
-            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke
-                    , previousAccessToken.getIssuedTime().getTime() + previousAccessToken.getValidityPeriodInMillis()
-                    , previousAccessToken.getAuthorizedUser().getUserName(), oAuthAppDO.getOauthConsumerKey(),
-                    oAuthAppDO.getTokenType());
+            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke,
+                    previousAccessToken.getAccessTokenIssuedTime().getTime() + previousAccessToken
+                            .getAccessTokenValidityInMillis(), previousAccessToken.getAuthorizedUser().getUserName(),
+                    oAuthAppDO.getOauthConsumerKey(), oAuthAppDO.getTokenType());
             String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
             tokenRevocationEvent.setTenantDomain(tenantDomain);
             try {
