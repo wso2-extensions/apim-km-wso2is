@@ -354,7 +354,7 @@
     </scm>
     <properties>
         <carbon.apimgt.version>6.7.206</carbon.apimgt.version>
-        <carbon.identity.version>5.18.187</carbon.identity.version>
+        <carbon.identity.version>5.18.238</carbon.identity.version>
         <carbon.identity-oauth2-grant-jwt.version>1.0.26</carbon.identity-oauth2-grant-jwt.version>
         <json.simple.version>1.1</json.simple.version>
         <json-simple.wso2.version>1.1.wso2v1</json-simple.wso2.version>
@@ -371,7 +371,7 @@
         <project.version>1.0.0-SNAPSHOT</project.version>
         <imp.package.version.osgi.framework>[1.6.0, 2.0.0)</imp.package.version.osgi.framework>
         <imp.package.version.osgi.service>[1.2.0,1.3.0)</imp.package.version.osgi.service>
-        <carbon.identity-inbound-auth-oauth.version>6.4.111</carbon.identity-inbound-auth-oauth.version>
+        <carbon.identity-inbound-auth-oauth.version>6.4.168</carbon.identity-inbound-auth-oauth.version>
         <carbon.identity-data-publisher-application-authentication.version>5.3.19
         </carbon.identity-data-publisher-application-authentication.version>
         <http.client.version>4.3.6.wso2v1</http.client.version>
