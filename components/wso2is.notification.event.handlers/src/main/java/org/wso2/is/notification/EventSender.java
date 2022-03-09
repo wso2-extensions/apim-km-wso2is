@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -39,7 +40,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- *Utility class to push events.
+ * Utility class to push events.
  */
 public class EventSender {
 
@@ -97,8 +98,18 @@ public class EventSender {
 
         @Override
         public void run() {
-
-            try (CloseableHttpClient closeableHttpClient = HttpClientBuilder.create().useSystemProperties().build()) {
+            String hostNameVerifier = System.getProperty("httpclient.hostnameVerifier");
+            String disableHostnameVerification = System.getProperty("org.opensaml.httpclient.https" +
+                    ".disableHostnameVerification");
+            CloseableHttpClient closeableHttpClient;
+            if (Boolean.parseBoolean(disableHostnameVerification) || (hostNameVerifier != null
+                    && hostNameVerifier.equals("AllowAll"))) {
+                closeableHttpClient = HttpClientBuilder.create()
+                        .setHostnameVerifier(new AllowAllHostnameVerifier()).useSystemProperties().build();
+            } else {
+                closeableHttpClient = HttpClientBuilder.create().useSystemProperties().build();
+            }
+            try {
                 HttpPost httpPost = new HttpPost(notificationEndpoint);
                 if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
                     byte[] credentials =
