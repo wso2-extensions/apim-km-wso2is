@@ -51,7 +51,7 @@ import org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer;
 public class KeyManagerCoreServiceComponent {
 
     private static final Log log = LogFactory.getLog(KeyManagerCoreServiceComponent.class);
-    private static final String RESTRICT_UNASSIGNED_SCOPES = "restrict.unassigned.scoped";
+    private static final String RESTRICT_UNASSIGNED_SCOPES = "restrict.unassigned.scops";
 
     @Activate
     protected void activate(ComponentContext cxt) {
