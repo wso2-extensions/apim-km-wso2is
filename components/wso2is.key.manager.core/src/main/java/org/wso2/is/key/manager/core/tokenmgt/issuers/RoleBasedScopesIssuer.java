@@ -67,6 +67,7 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.is.key.manager.core.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.core.tokenmgt.handlers.ResourceConstants;
 import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 
@@ -447,28 +448,41 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
 
         //Iterate the requested scopes list.
         for (String scope : requestedScopes) {
+            boolean isRestrictUnassignedScopes = ServiceReferenceHolder.isRestrictUnassignedScopes();
             //Get the set of roles associated with the requested scope.
-            String roles = appScopes.get(scope);
-            //If the scope has been defined in the context of the App and if roles have been defined for the scope
-            if (roles != null && roles.length() != 0) {
-                List<String> roleList = new ArrayList<>();
-                for (String aRole : roles.split(",")) {
-                    if (preservedCaseSensitive) {
-                        roleList.add(aRole.trim());
-                    } else {
-                        roleList.add(aRole.trim().toLowerCase(Locale.ENGLISH));
-                    }
-                }
-                //Check if user has at least one of the roles associated with the scope
-                roleList.retainAll(userRoleList);
-                if (!roleList.isEmpty()) {
-                    authorizedScopes.add(scope);
+            if (isRestrictUnassignedScopes) {
+                if (appScopes.containsKey(scope)) {
+                    addAuthorizedRoles(appScopes, scope, preservedCaseSensitive, userRoleList, authorizedScopes);
                 }
             } else {
-                authorizedScopes.add(scope);
+                addAuthorizedRoles(appScopes, scope, preservedCaseSensitive, userRoleList, authorizedScopes);
             }
         }
         return (!authorizedScopes.isEmpty()) ? authorizedScopes : defaultScope;
+    }
+
+    private List<String> addAuthorizedRoles(Map<String, String> appScopes, String scope, boolean preservedCaseSensitive,
+                                            List<String> userRoleList, List<String> authorizedScopes) {
+        String roles = appScopes.get(scope);
+        //If the scope has been defined in the context of the App and if roles have been defined for the scope
+        if (roles != null && roles.length() != 0) {
+            List<String> roleList = new ArrayList<>();
+            for (String aRole : roles.split(",")) {
+                if (preservedCaseSensitive) {
+                    roleList.add(aRole.trim());
+                } else {
+                    roleList.add(aRole.trim().toLowerCase(Locale.ENGLISH));
+                }
+            }
+            //Check if user has at least one of the roles associated with the scope
+            roleList.retainAll(userRoleList);
+            if (!roleList.isEmpty()) {
+                authorizedScopes.add(scope);
+            }
+        } else {
+            authorizedScopes.add(scope);
+        }
+        return authorizedScopes;
     }
 
     /**
