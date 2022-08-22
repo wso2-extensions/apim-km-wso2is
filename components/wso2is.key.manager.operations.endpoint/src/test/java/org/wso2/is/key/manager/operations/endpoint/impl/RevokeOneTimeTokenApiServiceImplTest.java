@@ -51,12 +51,7 @@ public class RevokeOneTimeTokenApiServiceImplTest {
     private RevokeOneTimeTokenApiServiceImpl revokeService;
     private MessageContext messageContext;
     private RevokeTokenInfoDTO revokeTokenInfoDTO;
-    private OAuthClientAuthnContext oAuthClientAuthnContext;
-    private OAuthRevocationRequestDTO oAuthRevocationRequestDTO;
-    private PrivilegedCarbonContext privilegedCarbonContext;
-    private OAuth2Service oAuth2Service;
     private OAuthRevocationResponseDTO oAuthRevocationResponseDTO;
-    private ErrorDTO errorDto;
 
     @Before
     public void init() throws Exception {
@@ -71,12 +66,12 @@ public class RevokeOneTimeTokenApiServiceImplTest {
 
         messageContext = Mockito.mock(MessageContext.class);
         revokeTokenInfoDTO = Mockito.mock(RevokeTokenInfoDTO.class);
-        oAuthClientAuthnContext = Mockito.mock(OAuthClientAuthnContext.class);
-        oAuthRevocationRequestDTO = Mockito.mock(OAuthRevocationRequestDTO.class);
-        privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
-        oAuth2Service = Mockito.mock(OAuth2Service.class);
+        OAuthClientAuthnContext oAuthClientAuthnContext = Mockito.mock(OAuthClientAuthnContext.class);
+        OAuthRevocationRequestDTO oAuthRevocationRequestDTO = Mockito.mock(OAuthRevocationRequestDTO.class);
+        PrivilegedCarbonContext privilegedCarbonContext = Mockito.mock(PrivilegedCarbonContext.class);
+        OAuth2Service oAuth2Service = Mockito.mock(OAuth2Service.class);
         oAuthRevocationResponseDTO = Mockito.mock(OAuthRevocationResponseDTO.class);
-        errorDto = Mockito.mock(ErrorDTO.class);
+        ErrorDTO errorDto = Mockito.mock(ErrorDTO.class);
 
         PowerMockito.when(UserInfoUtil.getError(Mockito.anyString(), Mockito.anyString(),
                 Mockito.anyString())).thenReturn(errorDto);
