@@ -9,6 +9,7 @@
         <jaxrs:serviceBeans>
             <bean class="org.wso2.is.key.manager.operations.endpoint.DcrApi"/>
             <bean class="org.wso2.is.key.manager.operations.endpoint.UserInfoApi"/>
+            <bean class="org.wso2.is.key.manager.operations.endpoint.RevokeOneTimeTokenApi"/>
         </jaxrs:serviceBeans>
         <jaxrs:providers>
             <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
