@@ -48,14 +48,13 @@ public class RevokeOneTimeTokenApiServiceImpl implements RevokeOneTimeTokenApiSe
         String token = revokeTokenInfo.getToken();
         String consumerKey = revokeTokenInfo.getConsumerKey();
 
-        if (StringUtils.isEmpty(token)) {
+        if (StringUtils.isBlank(token)) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(),
-                            "Could not revoke the token because the token id is empty", null
-                    ))
+                            "Could not revoke the token because the token id is empty", null))
                     .build();
         }
-        if (StringUtils.isEmpty(consumerKey)) {
+        if (StringUtils.isBlank(consumerKey)) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(UserInfoUtil.getError(Response.Status.BAD_REQUEST.toString(),
                             "Could not revoke the token because the consumer key is empty", null))
