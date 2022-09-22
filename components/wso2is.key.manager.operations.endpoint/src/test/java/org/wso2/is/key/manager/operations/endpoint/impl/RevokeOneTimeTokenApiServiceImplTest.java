@@ -43,8 +43,8 @@ import javax.ws.rs.core.Response;
  * This class tests the RevokeOneTimeTokenApiServiceImpl class for the One Time Token Revocation
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({RevokeOneTimeTokenApiServiceImpl.class, UserInfoUtil.class, OAuth2Util.
-        class, PrivilegedCarbonContext.class})
+@PrepareForTest({RevokeOneTimeTokenApiServiceImpl.class, UserInfoUtil.class, OAuth2Util.class,
+        PrivilegedCarbonContext.class})
 @SuppressStaticInitializationFor("org.wso2.carbon.identity.oauth2.util.OAuth2Util")
 public class RevokeOneTimeTokenApiServiceImplTest {
 
@@ -134,6 +134,28 @@ public class RevokeOneTimeTokenApiServiceImplTest {
     public void testRevokeOneTimeTokenPostWithNullConsumerKey() {
 
         Mockito.when(revokeTokenInfoDTO.getConsumerKey()).thenReturn("");
+        Response response = revokeService.revokeOneTimeTokenPost(revokeTokenInfoDTO, messageContext);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    /**
+     * Testing when the token is a whitespace
+     */
+    @Test
+    public void testRevokeOneTimeTokenPostWithWhiteSpaceToken() {
+
+        Mockito.when(revokeTokenInfoDTO.getToken()).thenReturn(" ");
+        Response response = revokeService.revokeOneTimeTokenPost(revokeTokenInfoDTO, messageContext);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    /**
+     * Testing when the consumer key is a whitespace
+     */
+    @Test
+    public void testRevokeOneTimeTokenPostWithWhiteSpaceConsumerKey() {
+
+        Mockito.when(revokeTokenInfoDTO.getConsumerKey()).thenReturn(" ");
         Response response = revokeService.revokeOneTimeTokenPost(revokeTokenInfoDTO, messageContext);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
