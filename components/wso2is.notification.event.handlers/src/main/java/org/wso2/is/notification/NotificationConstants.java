@@ -36,6 +36,7 @@ public class NotificationConstants {
     public static final String ADMIN_PASSWORD_SYSTEM_PROPERTY = "admin.password";
     public static final String CARBON_HOME_SYSTEM_PROPERTY = "carbon.home";
     public static final String DOT = ".";
+    public static final long MAX_TOKEN_IDENTIFIER = -1;
 
     /**
      * Audit Log Constants

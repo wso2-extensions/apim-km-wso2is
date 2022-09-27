@@ -103,7 +103,14 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     private TokenRevocationEvent toTokenRevocationEvent(AccessTokenDO accessTokenDO)
             throws IdentityOAuth2Exception, InvalidOAuthClientException, UserStoreException {
 
-        long expiryTime = accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis();
+        long expiryTime;
+        long validityTime = accessTokenDO.getValidityPeriodInMillis();
+        if (NotificationConstants.MAX_TOKEN_IDENTIFIER != validityTime) {
+            validityTime = Long.MAX_VALUE;
+            expiryTime = accessTokenDO.getIssuedTime().getTime() + validityTime;
+        } else {
+            expiryTime = accessTokenDO.getIssuedTime().getTime() + validityTime;
+        }
         String accessToken = accessTokenDO.getAccessToken();
         String user = accessTokenDO.getAuthzUser().getUserName();
         int tenantID = accessTokenDO.getTenantID();
