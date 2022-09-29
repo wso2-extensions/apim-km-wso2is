@@ -106,10 +106,9 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
         long expiryTime;
         long validityTime = accessTokenDO.getValidityPeriodInMillis();
         if (NotificationConstants.MAX_TOKEN_IDENTIFIER != validityTime) {
-            validityTime = Long.MAX_VALUE;
             expiryTime = accessTokenDO.getIssuedTime().getTime() + validityTime;
         } else {
-            expiryTime = accessTokenDO.getIssuedTime().getTime() + validityTime;
+            expiryTime = Long.MAX_VALUE;
         }
         String accessToken = accessTokenDO.getAccessToken();
         String user = accessTokenDO.getAuthzUser().getUserName();
