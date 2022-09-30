@@ -49,6 +49,31 @@ consumes:
 produces:
   - application/json
 paths:
+  # The endpoint is used to revoke one time tokens
+  /revoke-one-time-token:
+    post:
+      description: |
+        Revoking the single usage token with the token id given in the body
+      summary: |
+        Revoking One Time Token
+      parameters:
+        - name: revokeTokenInfo
+          in: body
+          schema:
+            $ref: '#/definitions/RevokeTokenInfo'
+          description: Unique identifier of the OTT.
+          required: true
+      responses:
+        200:
+          description: Successfully Revoked
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
   /user-info/claims:
     get:
       description: |
@@ -412,6 +437,17 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/Claim'
+  RevokeTokenInfo:
+    type: object
+    properties:
+      token:
+        type: string
+        description: |
+          JWT token that is needed to revoke
+      consumer_key:
+        type: string
+        description: |
+          Consumer key of the user
 
 
 #-----------------------------------------------------
