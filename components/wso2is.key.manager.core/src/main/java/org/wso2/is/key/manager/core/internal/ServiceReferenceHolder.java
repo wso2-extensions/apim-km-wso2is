@@ -34,6 +34,7 @@ public class ServiceReferenceHolder {
     private RegistryService registryService;
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
+    private static boolean restrictUnassignedScopes;
 
     private ServiceReferenceHolder() {
 
@@ -76,5 +77,13 @@ public class ServiceReferenceHolder {
 
     public static void setContextService(ConfigurationContextService contextService) {
         ServiceReferenceHolder.contextService = contextService;
+    }
+
+    public static boolean isRestrictUnassignedScopes() {
+        return restrictUnassignedScopes;
+    }
+
+    public static void setRestrictUnassignedScopes(boolean restrictUnassignedScopes) {
+        ServiceReferenceHolder.restrictUnassignedScopes = restrictUnassignedScopes;
     }
 }
