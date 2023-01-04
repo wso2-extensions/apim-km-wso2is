@@ -107,6 +107,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     // set role based scopes issuer as the default
     private static final String ISSUER_PREFIX = "default";
     OAuthServerConfiguration oAuthServerConfiguration = OAuthServerConfiguration.getInstance();
+    private static final String REFRESH_TOKEN_GRANT_TYPE = "refresh_token";
 
     @Override
     public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
@@ -225,7 +226,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                         new String[authorizedScopes.size()]));
                 return true;
             }
-            userRoles = getUserRoles(authenticatedUser);
+            userRoles = getUserRoles(authenticatedUser, null);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
             oAuth2TokenValidationMessageContext.getResponseDTO().setScope(authorizedScopes.toArray(
                     new String[authorizedScopes.size()]));
@@ -296,7 +297,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             if (isAppScopesEmpty(appScopes, clientId)) {
                 return getAllowedScopes(requestedScopes);
             }
-            String[] userRoles = getUserRoles(authenticatedUser);
+            String[] userRoles = getUserRoles(authenticatedUser, null);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
         return authorizedScopes;
@@ -322,7 +323,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             if (isAppScopesEmpty(appScopes, clientId)) {
                 return getAllowedScopes(requestedScopes);
             }
-            String[] userRoles = getUserRoles(authenticatedUser);
+            String[] userRoles = getUserRoles(authenticatedUser, null);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
         return authorizedScopes;
@@ -371,7 +372,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                             tokReqMsgCtx.getProperty(ResourceConstants.ROLE_CLAIM).toString());
                 }
             } else {
-                userRoles = getUserRoles(authenticatedUser);
+                userRoles = getUserRoles(authenticatedUser, grantType);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
         }
@@ -384,13 +385,17 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
      * @param authenticatedUser Authenticated user
      * @return roles list
      */
-    private String[] getUserRoles(AuthenticatedUser authenticatedUser) {
+    private String[] getUserRoles(AuthenticatedUser authenticatedUser, String grantType) {
 
         String[] userRoles = null;
         String tenantDomain;
         String username;
         if (authenticatedUser.isFederatedUser()) {
-            tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
+            if (StringUtils.equals(REFRESH_TOKEN_GRANT_TYPE, grantType)) {
+                tenantDomain = authenticatedUser.getTenantDomain();
+            } else {
+                tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
+            }
             username = MultitenantUtils.getTenantAwareUsername(authenticatedUser.getAuthenticatedSubjectIdentifier());
         } else {
             tenantDomain = authenticatedUser.getTenantDomain();
