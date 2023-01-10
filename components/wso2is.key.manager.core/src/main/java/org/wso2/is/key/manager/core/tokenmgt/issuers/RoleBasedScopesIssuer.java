@@ -44,6 +44,7 @@ import org.wso2.carbon.identity.oauth.cache.OAuthCache;
 import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.callback.OAuthCallback;
 import org.wso2.carbon.identity.oauth.common.GrantType;
+import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2ScopeServerException;
@@ -57,6 +58,7 @@ import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RequestParameter;
 import org.wso2.carbon.identity.oauth2.model.ResourceScopeCacheEntry;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.oauth2.validators.OAuth2TokenValidationMessageContext;
 import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -372,6 +374,14 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                             tokReqMsgCtx.getProperty(ResourceConstants.ROLE_CLAIM).toString());
                 }
             } else {
+                if (authenticatedUser.isFederatedUser() && StringUtils.equals(REFRESH_TOKEN_GRANT_TYPE, grantType)) {
+                    try {
+                        authenticatedUser.setUserName(OAuth2Util.getAppInformationByClientId(clientId).getAppOwner().
+                                getUserName());
+                    } catch (InvalidOAuthClientException | IdentityOAuth2Exception e) {
+                        log.error("Error when retrieving the username " + e.getMessage(), e);
+                    }
+                }
                 userRoles = getUserRoles(authenticatedUser, grantType);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
@@ -390,16 +400,14 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         String[] userRoles = null;
         String tenantDomain;
         String username;
-        if (authenticatedUser.isFederatedUser()) {
-            if (StringUtils.equals(REFRESH_TOKEN_GRANT_TYPE, grantType)) {
-                tenantDomain = authenticatedUser.getTenantDomain();
-            } else {
-                tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
-            }
-            username = MultitenantUtils.getTenantAwareUsername(authenticatedUser.getAuthenticatedSubjectIdentifier());
-        } else {
+        if ((authenticatedUser.isFederatedUser() && StringUtils.equals(REFRESH_TOKEN_GRANT_TYPE, grantType))
+                || !authenticatedUser.isFederatedUser()) {
             tenantDomain = authenticatedUser.getTenantDomain();
             username = authenticatedUser.getUserName();
+        } else {
+            tenantDomain = MultitenantUtils.getTenantDomain(authenticatedUser.getAuthenticatedSubjectIdentifier());
+            username = MultitenantUtils.getTenantAwareUsername(
+                    authenticatedUser.getAuthenticatedSubjectIdentifier());
         }
         String userStoreDomain = authenticatedUser.getUserStoreDomain();
         RealmService realmService = getRealmService();
