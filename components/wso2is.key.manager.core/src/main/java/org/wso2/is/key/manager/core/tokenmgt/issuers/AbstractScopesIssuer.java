@@ -126,7 +126,11 @@ public abstract class AbstractScopesIssuer {
         String requestedScopesString = String.join(" ", requestedScopes);
         String tenantDomain = null;
         try {
-            tenantDomain = getAppInformationByClientId(consumerKey).getAppOwner().getTenantDomain();
+            if (authenticatedUser.isFederatedUser()) {
+                tenantDomain = getAppInformationByClientId(consumerKey).getAppOwner().getTenantDomain();
+            } else {
+                tenantDomain = authenticatedUser.getTenantDomain();
+            }
             if (!MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
                 isTenantFlowStarted = true;
                 PrivilegedCarbonContext.startTenantFlow();
