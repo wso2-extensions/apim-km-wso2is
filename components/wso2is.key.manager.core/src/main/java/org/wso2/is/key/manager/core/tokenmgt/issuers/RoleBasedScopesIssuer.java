@@ -44,6 +44,7 @@ import org.wso2.carbon.identity.oauth.cache.OAuthCache;
 import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.callback.OAuthCallback;
 import org.wso2.carbon.identity.oauth.common.GrantType;
+import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
@@ -123,6 +124,13 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     @Override
     public boolean validateScope(OAuthTokenReqMessageContext oAuthTokenReqMessageContext) throws
             IdentityOAuth2Exception {
+
+        String grantType = oAuthTokenReqMessageContext.getOauth2AccessTokenReqDTO().getGrantType();
+        boolean isRefreshRequest = OAuthConstants.GrantTypes.REFRESH_TOKEN.equals(grantType);
+        boolean isFederatedUser = oAuthTokenReqMessageContext.getAuthorizedUser().isFederatedUser();
+        if (isRefreshRequest && isFederatedUser) {
+            return true;
+        }
 
         List<String> authScopes = getScopes(oAuthTokenReqMessageContext);
         oAuthTokenReqMessageContext.setScope(authScopes.toArray(new String[authScopes.size()]));
