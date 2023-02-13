@@ -31,6 +31,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.core.ServerStartupObserver;
 import org.wso2.carbon.identity.auth.service.handler.AuthenticationHandler;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
+import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
@@ -39,6 +40,7 @@ import org.wso2.carbon.utils.Axis2ConfigurationContextObserver;
 import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.key.manager.core.handlers.ExtendedISAuthHandler;
 import org.wso2.is.key.manager.core.observers.ReservedUserCreationObserver;
+import org.wso2.is.key.manager.core.tokenmgt.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer;
 
 /**
@@ -64,6 +66,8 @@ public class KeyManagerCoreServiceComponent {
             cxt.getBundleContext().registerService(ServerStartupObserver.class.getName(),
                     reservedUserCreationObserver, null);
             cxt.getBundleContext().registerService(ScopeValidator.class, new RoleBasedScopesIssuer(), null);
+            cxt.getBundleContext().registerService(AccessTokenDAO.class, new ExtendedAccessTokenDAOImpl(), null);
+
             if (log.isDebugEnabled()) {
                 log.debug("KeyManagerCoreService is activated");
             }
