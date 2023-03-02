@@ -293,24 +293,39 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
 
     public List<String> getScopes(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) {
 
-        List<String> authorizedScopes = null;
-        List<String> requestedScopes = new ArrayList<>();
+        List<String> authorizedScopes;
+        List<String> requestedScopes = null;
+        List<String> scopes = new ArrayList<>();
         if (oAuthAuthzReqMessageContext.getApprovedScope() != null) {
-            requestedScopes = Arrays.asList(oAuthAuthzReqMessageContext.getApprovedScope());
+            requestedScopes = new ArrayList<>(Arrays.asList(oAuthAuthzReqMessageContext.getApprovedScope()));
+            for (String scope : requestedScopes) {
+                // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let them pass
+                // to the final scope list returned from RoleBasedScopeIssuer. This is because RoleBasedScopeIssuer is
+                // not responsible for validating Product REST API scopes. Those will be handled by SystemScopeIssuer.
+                if (checkForProductRestAPIScopes(scope)) {
+                    scopes.add(scope);
+                }
+            }
+            requestedScopes.removeAll(scopes);
+            if (requestedScopes.isEmpty()) {
+                return scopes;
+            }
         }
         String clientId = oAuthAuthzReqMessageContext.getAuthorizationReqDTO().getConsumerKey();
         AuthenticatedUser authenticatedUser = oAuthAuthzReqMessageContext.getAuthorizationReqDTO().getUser();
-
         Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
         if (appScopes != null) {
             //If no scopes can be found in the context of the application
             if (isAppScopesEmpty(appScopes, clientId)) {
-                return getAllowedScopes(requestedScopes);
+                authorizedScopes = getAllowedScopes(requestedScopes);
+                scopes.addAll(authorizedScopes);
+                return scopes;
             }
             String[] userRoles = getUserRoles(authenticatedUser, null);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
+            scopes.addAll(authorizedScopes);
         }
-        return authorizedScopes;
+        return scopes;
     }
 
     /**
@@ -348,19 +363,33 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     @Override
     public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) {
 
-        List<String> authorizedScopes = null;
+        List<String> authorizedScopes;
+        List<String> scopes = new ArrayList<>();
         List<String> requestedScopes = new ArrayList<>(Arrays.asList(tokReqMsgCtx.getScope()));
+        for (String scope : requestedScopes) {
+            // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let them pass to
+            // the final scope list returned from RoleBasedScopeIssuer. This is because RoleBasedScopeIssuer is not
+            // responsible for validating Product REST API scopes. Those will be handled by the SystemScopeIssuer.
+            if (checkForProductRestAPIScopes(scope)) {
+                scopes.add(scope);
+            }
+        }
+        requestedScopes.removeAll(scopes);
         String clientId = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getClientId();
         AuthenticatedUser authenticatedUser = tokReqMsgCtx.getAuthorizedUser();
+        if (requestedScopes.isEmpty()) {
+            return scopes;
+        }
         Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
         if (appScopes != null) {
-            //If no scopes can be found in the context of the application
+            String[] userRoles = new String[0];
+            // If no scopes can be found in the context of the application
             if (isAppScopesEmpty(appScopes, clientId)) {
-                return getAllowedScopes(requestedScopes);
+                authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
+                scopes.addAll(authorizedScopes);
+                return scopes;
             }
-
             String grantType = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getGrantType();
-            String[] userRoles = null;
 
             // If GrantType is SAML20_BEARER and CHECK_ROLES_FROM_SAML_ASSERTION is true, or if GrantType is
             // JWT_BEARER and retrieveRolesFromUserStoreForScopeValidation system property is true,
@@ -393,8 +422,20 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 userRoles = getUserRoles(authenticatedUser, grantType);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
+            scopes.addAll(authorizedScopes);
         }
-        return authorizedScopes;
+        return scopes;
+    }
+
+    /**
+     * This method is used to check whether a given scope is a product rest API scope or not.
+     *
+     * @param scope scope
+     * @return true if it is a product rest API scope
+     */
+    private boolean checkForProductRestAPIScopes(String scope) {
+        return scope.startsWith("apim:") || scope.startsWith("apim_analytics:") ||
+                scope.startsWith("service_catalog:");
     }
 
     /**
@@ -471,11 +512,8 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         for (String scope : requestedScopes) {
             boolean isRestrictUnassignedScopes = ServiceReferenceHolder.isRestrictUnassignedScopes();
             //Get the set of roles associated with the requested scope.
-            if (isRestrictUnassignedScopes) {
-                if (appScopes.containsKey(scope)) {
-                    addAuthorizedRoles(appScopes, scope, preservedCaseSensitive, userRoleList, authorizedScopes);
-                }
-            } else {
+            if ((isRestrictUnassignedScopes && oAuthServerConfiguration.getAllowedScopes().contains(scope)) ||
+                    appScopes.containsKey(scope) || !isRestrictUnassignedScopes) {
                 addAuthorizedRoles(appScopes, scope, preservedCaseSensitive, userRoleList, authorizedScopes);
             }
         }

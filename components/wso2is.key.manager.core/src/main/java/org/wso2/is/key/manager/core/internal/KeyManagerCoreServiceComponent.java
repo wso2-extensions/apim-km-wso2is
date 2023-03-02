@@ -68,8 +68,8 @@ public class KeyManagerCoreServiceComponent {
                 log.debug("KeyManagerCoreService is activated");
             }
 
-            boolean restrictUnassignedScoped = Boolean.parseBoolean(System.getProperty(RESTRICT_UNASSIGNED_SCOPES));
-            ServiceReferenceHolder.setRestrictUnassignedScopes(restrictUnassignedScoped);
+            boolean restrictUnassignedScopes = Boolean.parseBoolean(System.getProperty(RESTRICT_UNASSIGNED_SCOPES));
+            ServiceReferenceHolder.setRestrictUnassignedScopes(restrictUnassignedScopes);
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
