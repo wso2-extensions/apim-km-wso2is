@@ -32,6 +32,7 @@
         <module>components/wso2is.key.manager</module>
         <module>components/wso2is.key.manager.operations.endpoint</module>
         <module>components/wso2is.notification.event.handlers</module>
+        <module>wso2is.key.manager.tokenpersistence</module>
         <module>features/wso2is.key.manager.feature</module>
         <module>features/wso2is.key.manager.operations.endpoint.feature</module>
         <module>features/wso2is.key.manager.notification.feature</module>
@@ -423,7 +424,7 @@
         <project.version>1.0.0-SNAPSHOT</project.version>
         <imp.package.version.osgi.framework>[1.6.0, 2.0.0)</imp.package.version.osgi.framework>
         <imp.package.version.osgi.service>[1.2.0,1.3.0)</imp.package.version.osgi.service>
-        <carbon.identity-inbound-auth-oauth.version>6.8.0</carbon.identity-inbound-auth-oauth.version>
+        <carbon.identity-inbound-auth-oauth.version>6.9.8-SNAPSHOT</carbon.identity-inbound-auth-oauth.version>
         <carbon.identity-data-publisher-application-authentication.version>5.4.4
         </carbon.identity-data-publisher-application-authentication.version>
         <http.client.version>4.3.6.wso2v1</http.client.version>
