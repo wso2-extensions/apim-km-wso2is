@@ -206,23 +206,27 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                 tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY) != null) {
             RefreshTokenValidationDataDO previousAccessToken =
                     (RefreshTokenValidationDataDO) tokReqMsgCtx.getProperty(RefreshGrantHandler.PREV_ACCESS_TOKEN);
-            OAuthAppDO oAuthAppDO =
-                    (OAuthAppDO) tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
-            String tokenToRevoke = getJWTid(previousAccessToken.getAccessToken(), oAuthAppDO);
-            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke,
-                    previousAccessToken.getAccessTokenIssuedTime().getTime() + previousAccessToken
-                            .getAccessTokenValidityInMillis(), previousAccessToken.getAuthorizedUser().getUserName(),
-                    oAuthAppDO.getOauthConsumerKey(), oAuthAppDO.getTokenType());
-            String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
-            tokenRevocationEvent.setTenantDomain(tenantDomain);
-            try {
-                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                        .getTenantId(tenantDomain);
-                tokenRevocationEvent.setTenantId(tenantId);
-            } catch (UserStoreException e) {
-                log.error("Error while finding tenant id", e);
+            // no previous access token identified if no persistence
+            if (previousAccessToken.getAccessToken() != null) {
+                OAuthAppDO oAuthAppDO = (OAuthAppDO) tokReqMsgCtx
+                        .getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
+                String tokenToRevoke = getJWTid(previousAccessToken.getAccessToken(), oAuthAppDO);
+                TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke,
+                        previousAccessToken.getAccessTokenIssuedTime().getTime()
+                                + previousAccessToken.getAccessTokenValidityInMillis(),
+                        previousAccessToken.getAuthorizedUser().getUserName(), oAuthAppDO.getOauthConsumerKey(),
+                        oAuthAppDO.getTokenType());
+                String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
+                tokenRevocationEvent.setTenantDomain(tenantDomain);
+                try {
+                    int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                            .getTenantId(tenantDomain);
+                    tokenRevocationEvent.setTenantId(tenantId);
+                } catch (UserStoreException e) {
+                    log.error("Error while finding tenant id", e);
+                }
+                publishEvent(tokenRevocationEvent);
             }
-            publishEvent(tokenRevocationEvent);
         }
     }
 
