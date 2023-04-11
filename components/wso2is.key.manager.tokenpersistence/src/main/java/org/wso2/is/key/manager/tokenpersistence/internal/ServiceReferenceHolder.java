@@ -22,16 +22,20 @@ import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
+import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
 
 /**
  * Service holder to keep track on osgi Services
  */
 public class ServiceReferenceHolder {
+    private static final Object lock = new Object();
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
     private RegistryService registryService;
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
+    private static InvalidTokenPersistenceService tokenPersistenceService;
     
     private ServiceReferenceHolder() {
         
@@ -72,6 +76,18 @@ public class ServiceReferenceHolder {
 
     public static void setContextService(ConfigurationContextService contextService) {
         ServiceReferenceHolder.contextService = contextService;
+    }
+
+    public static synchronized InvalidTokenPersistenceService getInvalidTokenPersistenceService() {
+        if (tokenPersistenceService == null) {
+            tokenPersistenceService = DBInvalidTokenPersistence.getInstance();     
+        }
+        return tokenPersistenceService;
+    }
+    
+    public static void setInvalidTokenPersistenceService(
+            InvalidTokenPersistenceService invalidTokenPersistenceService) {
+        tokenPersistenceService = invalidTokenPersistenceService;
     }
 
 }
