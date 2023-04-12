@@ -38,6 +38,7 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
+import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 
 import java.sql.Timestamp;
@@ -46,7 +47,6 @@ import java.util.Date;
 import java.util.UUID;
 
 /**
- * 
  * Refresh token grant handler to handle jwt refresh tokens
  *
  */
@@ -60,11 +60,31 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
     public RefreshTokenValidationDataDO validateRefreshToken(OAuthTokenReqMessageContext tokenReqMessageContext)
             throws IdentityOAuth2Exception {
         OAuth2AccessTokenReqDTO tokenReq = tokenReqMessageContext.getOauth2AccessTokenReqDTO();
+        
+        
         if (!OAuth2Util.isJWT(tokenReq.getRefreshToken())) {
-            throw new IdentityOAuth2Exception("Invalid token type received");
+            if (ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
+                    tokenReq.getRefreshToken(), PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN,
+                    tokenReq.getClientId())) {
+                throw new IdentityOAuth2Exception("Invalid refresh token. token is already used.");
+            }
+            //For backward compatibility, we check whether it is avaliable in idn_oauth2_token table
+            RefreshTokenValidationDataDO validationDO = OpaqueTokenUtil
+                    .validateOpaqueRefreshToken(tokenReqMessageContext);
+            OAuthUtil.clearOAuthCache(tokenReq.getClientId(), validationDO.getAuthorizedUser(),
+                    OAuth2Util.buildScopeString(validationDO.getScope()), "NONE");            
+            return validationDO;
+            
         }
         //validate JWT token signature, expiry time, not before time
         try {
+            // check whether the token is already revoked
+            if (ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
+                    TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(), tokenReq.getClientId()),
+                    PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, tokenReq.getClientId())) {
+                throw new IdentityOAuth2Exception("Invalid refresh token. token is already used.");
+            }
+            
             SignedJWT signedJWT = SignedJWT.parse(tokenReq.getRefreshToken());
             JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
             if (claimsSet == null) {
@@ -86,11 +106,6 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
             //validate token against persisted invalid refresh tokens
             Object scopes = claimsSet.getClaim("scope");
             
-            if (ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
-                    TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(), tokenReq.getClientId()),
-                    "REFRESH_TOKEN", tokenReq.getClientId())) {
-                throw new IdentityOAuth2Exception("Invalid refresh token. token is already used.");
-            }
             //create new RefreshTokenValidationDO
             RefreshTokenValidationDataDO validationDataDO = new RefreshTokenValidationDataDO();
             validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
@@ -115,32 +130,31 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
     public void persistNewToken(OAuthTokenReqMessageContext tokenReqMessageContext, AccessTokenDO accessTokenBean,
             String userStoreDomain, String clientId) throws IdentityOAuth2Exception {
         OAuth2AccessTokenReqDTO tokenReq = tokenReqMessageContext.getOauth2AccessTokenReqDTO();
-        if (!OAuth2Util.isJWT(tokenReq.getRefreshToken())) {
-            //TODO:// If the token is opaque, delete the existing token from the DB. (migration)///////////////
-            throw new IdentityOAuth2Exception("Invalid token type received");
-        }
-        //If JWT make the old refresh token inactive and persist it
         RefreshTokenValidationDataDO oldAccessToken =
                 (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(PREV_ACCESS_TOKEN);
-        /*
-        AccessTokenDO oldAccessTokenBean = new AccessTokenDO();
-        oldAccessTokenBean.setConsumerKey(tokenReq.getClientId());
-        String tokenId = UUID.randomUUID().toString();
-        oldAccessTokenBean.setTokenId(tokenId);
-        oldAccessTokenBean.setGrantType(tokenReq.getGrantType());
-        oldAccessTokenBean.setRefreshToken(TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(),
-                tokenReq.getClientId()));
-        oldAccessTokenBean.setRefreshTokenIssuedTime(oldAccessToken.getIssuedTime());
-        oldAccessTokenBean.setRefreshTokenValidityPeriodInMillis(oldAccessToken.getValidityPeriodInMillis());
-        oldAccessTokenBean.setScope(oldAccessToken.getScope());
-        oldAccessTokenBean.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_INACTIVE);
-        oldAccessTokenBean.setAuthzUser(oldAccessToken.getAuthorizedUser());
-        */
-
-        ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
-                TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(), clientId),
-                PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, clientId,
-                oldAccessToken.getIssuedTime().getTime() + oldAccessToken.getValidityPeriodInMillis());
+        
+        String refreshToken;
+        Long tokenExpirationTime; 
+        if (!OAuth2Util.isJWT(tokenReq.getRefreshToken())) { // for backward compatibility.
+            refreshToken = tokenReq.getRefreshToken();
+            tokenExpirationTime = oldAccessToken.getIssuedTime().getTime() + oldAccessToken.getValidityPeriodInMillis();
+        } else {
+            //TODO: check whether extract it from the jwt is correct
+            refreshToken = TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(), clientId);
+            SignedJWT signedJWT;
+            try {
+                //TODO: can optimize the parsing by adding the parsed token in validateRefreshToken() 
+                //to tokenReqMessageContext
+                signedJWT = SignedJWT.parse(tokenReq.getRefreshToken());
+                JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+                tokenExpirationTime = claimsSet.getExpirationTime().getTime();
+            } catch (ParseException e) {
+                throw new IdentityOAuth2Exception("Error while validating Token while persisting.", e);
+            }           
+        }
+        //If JWT make the old refresh token inactive and persist it
+        ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(refreshToken,
+                PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, clientId, tokenExpirationTime);
     }
 
     @Override
