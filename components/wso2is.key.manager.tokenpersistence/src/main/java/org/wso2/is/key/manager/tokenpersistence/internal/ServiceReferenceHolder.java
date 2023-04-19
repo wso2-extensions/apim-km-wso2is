@@ -35,7 +35,7 @@ public class ServiceReferenceHolder {
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
     private static InvalidTokenPersistenceService tokenPersistenceService;
-
+    
     private ServiceReferenceHolder() {
 
     }

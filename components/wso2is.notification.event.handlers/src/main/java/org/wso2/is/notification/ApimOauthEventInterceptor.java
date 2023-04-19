@@ -39,7 +39,7 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.RefreshGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.is.notification.event.TokenRevocationEvent;
+import org.wso2.is.notification.event.*;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
 import java.text.ParseException;
@@ -56,7 +56,6 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     boolean enabled;
     String username;
     char[] password;
-    private EventSender eventSender;
     private static final String JWT = "JWT";
 
     public ApimOauthEventInterceptor() {
@@ -72,9 +71,10 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             if (StringUtils.isNotEmpty(usernameProperty) && StringUtils.isNotEmpty(passwordProperty)) {
                 username = NotificationUtil.replaceSystemProperty(usernameProperty);
                 password = NotificationUtil.replaceSystemProperty(passwordProperty).toCharArray();
-                eventSender = new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap);
+                ServiceReferenceHolder.getInstance()
+                        .setEventSender(new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap));
             } else {
-                eventSender = new EventSender(notificationEndpoint, headerMap);
+                ServiceReferenceHolder.getInstance().setEventSender(new EventSender(notificationEndpoint, headerMap));
             }
         }
     }
@@ -234,7 +234,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
 
         if (isEnabled()) {
             if (StringUtils.isNotEmpty(notificationEndpoint)) {
-                eventSender.publishEvent(tokenRevocationEvent);
+                ServiceReferenceHolder.getInstance().getEventSender().publishEvent(tokenRevocationEvent);
             }
         }
     }
