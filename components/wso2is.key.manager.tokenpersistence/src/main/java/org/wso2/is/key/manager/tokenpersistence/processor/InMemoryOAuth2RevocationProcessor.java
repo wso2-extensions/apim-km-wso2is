@@ -55,13 +55,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         //TODO://token binding is not supported ATM.
         //TODO://not clearing or serving from oauth cache ATM
         accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
-        //TODO://should dao invalidation be synchronized for user and scope (user Id not available though ATM)
-        /*
-        OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
-                    .invalidateAndCreateNewAccessToken(null, accessTokenDO.getTokenState(),
-                            accessTokenDO.getConsumerKey(),
-                            accessTokenDO.getTokenId(), accessTokenDO, null, null);
-        */
+
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
                 accessTokenDO.getAccessToken(), PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN,
                 accessTokenDO.getConsumerKey(),
@@ -74,24 +68,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         //TODO://token binding is not supported ATM.
         //TODO://not clearing or serving from oauth cache ATM
         refreshTokenDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
-        /*
-        AccessTokenDO accessTokenBean = new AccessTokenDO();
-        accessTokenBean.setConsumerKey(revokeRequestDTO.getConsumerKey());
-        String tokenId = UUID.randomUUID().toString();
-        accessTokenBean.setTokenId(tokenId);
-        accessTokenBean.setRefreshToken(TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(),
-                revokeRequestDTO.getConsumerKey()));
-        accessTokenBean.setRefreshTokenIssuedTime(refreshTokenDO.getIssuedTime());
-        accessTokenBean.setRefreshTokenValidityPeriodInMillis(refreshTokenDO.getValidityPeriodInMillis());
-        accessTokenBean.setScope(refreshTokenDO.getScope());
-        accessTokenBean.setTokenState(refreshTokenDO.getRefreshTokenState());
-        accessTokenBean.setAuthzUser(refreshTokenDO.getAuthorizedUser());
 
-        OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
-                .invalidateAndCreateNewAccessToken(null, accessTokenBean.getTokenState(),
-                        revokeRequestDTO.getConsumerKey(),
-                        accessTokenBean.getTokenId(), accessTokenBean, null, null);
-        */
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
                 TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), revokeRequestDTO.getConsumerKey()),
                 PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, revokeRequestDTO.getConsumerKey(),
@@ -107,13 +84,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         JWTClaimsSet claimsSet = getJWTClaimSet(signedJWT);
         validateJWT(signedJWT, claimsSet, revokeRequestDTO);
         //validate token against persisted invalid refresh tokens
-        // TODO: change to 
-        /*
-        RefreshTokenValidationDataDO validationDataDO = OAuthTokenPersistenceFactory.getInstance()
-                .getTokenManagementDAO().validateRefreshToken(revokeRequestDTO.getConsumerKey(),
-                        TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(),
-                                revokeRequestDTO.getConsumerKey()));
-        */
+
         RefreshTokenValidationDataDO validationDataDO = null;
         //TODO://check if refresh token in request is already persisted as an inactive or revoked access token in db
         //TODO://check in the rule engine if token is revoked indirectly
