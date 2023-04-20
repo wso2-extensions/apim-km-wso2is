@@ -319,6 +319,11 @@
                 <artifactId>commons-codec</artifactId>
                 <version>${common.codec.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.orbit.com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.orbit.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -448,5 +453,6 @@
         <junit.version>4.12</junit.version>
         <powermock.version>1.7.4</powermock.version>
         <mockito.all.version>1.10.19</mockito.all.version>
+        <h2.orbit.version>2.1.210.wso2v1</h2.orbit.version>
     </properties>
 </project>

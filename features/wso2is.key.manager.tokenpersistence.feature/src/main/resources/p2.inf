@@ -1,0 +1,2 @@
+instructions.configure = \
+org.eclipse.equinox.p2.touchpoint.natives.copy(source:${installFolder}/../features/wso2is.key.manager.tokenpersistence_${feature.version}/repository/database/WSO2INVALID_TOKEN_DB.mv.db/,target:${installFolder}/../../database/WSO2INVALID_TOKEN_DB.mv.db,overwrite:true);\
