@@ -36,9 +36,54 @@
             <groupId>org.wso2.km.ext.wso2is</groupId>
             <artifactId>wso2is.key.manager.tokenpersistence</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <id>clean-persistence-h2-database</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <delete file="src/main/resources/repository/database/WSO2INVALID_TOKEN_DB.mv.db" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-persistence-database</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <path id="h2.classpath">
+                                    <path refid="maven.compile.classpath" />
+                                </path>
+                                <echo message="########### Creating Invalid Token Database ##############" />
+                                <sql driver="org.h2.Driver" url="jdbc:h2:${basedir}/src/main/resources/repository/database/WSO2INVALID_TOKEN_DB" userid="wso2carbon" password="wso2carbon" autocommit="true" onerror="continue">
+                                    <classpath>
+                                        <path refid="h2.classpath" />
+                                    </classpath>
+                                    <fileset file="${basedir}/src/main/resources/sql/h2.sql" />
+                                </sql>
+                                <echo message="##################### END ########################" />
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
