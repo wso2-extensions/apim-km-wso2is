@@ -45,6 +45,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     public static final String INSERT_INVALID_TOKEN = 
             "INSERT INTO AM_INVALID_TOKENS (UUID, SIGNATURE, CONSUMER_KEY, TOKEN_TYPE, EXPIRY_TIMESTAMP) "
             + "VALUES (?,?,?,?,?)";
+    public static final String DELETE_INVALID_TOKEN = "DELETE FROM AM_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
     
     private DBInvalidTokenPersistence() {
 
@@ -93,6 +94,20 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
         } catch (SQLException e) {
             throw new IdentityOAuth2Exception("Error while checking existence of token as an invalid token.", e);
         }
+        
+        removeExpiredJWTs();
     }
 
+    public void removeExpiredJWTs() throws IdentityOAuth2Exception {
+
+        try (Connection connection = DBUtil.getConnection(); PreparedStatement ps =
+                connection.prepareStatement(DELETE_INVALID_TOKEN)) {
+            connection.setAutoCommit(false);
+            ps.setLong(1, System.currentTimeMillis());
+            ps.executeUpdate();
+            connection.commit();
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
+        }
+    }
 }
