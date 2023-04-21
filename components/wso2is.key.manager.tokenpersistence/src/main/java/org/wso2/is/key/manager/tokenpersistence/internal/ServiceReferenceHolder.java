@@ -18,12 +18,11 @@
 
 package org.wso2.is.key.manager.tokenpersistence.internal;
 
-import org.wso2.carbon.identity.oauth2.*;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import org.wso2.is.key.manager.tokenpersistence.dao.*;
+import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
 
 /**
@@ -37,8 +36,7 @@ public class ServiceReferenceHolder {
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
     private static InvalidTokenPersistenceService tokenPersistenceService;
-    private static InternalRevocationEventService internalRevocationEventService;
-
+    
     private ServiceReferenceHolder() {
         
     }
@@ -90,18 +88,6 @@ public class ServiceReferenceHolder {
     public static void setInvalidTokenPersistenceService(
             InvalidTokenPersistenceService invalidTokenPersistenceService) {
         tokenPersistenceService = invalidTokenPersistenceService;
-    }
-
-    public static synchronized InternalRevocationEventService getInternalRevocationEventService() {
-        if (internalRevocationEventService == null) {
-            internalRevocationEventService = DBInternalRevocationEventService.getInstance();
-        }
-        return internalRevocationEventService;
-    }
-
-    public static void setInternalRevocationEventService(
-            InternalRevocationEventService revocationEventService) {
-        internalRevocationEventService = revocationEventService;
     }
 
 }
