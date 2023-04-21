@@ -18,10 +18,7 @@
 
 package org.wso2.is.key.manager.tokenpersistence.dao;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
@@ -36,10 +33,6 @@ import java.util.Set;
  */
 
 public class ExtendedAccessTokenDAOImpl implements AccessTokenDAO {
-
-
-    private static final Log log = LogFactory.getLog(ExtendedAccessTokenDAOImpl.class);
-
 
 
     @Override
@@ -202,35 +195,11 @@ public class ExtendedAccessTokenDAOImpl implements AccessTokenDAO {
 
     @Override
     public void invalidateAndCreateNewAccessToken(String oldAccessTokenId, String tokenState, String consumerKey,
-                                                  String tokenStateId, AccessTokenDO accessTokenDO,
-                                                  String userStoreDomain, String grantType)
+            String tokenStateId, AccessTokenDO accessTokenDO, String userStoreDomain, String grantType)
             throws IdentityOAuth2Exception {
 
-        if (OAuthConstants.GrantTypes.REFRESH_TOKEN.equals(grantType)
-                && OAuthConstants.TokenStates.TOKEN_STATE_INACTIVE.equals(tokenState)) {
-            //store invalidated refresh token as a new entry
-            if (accessTokenDO.getRefreshToken() == null) {
-                throw new IdentityOAuth2Exception("Refresh token is not available");
-            }
-            //TODO:// no access token information ATM
-            accessTokenDO.setAccessToken("DEFAULT");
-            //insertInvalidToken(accessTokenDO, consumerKey);
-        } else if (OAuthConstants.TokenStates.TOKEN_STATE_REVOKED.equals(tokenState) && grantType == null) {
-            //store revoked access token or refresh token as a new entry
-            if (accessTokenDO.getAccessToken() == null && accessTokenDO.getRefreshToken() == null) {
-                throw new IdentityOAuth2Exception("Access token/Refresh token not available");
-            }
-            if (accessTokenDO.getAccessToken() != null && accessTokenDO.getRefreshToken() == null) {
-                //TODO://no refresh token information ATM
-                accessTokenDO.setRefreshToken("DEFAULT");
-            }
-            if (accessTokenDO.getRefreshToken() != null && accessTokenDO.getAccessToken() == null) {
-                //TODO://no access token information ATM
-                accessTokenDO.setAccessToken("DEFAULT");
-            }
-            //insertInvalidToken(accessTokenDO, consumerKey);
-        }
     }
+    
     @Override
     public void updateUserStoreDomain(int tenantId, String currentUserStoreDomain, String newUserStoreDomain) {
 
@@ -245,22 +214,4 @@ public class ExtendedAccessTokenDAOImpl implements AccessTokenDAO {
     public void updateAccessTokenState(String tokenId, String tokenState) {
 
     }
-/*
-    public boolean isInvalidToken(String accessToken) throws IdentityOAuth2Exception {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            String query = "SELECT 1 FROM IDN_OAUTH2_ACCESS_TOKEN "
-                    + "WHERE ACCESS_TOKEN_HASH = ? AND (TOKEN_STATE='INACTIVE' OR"
-                    + " TOKEN_STATE='REVOKED')";
-            String sql = OAuth2Util.getTokenPartitionedSqlByToken(query, accessToken);
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setString(1, getHashingPersistenceProcessor().getProcessedRefreshToken(accessToken));
-                try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                    return resultSet.next();
-                }
-            }
-        } catch (SQLException e) {
-            throw new IdentityOAuth2Exception("Error while checking existence of token as an invalid token.", e);
-        }
-    }
-*/
 }
