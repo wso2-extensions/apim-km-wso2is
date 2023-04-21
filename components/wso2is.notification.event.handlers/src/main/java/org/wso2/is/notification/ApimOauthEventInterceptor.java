@@ -39,7 +39,7 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.RefreshGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.is.notification.event.TokenRevocationEvent;
+import org.wso2.is.notification.event.*;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
 import java.text.ParseException;

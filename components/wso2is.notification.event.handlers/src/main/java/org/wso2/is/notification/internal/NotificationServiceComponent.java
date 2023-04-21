@@ -15,8 +15,7 @@ import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.oauth.event.OAuthEventInterceptor;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import org.wso2.is.notification.APIMTokenExchangeAuditLogger;
-import org.wso2.is.notification.ApimOauthEventInterceptor;
+import org.wso2.is.notification.*;
 
 /**
  * Activation class for notification
@@ -26,6 +25,7 @@ public class NotificationServiceComponent {
 
     private static final Log log = LogFactory.getLog(NotificationServiceComponent.class);
     ServiceRegistration<OAuthEventInterceptor> serviceRegistration;
+    ServiceRegistration<OAuthEventInterceptor> internalTokenRevocationService;
     private ServiceRegistration<OAuthEventInterceptor> auditLoggerServiceRegistration;
 
     @Activate
@@ -34,6 +34,8 @@ public class NotificationServiceComponent {
         BundleContext bundleContext = componentContext.getBundleContext();
         serviceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new ApimOauthEventInterceptor(), null);
+        internalTokenRevocationService =
+                bundleContext.registerService(OAuthEventInterceptor.class, new InternalTokenRevocationInterceptor(), null);
         auditLoggerServiceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new APIMTokenExchangeAuditLogger(), null);
     }
@@ -92,6 +94,9 @@ public class NotificationServiceComponent {
 
         if (serviceRegistration != null) {
             serviceRegistration.unregister();
+        }
+        if (internalTokenRevocationService != null) {
+            internalTokenRevocationService.unregister();
         }
         if (auditLoggerServiceRegistration != null) {
             auditLoggerServiceRegistration.unregister();
