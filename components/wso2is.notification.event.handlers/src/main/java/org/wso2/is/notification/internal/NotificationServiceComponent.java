@@ -34,8 +34,6 @@ public class NotificationServiceComponent {
         BundleContext bundleContext = componentContext.getBundleContext();
         serviceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new ApimOauthEventInterceptor(), null);
-        internalTokenRevocationService =
-                bundleContext.registerService(OAuthEventInterceptor.class, new InternalTokenRevocationInterceptor(), null);
         auditLoggerServiceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new APIMTokenExchangeAuditLogger(), null);
     }

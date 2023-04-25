@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.oauth.dto.*;
 import org.wso2.carbon.identity.oauth.listener.*;
 import org.wso2.is.notification.*;
 import org.wso2.is.notification.event.*;
+import org.wso2.is.notification.internal.*;
 
 import java.util.*;
 
@@ -57,16 +58,11 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
     }
 
     @Override
-    public void doPostRevokeOAuthSecret(String consumerKey, Properties properties) throws IdentityOAuthAdminException {
+    public void doPostRevokeRegenerateOAuthSecret(String consumerKey, Properties properties)
+            throws IdentityOAuthAdminException {
         InternalTokenRevocationEvent internalTokenRevocationEvent
                 = new InternalTokenRevocationEvent(consumerKey, properties);
-        InternalTokenRevocationInterceptor internalTokenRevocationInterceptor = new InternalTokenRevocationInterceptor();
-        internalTokenRevocationInterceptor.publishEvent(internalTokenRevocationEvent);
-    }
-
-    @Override
-    public void doPostRegenerateOAuthSecret(String consumerKey, Properties properties) throws IdentityOAuthAdminException {
-        log.info(">>>>>>>>>>>doPostRegenerateOAuthSecret");
+        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationEvent);
     }
 
 }

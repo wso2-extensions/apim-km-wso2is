@@ -56,7 +56,6 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     boolean enabled;
     String username;
     char[] password;
-    private EventSender eventSender;
     private static final String JWT = "JWT";
 
     public ApimOauthEventInterceptor() {
@@ -72,9 +71,10 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             if (StringUtils.isNotEmpty(usernameProperty) && StringUtils.isNotEmpty(passwordProperty)) {
                 username = NotificationUtil.replaceSystemProperty(usernameProperty);
                 password = NotificationUtil.replaceSystemProperty(passwordProperty).toCharArray();
-                eventSender = new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap);
+                ServiceReferenceHolder.getInstance()
+                        .setEventSender(new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap));
             } else {
-                eventSender = new EventSender(notificationEndpoint, headerMap);
+                ServiceReferenceHolder.getInstance().setEventSender(new EventSender(notificationEndpoint, headerMap));
             }
         }
     }
@@ -234,7 +234,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
 
         if (isEnabled()) {
             if (StringUtils.isNotEmpty(notificationEndpoint)) {
-                eventSender.publishEvent(tokenRevocationEvent);
+                ServiceReferenceHolder.getInstance().getEventSender().publishEvent(tokenRevocationEvent);
             }
         }
     }
