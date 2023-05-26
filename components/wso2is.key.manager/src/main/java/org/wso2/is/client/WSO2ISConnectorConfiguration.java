@@ -59,6 +59,10 @@ public class WSO2ISConnectorConfiguration extends DefaultKeyManagerConnectorConf
         configurationDtoList
                 .add(new ConfigurationDto("Password", "Password", "input",
                         "Password of Admin user", "", true, true, Collections.emptyList(), false));
+        configurationDtoList.add(new ConfigurationDto("km_admin_as_app_owner",
+                "Enable admin user as the owner of created OAuth applications", "select",
+                "Enable admin user as the owner of created OAuth applications", "", false, false,
+                Collections.singletonList("Use as Application Owner"), false));
         configurationDtoList.addAll(super.getConnectionConfigurations());
         return configurationDtoList;
     }
