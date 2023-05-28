@@ -24,6 +24,9 @@ public class WSO2ISConstants {
 
     public static final String WSO2IS_TYPE = "WSO2-IS";
     public static final String DISPLAY_NAME = "WSO2 Identity Server";
+    public static final String KM_ADMIN_AS_APP_OWNER_NAME = "km_admin_as_app_owner";
+    public static final String KM_ADMIN_AS_APP_OWNER_LABEL = "Enable admin user as the owner of created OAuth applications";
+    public static final String KM_ADMIN_AS_APP_OWNER_VALUE = "Use as Application Owner";
 
     WSO2ISConstants() {
 
