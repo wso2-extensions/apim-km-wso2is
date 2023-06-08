@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
 import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
 import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.impl.AMDefaultKeyManagerImpl;
@@ -33,6 +34,7 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
 
     private static final Log log = LogFactory.getLog(WSO2ISOAuthClient.class);
+    private boolean kmAdminAsAppOwner = false;
 
     public String getType() {
 
@@ -40,8 +42,17 @@ public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
     }
 
     @Override
+    public void loadConfiguration(KeyManagerConfiguration configuration) throws APIManagementException {
+        Object kmAdminAsAppOwnerParameter = configuration.getParameter(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_NAME);
+        if (kmAdminAsAppOwnerParameter != null) {
+            kmAdminAsAppOwner = (boolean) kmAdminAsAppOwnerParameter;
+        }
+        super.loadConfiguration(configuration);
+    }
+
+    @Override
     public OAuthApplicationInfo createApplication(OAuthAppRequest oauthAppRequest) throws APIManagementException {
-        if (useKmAdminAsAppOwner()) {
+        if (kmAdminAsAppOwner) {
             overrideKMAdminAsAppOwnerProperties(oauthAppRequest);
         }
         return super.createApplication(oauthAppRequest);
@@ -49,25 +60,10 @@ public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
 
     @Override
     public OAuthApplicationInfo updateApplication(OAuthAppRequest appInfoDTO) throws APIManagementException {
-        if (useKmAdminAsAppOwner()) {
+        if (kmAdminAsAppOwner) {
             overrideKMAdminAsAppOwnerProperties(appInfoDTO);
         }
         return super.updateApplication(appInfoDTO);
-    }
-
-    /**
-     * Check whether KM admin has to be used as the OAuth application owner
-     *
-     * @return whether KM admin has to be used as the OAuth application owner
-     */
-    private boolean useKmAdminAsAppOwner() throws APIManagementException {
-        boolean kmAdminAsAppOwner = false;
-        Object kmAdminAsAppOwnerParameter = this.getKeyManagerConfiguration()
-                .getParameter(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_NAME);
-        if (kmAdminAsAppOwnerParameter != null) {
-            kmAdminAsAppOwner = (boolean) kmAdminAsAppOwnerParameter;
-        }
-        return kmAdminAsAppOwner;
     }
 
     /**
