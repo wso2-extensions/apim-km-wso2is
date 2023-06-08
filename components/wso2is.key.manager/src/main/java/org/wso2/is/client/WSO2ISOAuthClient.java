@@ -39,6 +39,7 @@ public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
         return WSO2ISConstants.WSO2IS_TYPE;
     }
 
+    @Override
     public OAuthApplicationInfo createApplication(OAuthAppRequest oauthAppRequest) throws APIManagementException {
         if (useKmAdminAsAppOwner()) {
             overrideKMAdminAsAppOwnerProperties(oauthAppRequest);
@@ -54,6 +55,11 @@ public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
         return super.updateApplication(appInfoDTO);
     }
 
+    /**
+     * Check whether KM admin has to be used as the OAuth application owner
+     *
+     * @return whether KM admin has to be used as the OAuth application owner
+     */
     private boolean useKmAdminAsAppOwner() throws APIManagementException {
         boolean kmAdminAsAppOwner = false;
         Object kmAdminAsAppOwnerParameter = this.getKeyManagerConfiguration()
@@ -64,6 +70,10 @@ public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
         return kmAdminAsAppOwner;
     }
 
+    /**
+     * Override the OAuth app username with the KM admin username and tenant domain
+     * with the KM admin user's tenant domain
+     */
     private void overrideKMAdminAsAppOwnerProperties(OAuthAppRequest oauthAppRequest) {
         String kmAdminUsername = this.getConfigurationParamValue(WSO2ISConstants.KEY_MANAGER_USERNAME);
         OAuthApplicationInfo oAuthApplicationInfo = oauthAppRequest.getOAuthApplicationInfo();
