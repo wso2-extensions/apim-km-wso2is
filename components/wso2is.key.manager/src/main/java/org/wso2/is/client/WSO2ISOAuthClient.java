@@ -20,7 +20,11 @@ package org.wso2.is.client;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
+import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.impl.AMDefaultKeyManagerImpl;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 /**
  * This class provides the implementation to use "wso2is" for managing
@@ -33,5 +37,38 @@ public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
     public String getType() {
 
         return WSO2ISConstants.WSO2IS_TYPE;
+    }
+
+    public OAuthApplicationInfo createApplication(OAuthAppRequest oauthAppRequest) throws APIManagementException {
+        if (useKmAdminAsAppOwner()) {
+            overrideKMAdminAsAppOwnerProperties(oauthAppRequest);
+        }
+        return super.createApplication(oauthAppRequest);
+    }
+
+    @Override
+    public OAuthApplicationInfo updateApplication(OAuthAppRequest appInfoDTO) throws APIManagementException {
+        if (useKmAdminAsAppOwner()) {
+            overrideKMAdminAsAppOwnerProperties(appInfoDTO);
+        }
+        return super.updateApplication(appInfoDTO);
+    }
+
+    private boolean useKmAdminAsAppOwner() throws APIManagementException {
+        boolean kmAdminAsAppOwner = false;
+        Object kmAdminAsAppOwnerParameter = this.getKeyManagerConfiguration()
+                .getParameter(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_NAME);
+        if (kmAdminAsAppOwnerParameter != null) {
+            kmAdminAsAppOwner = (boolean) kmAdminAsAppOwnerParameter;
+        }
+        return kmAdminAsAppOwner;
+    }
+
+    private void overrideKMAdminAsAppOwnerProperties(OAuthAppRequest oauthAppRequest) {
+        String kmAdminUsername = this.getConfigurationParamValue(WSO2ISConstants.KEY_MANAGER_USERNAME);
+        OAuthApplicationInfo oAuthApplicationInfo = oauthAppRequest.getOAuthApplicationInfo();
+        oAuthApplicationInfo.addParameter(WSO2ISConstants.OAUTH_CLIENT_USERNAME, kmAdminUsername);
+        String kmAdminTenantDomain = MultitenantUtils.getTenantDomain(kmAdminUsername);
+        this.setTenantDomain(kmAdminTenantDomain);
     }
 }

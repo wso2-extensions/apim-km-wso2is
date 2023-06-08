@@ -386,11 +386,7 @@ public class DCRMService {
 
         String applicationOwner = registrationRequest.getApplicationOwner();
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        if (!StringUtils.isEmpty(applicationOwner)) {
-            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(applicationOwner);
-        } else {
-            applicationOwner = PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername();
-        }
+        PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(applicationOwner);
 
         String spName = registrationRequest.getClientName();
         String templateName = registrationRequest.getSpTemplateName();
