@@ -108,7 +108,7 @@ public class DCRMService {
         String overrideSpNameProp = System.getProperty(OVERRIDE_SP_NAME);
         boolean overrideSpName = StringUtils.isEmpty(overrideSpNameProp) || Boolean.parseBoolean(overrideSpNameProp);
 
-        String clientName = updateRequest.getClientName();
+        String clientName = overrideSpName ? updateRequest.getClientName() : appDTO.getApplicationName();
 
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
@@ -131,9 +131,7 @@ public class DCRMService {
             // Need to create a deep clone, since modifying the fields of the original object,
             // will modify the cached SP object.
             ServiceProvider clonedSP = ExtendedDCRMUtils.cloneServiceProvider(sp);
-            if (overrideSpName) {
-                clonedSP.setApplicationName(clientName);
-            }
+            clonedSP.setApplicationName(clientName);
             updateServiceProvider(clonedSP, tenantDomain, applicationOwner);
         }
 
