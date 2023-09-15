@@ -113,7 +113,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                     - claimsSet.getIssueTime().getTime());
             validationDataDO.setGrantType("refresh_token");
             validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
-            AuthenticatedUser user = OAuth2Util.getUserFromUserName((String) claimsSet.getClaim("given_name"));
+            AuthenticatedUser user = OAuth2Util.getUserFromUserName((String) claimsSet.getClaim("su"));
             user.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
             validationDataDO.setAuthorizedUser(user);
             validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
