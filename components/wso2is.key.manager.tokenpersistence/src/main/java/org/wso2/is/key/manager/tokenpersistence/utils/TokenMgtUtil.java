@@ -133,7 +133,7 @@ public class TokenMgtUtil {
         return residentIdentityProvider;
     }
     
-    private static String getTenantDomain() {
+    public static String getTenantDomain() {
         String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         if (StringUtils.isEmpty(tenantDomain)) {
             tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;

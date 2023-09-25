@@ -25,15 +25,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenValidationProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.carbon.identity.oauth2.dto.OAuth2TokenValidationRequestDTO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.identity.oauth2.validators.OAuth2TokenValidationMessageContext;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
@@ -50,8 +50,7 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
 
     private static final Log log = LogFactory.getLog(InMemoryTokenValidationProcessor.class);
 
-    public AccessTokenDO validateToken(OAuth2TokenValidationMessageContext messageContext,
-                                       OAuth2TokenValidationRequestDTO validationRequestDTO, boolean includeExpired)
+    public AccessTokenDO validateToken(String accessToken, boolean includeExpired)
             throws IdentityOAuth2Exception {
 
         /*
@@ -59,10 +58,10 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
          * validation as access tokens.
          */
         // check if token is JWT.
-        if (OAuth2Util.isJWT(validationRequestDTO.getAccessToken().getIdentifier())) {
+        if (OAuth2Util.isJWT(accessToken)) {
             //validate JWT token signature, expiry time, not before time
             try {
-                SignedJWT signedJWT = SignedJWT.parse(validationRequestDTO.getAccessToken().getIdentifier());
+                SignedJWT signedJWT = SignedJWT.parse(accessToken);
                 JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
                 if (claimsSet == null) {
                     throw new IdentityOAuth2Exception("Claim values are empty in the given Token.");
@@ -82,15 +81,13 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
                 String consumerKey = (String) claimsSet.getClaim("azp");
                 // check whether the token is already revoked through direct revocations
                 if (ServiceReferenceHolder.getInvalidTokenPersistenceService().isInvalidToken(
-                        TokenMgtUtil.getTokenIdentifier(validationRequestDTO.getAccessToken().getIdentifier(),
-                                consumerKey),
+                        TokenMgtUtil.getTokenIdentifier(accessToken, consumerKey),
                         PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN, consumerKey)) {
                     throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
                 }
                 //TODO:// check whether the token is already revoked through indirect revocations
                 //validate token against persisted invalid refresh tokens
                 Object scopes = claimsSet.getClaim("scope");
-
                 //create new AccessTokenDO
                 AccessTokenDO validationDataDO = new AccessTokenDO();
                 validationDataDO.setConsumerKey(consumerKey);
@@ -98,8 +95,12 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
                 validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                         - claimsSet.getIssueTime().getTime());
                 validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
-                //TODO:// identify the user from the userId in subject claim ?
-                AuthenticatedUser user = OAuth2Util.getUserFromUserName(claimsSet.getSubject());
+                RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
+                int tenantId = realmService.getTenantManager().getTenantId(TokenMgtUtil.getTenantDomain());
+                AbstractUserStoreManager userStoreManager
+                        = (AbstractUserStoreManager) realmService.getTenantUserRealm(tenantId).getUserStoreManager();
+                String userName = userStoreManager.getUserNameFromUserID(claimsSet.getSubject());
+                AuthenticatedUser user = OAuth2Util.getUserFromUserName(userName);
                 user.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
                 validationDataDO.setAuthzUser(user);
                 if (isTokenActive) {
@@ -107,13 +108,15 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
                 } else {
                     validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
                 }
-                OAuthUtil.clearOAuthCache(consumerKey, user, OAuth2Util.buildScopeString(validationDataDO.getScope()),
-                        "NONE");
+                validationDataDO.setAccessToken(accessToken);
+                //TODO:// handle oauth caching
                 return validationDataDO;
             } catch (JOSEException | ParseException e) {
                 throw new IdentityOAuth2Exception("Error while validating Token.", e);
+            } catch (UserStoreException e) {
+                throw new IdentityOAuth2Exception("Error while getting authenticated user for token.", e);
             }
-        }
+        } //TODO:// handle error if not jwt
         return null;
     }
 
@@ -137,5 +140,22 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
             }
         }
         return true;
+    }
+
+    @Override
+    public String getClientIdForAccessToken(String accessToken) throws IdentityOAuth2Exception {
+
+        if (OAuth2Util.isJWT(accessToken)) {
+            //validate JWT token signature, expiry time, not before time
+            try {
+                SignedJWT signedJWT = SignedJWT.parse(accessToken);
+                JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+                return (String) claimsSet.getClaim("azp");
+            } catch (ParseException e) {
+                throw new IdentityOAuth2Exception("Error while validating Token.", e);
+            }
+        } else {
+            throw new IdentityOAuth2Exception("Token type is not valid");
+        }
     }
 }

@@ -72,7 +72,7 @@ public class DBUtil {
      * Utility method to get a new database connection
      *
      * @return Connection
-     * @throws java.sql.SQLException if failed to get Connection
+     * @throws SQLException if failed to get Connection
      */
     public static Connection getConnection() throws SQLException {
         if (dataSource == null) {
