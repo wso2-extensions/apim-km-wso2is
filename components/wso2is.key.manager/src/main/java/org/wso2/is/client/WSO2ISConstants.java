@@ -31,6 +31,13 @@ public class WSO2ISConstants {
             "Enable admin user as the owner of created OAuth applications";
     public static final String KM_ADMIN_AS_APP_OWNER_VALUE = "Use as OAuth Application Owner";
 
+    public static final String KEY_MANAGER_USERNAME = "Username";
+    public static final String OAUTH_CLIENT_USERNAME = "username";
+    public static final String KM_ADMIN_AS_APP_OWNER_NAME = "km_admin_as_app_owner";
+    public static final String KM_ADMIN_AS_APP_OWNER_LABEL =
+            "Enable admin user as the owner of created OAuth applications";
+    public static final String KM_ADMIN_AS_APP_OWNER_VALUE = "Use as OAuth Application Owner";
+
     WSO2ISConstants() {
 
     }
