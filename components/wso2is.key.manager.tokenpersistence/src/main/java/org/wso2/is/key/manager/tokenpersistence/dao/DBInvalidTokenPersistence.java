@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com)
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,6 +28,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -46,6 +47,9 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             "INSERT INTO AM_INVALID_TOKENS (UUID, SIGNATURE, CONSUMER_KEY, TOKEN_TYPE, EXPIRY_TIMESTAMP) "
             + "VALUES (?,?,?,?,?)";
     public static final String DELETE_INVALID_TOKEN = "DELETE FROM AM_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
+
+    public static final String IS_INTERNALLY_REVOKED_CONSUMER_KEY = "SELECT 1 FROM AM_INTERNAL_TOKEN_REVOCATION WHERE "
+            + "CONSUMER_KEY = ? AND TIME_REVOKED > ?";
     
     private DBInvalidTokenPersistence() {
 
@@ -61,11 +65,12 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     
     @Override
     public boolean isInvalidToken(String token, String type, String consumerKey) throws IdentityOAuth2Exception {
+
         log.debug("Validate invalid token from the database.");
         try (Connection connection = DBUtil.getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(IS_INVALID_TOKEN)) {
                 preparedStatement.setString(1, token);
-                preparedStatement.setString(2, type);
+                preparedStatement.setString(2, type); //TODO: check whether why this is really needed
                 preparedStatement.setString(3, consumerKey);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     return resultSet.next();
@@ -108,6 +113,32 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             connection.commit();
         } catch (SQLException e) {
             throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
+        }
+    }
+
+    /**
+     * Check whether any internally revoked JWT rule is present for the given consumer key which is revoked after the
+     * given timestamp.
+     *
+     * @param consumerKey Consumer key of the application.
+     * @param timeStamp   Timestamp to check the revoked JWT.
+     * @throws IdentityOAuth2Exception If an error occurs while checking the existence of the revoked JWT.
+     */
+    public boolean isRevokedJWTConsumerKeyExist(String consumerKey, Date timeStamp) throws IdentityOAuth2Exception {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Check whether internally revoked JWT rule is present for the consumer key: " + consumerKey);
+        }
+        try (Connection connection = DBUtil.getConnection();
+             PreparedStatement ps = connection.prepareStatement(IS_INTERNALLY_REVOKED_CONSUMER_KEY)) {
+            ps.setString(1, consumerKey);
+            ps.setTimestamp(2, new java.sql.Timestamp(timeStamp.getTime()));
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return resultSet.next();
+            }
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception("Error while checking existence of internally revoked JWT for consumer "
+                    + "key: " + consumerKey, e);
         }
     }
 }

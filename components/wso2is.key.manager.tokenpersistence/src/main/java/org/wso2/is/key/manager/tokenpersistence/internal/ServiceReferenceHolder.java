@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com)
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,24 +26,25 @@ import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
 
 /**
- * Service holder to keep track on osgi Services
+ * Service holder to keep track on osgi Services.
  */
 public class ServiceReferenceHolder {
-    private static final Object lock = new Object();
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
     private RegistryService registryService;
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
     private static InvalidTokenPersistenceService tokenPersistenceService;
-    
+
     private ServiceReferenceHolder() {
-        
+
     }
+
     public static ServiceReferenceHolder getInstance() {
 
         return instance;
     }
+
     public void setRealmService(RealmService realmService) {
 
         this.realmService = realmService;
@@ -70,22 +71,22 @@ public class ServiceReferenceHolder {
         this.tenantRegistryLoader = tenantRegistryLoader;
     }
 
-    public static ConfigurationContextService getContextService() {
+    public ConfigurationContextService getContextService() {
         return contextService;
     }
 
-    public static void setContextService(ConfigurationContextService contextService) {
+    public void setContextService(ConfigurationContextService contextService) {
         ServiceReferenceHolder.contextService = contextService;
     }
 
-    public static synchronized InvalidTokenPersistenceService getInvalidTokenPersistenceService() {
+    public synchronized InvalidTokenPersistenceService getInvalidTokenPersistenceService() {
         if (tokenPersistenceService == null) {
-            tokenPersistenceService = DBInvalidTokenPersistence.getInstance();     
+            tokenPersistenceService = DBInvalidTokenPersistence.getInstance();
         }
         return tokenPersistenceService;
     }
-    
-    public static void setInvalidTokenPersistenceService(
+
+    public void setInvalidTokenPersistenceService(
             InvalidTokenPersistenceService invalidTokenPersistenceService) {
         tokenPersistenceService = invalidTokenPersistenceService;
     }

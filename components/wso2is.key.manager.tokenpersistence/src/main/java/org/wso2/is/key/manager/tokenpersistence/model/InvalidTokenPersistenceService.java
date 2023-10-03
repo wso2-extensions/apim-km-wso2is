@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com)
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,16 +20,17 @@ package org.wso2.is.key.manager.tokenpersistence.model;
 
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 
+import java.util.Date;
+
 /**
- * 
- * Interface to access invalid token information
- *
+ * Interface to access invalid token information.
  */
 public interface InvalidTokenPersistenceService {
 
-    public boolean isInvalidToken(String token, String type, String consumerKey) throws IdentityOAuth2Exception;
+    boolean isInvalidToken(String token, String type, String consumerKey) throws IdentityOAuth2Exception;
 
-    public void addInvalidToken(String token, String type, String consumerKey, Long expiryTime)
+    void addInvalidToken(String token, String type, String consumerKey, Long expiryTime)
             throws IdentityOAuth2Exception;
 
+    boolean isRevokedJWTConsumerKeyExist(String consumerKey, Date timeStamp) throws IdentityOAuth2Exception;
 }

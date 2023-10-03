@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com)
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,16 +43,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
-
-
-
 /**
  * Extended JWT Token Issuer to extend issuing of refresh token in JWT format.
  */
 public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
     private static Log log = LogFactory.getLog(ExtendedJWTTokenIssuer.class);
     private static final String AUDIENCE = "aud";
-    private static final String AUTHORIZATION_PARTY = "azp";
     private static final String CLIENT_ID = "client_id";
     private static final String SCOPE = "scope";
     private static final String GIVEN_NAME = "given_name";
@@ -98,7 +94,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
      *
      * @param request Token request message context.
      * @return Signed jwt string.
-     * @throws IdentityOAuth2Exception
+     * @throws IdentityOAuth2Exception If an error occurred while building the jwt token.
      */
     protected String buildJWTTokenForRefreshTokens(OAuthAuthzReqMessageContext request)
             throws IdentityOAuth2Exception {
@@ -115,7 +111,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (JWSAlgorithm.NONE.getName().equals(signatureAlgorithm.getName())) {
             return new PlainJWT(jwtClaimsSet).serialize();
         }
-
         return signJWT(jwtClaimsSet, null, request);
     }
 
@@ -124,7 +119,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
      *
      * @param request Token request message context.
      * @return Signed jwt string.
-     * @throws IdentityOAuth2Exception
+     * @throws IdentityOAuth2Exception If an error occurred while building the jwt token.
      */
     protected String buildJWTTokenForRefreshTokens(OAuthTokenReqMessageContext request)
             throws IdentityOAuth2Exception {
@@ -141,7 +136,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (JWSAlgorithm.NONE.getName().equals(signatureAlgorithm.getName())) {
             return new PlainJWT(jwtClaimsSet).serialize();
         }
-
         return signJWT(jwtClaimsSet, request, null);
     }
 
@@ -153,7 +147,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
      * @param tokenReqMessageContext     Token request message context.
      * @param consumerKey                Consumer key of the application.
      * @return JWT claim set.
-     * @throws IdentityOAuth2Exception
+     * @throws IdentityOAuth2Exception If an error occurred while creating the JWT claim set.
      */
     protected JWTClaimsSet createJWTClaimSetForRefreshTokens(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
                                                              OAuthTokenReqMessageContext tokenReqMessageContext,
@@ -173,7 +167,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         } else {
             spTenantDomain = tokenReqMessageContext.getOauth2AccessTokenReqDTO().getTenantDomain();
         }
-
         String issuer = OAuth2Util.getIdTokenIssuer(spTenantDomain);
         long curTimeInMillis = Calendar.getInstance().getTimeInMillis();
 
@@ -181,12 +174,11 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (StringUtils.isEmpty(sub)) {
             sub = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext).toFullQualifiedUsername();
         }
-
         // Set the default claims.
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder();
         jwtClaimsSetBuilder.issuer(issuer);
         jwtClaimsSetBuilder.subject(sub);
-        jwtClaimsSetBuilder.claim(AUTHORIZATION_PARTY, consumerKey);
+        jwtClaimsSetBuilder.claim(PersistenceConstants.AUTHORIZATION_PARTY, consumerKey);
         jwtClaimsSetBuilder.issueTime(new Date(curTimeInMillis));
         jwtClaimsSetBuilder.jwtID(UUID.randomUUID().toString());
         jwtClaimsSetBuilder.notBeforeTime(new Date(curTimeInMillis));
@@ -236,13 +228,14 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
     /**
      * Get authentication request object from message context.
      *
-     * @param authAuthzReqMessageContext
-     * @param tokenReqMessageContext
-     * @return AuthenticatedUser
+     * @param authAuthzReqMessageContext OAuthAuthzReqMessageContext
+     * @param tokenReqMessageContext     OAuthTokenReqMessageContext
+     * @return AuthenticatedUser    Authenticated user
      */
     protected AuthenticatedUser getAuthenticatedUser(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
                                                      OAuthTokenReqMessageContext tokenReqMessageContext)
             throws IdentityOAuth2Exception {
+
         AuthenticatedUser authenticatedUser;
         if (authAuthzReqMessageContext != null) {
             authenticatedUser = authAuthzReqMessageContext.getAuthorizationReqDTO().getUser();

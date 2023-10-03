@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com).
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com)
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -15,147 +15,84 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.wso2.is.key.manager.tokenpersistence.processor;
 
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
-import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenValidationProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
-import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
-import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
-import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.util.Date;
 
 /**
- * Default token validation processor with token persistence.
+ * In Memory token validation processor for in memory token persistence. Token Validation processor is supposed to be
+ * used during token introspection and user info endpoints where you need to validate the token before proceeding.
  */
 public class InMemoryTokenValidationProcessor implements TokenValidationProcessor {
-
 
     private static final Log log = LogFactory.getLog(InMemoryTokenValidationProcessor.class);
 
     public AccessTokenDO validateToken(String accessToken, boolean includeExpired)
             throws IdentityOAuth2Exception {
 
-        /*
-         * not checking for invalid refresh tokens as refresh tokens do not require the same level of real-time
-         * validation as access tokens.
-         */
         // check if token is JWT.
-        if (OAuth2Util.isJWT(accessToken)) {
-            //validate JWT token signature, expiry time, not before time
-            try {
-                SignedJWT signedJWT = SignedJWT.parse(accessToken);
-                JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-                if (claimsSet == null) {
-                    throw new IdentityOAuth2Exception("Claim values are empty in the given Token.");
-                }
-                IdentityProvider identityProvider = TokenMgtUtil.getResidentIDPForIssuer(claimsSet.getIssuer());
-                if (!TokenMgtUtil.validateSignature(signedJWT, identityProvider)) {
-                    throw new IdentityOAuth2Exception(("Invalid signature"));
-                }
-                boolean isTokenActive = true;
-                if (!TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
-                    if (!includeExpired) {
-                        throw new IdentityOAuth2Exception("Invalid token. Expiry time exceeded");
-                    }
-                    isTokenActive = false;
-                }
-                checkNotBeforeTime(claimsSet.getNotBeforeTime());
-                String consumerKey = (String) claimsSet.getClaim("azp");
-                // check whether the token is already revoked through direct revocations
-                if (ServiceReferenceHolder.getInvalidTokenPersistenceService().isInvalidToken(
-                        TokenMgtUtil.getTokenIdentifier(accessToken, consumerKey),
-                        PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN, consumerKey)) {
-                    throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
-                }
-                //TODO:// check whether the token is already revoked through indirect revocations
-                //validate token against persisted invalid refresh tokens
-                Object scopes = claimsSet.getClaim("scope");
-                //create new AccessTokenDO
-                AccessTokenDO validationDataDO = new AccessTokenDO();
-                validationDataDO.setConsumerKey(consumerKey);
-                validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
-                validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
-                        - claimsSet.getIssueTime().getTime());
-                validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
-                RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
-                int tenantId = realmService.getTenantManager().getTenantId(TokenMgtUtil.getTenantDomain());
-                AbstractUserStoreManager userStoreManager
-                        = (AbstractUserStoreManager) realmService.getTenantUserRealm(tenantId).getUserStoreManager();
-                String userName = userStoreManager.getUserNameFromUserID(claimsSet.getSubject());
-                AuthenticatedUser user = OAuth2Util.getUserFromUserName(userName);
-                user.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
-                validationDataDO.setAuthzUser(user);
-                if (isTokenActive) {
-                    validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
-                } else {
-                    validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
-                }
-                validationDataDO.setAccessToken(accessToken);
-                //TODO:// handle oauth caching
-                return validationDataDO;
-            } catch (JOSEException | ParseException e) {
-                throw new IdentityOAuth2Exception("Error while validating Token.", e);
-            } catch (UserStoreException e) {
-                throw new IdentityOAuth2Exception("Error while getting authenticated user for token.", e);
+        TokenMgtUtil.isJWTToken(accessToken);
+        log.debug(String.format("Validating JWT Token with expiry %s", includeExpired));
+        // validate JWT token signature, expiry time, not before time.
+        SignedJWT signedJWT = TokenMgtUtil.parseJWT(accessToken);
+        JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
+        // expiry time verification.
+        boolean isTokenActive = true;
+        if (!TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
+            if (!includeExpired) {
+                throw new IdentityOAuth2Exception("Invalid token. Expiry time exceeded.");
             }
-        } //TODO:// handle error if not jwt
-        return null;
-    }
-
-    private boolean checkNotBeforeTime(Date notBeforeTime) throws IdentityOAuth2Exception {
-
-        if (notBeforeTime != null) {
-            long timeStampSkewMillis = OAuthServerConfiguration.getInstance().getTimeStampSkewInSeconds() * 1000;
-            long notBeforeTimeMillis = notBeforeTime.getTime();
-            long currentTimeInMillis = System.currentTimeMillis();
-            if (currentTimeInMillis + timeStampSkewMillis < notBeforeTimeMillis) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Token is used before Not_Before_Time." +
-                            ", Not Before Time(ms) : " + notBeforeTimeMillis +
-                            ", TimeStamp Skew : " + timeStampSkewMillis +
-                            ", Current Time : " + currentTimeInMillis + ". Token Rejected and validation terminated.");
-                }
-                throw new IdentityOAuth2Exception("Token is used before Not_Before_Time.");
-            }
-            if (log.isDebugEnabled()) {
-                log.debug("Not Before Time(nbf) of Token was validated successfully.");
-            }
+            isTokenActive = false;
         }
-        return true;
-    }
-
-    @Override
-    public String getClientIdForAccessToken(String accessToken) throws IdentityOAuth2Exception {
-
-        if (OAuth2Util.isJWT(accessToken)) {
-            //validate JWT token signature, expiry time, not before time
-            try {
-                SignedJWT signedJWT = SignedJWT.parse(accessToken);
-                JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-                return (String) claimsSet.getClaim("azp");
-            } catch (ParseException e) {
-                throw new IdentityOAuth2Exception("Error while validating Token.", e);
-            }
+        // not before time verification.
+        TokenMgtUtil.checkNotBeforeTime(claimsSet.getNotBeforeTime());
+        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+        String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(accessToken, consumerKey);
+        /*
+         * check whether the token is already revoked through direct revocations and following indirect
+         * revocations.
+         * 1. check if consumer app was changed.
+         * 2. check if user was changed.
+         */
+        if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey,
+                TokenMgtUtil.isRefreshTokenType(claimsSet) ? PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN :
+                        PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN)
+                || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
+                claimsSet.getIssueTime())) {
+            throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
+        }
+        Object scopes = claimsSet.getClaim(PersistenceConstants.SCOPE);
+        // create new AccessTokenDO with validated token information.
+        AccessTokenDO validationDataDO = new AccessTokenDO();
+        validationDataDO.setConsumerKey(consumerKey);
+        validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
+        validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
+                - claimsSet.getIssueTime().getTime());
+        validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
+        AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
+        validationDataDO.setAuthzUser(authenticatedUser);
+        if (isTokenActive) {
+            log.debug("Token is active");
+            validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
         } else {
-            throw new IdentityOAuth2Exception("Token type is not valid");
+            log.debug("Token is expired");
+            validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
         }
+        validationDataDO.setAccessToken(accessToken);
+        //TODO:// handle oauth caching
+        return validationDataDO;
     }
 }
