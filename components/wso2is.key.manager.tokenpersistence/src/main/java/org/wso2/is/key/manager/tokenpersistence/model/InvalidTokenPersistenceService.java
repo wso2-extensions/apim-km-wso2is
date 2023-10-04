@@ -27,9 +27,9 @@ import java.util.Date;
  */
 public interface InvalidTokenPersistenceService {
 
-    boolean isInvalidToken(String token, String type, String consumerKey) throws IdentityOAuth2Exception;
+    boolean isInvalidToken(String token, String consumerKey) throws IdentityOAuth2Exception;
 
-    void addInvalidToken(String token, String type, String consumerKey, Long expiryTime)
+    void addInvalidToken(String token, String consumerKey, Long expiryTime)
             throws IdentityOAuth2Exception;
 
     boolean isRevokedJWTConsumerKeyExist(String consumerKey, Date timeStamp) throws IdentityOAuth2Exception;

@@ -20,7 +20,7 @@ package org.wso2.is.key.manager.tokenpersistence.processor;
 
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.oltu.oauth2.common.message.types.GrantType;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
-import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
@@ -50,9 +49,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         //TODO:// Decide whether token binding is needed
         accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
-                accessTokenDO.getAccessToken(), PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN,
-                accessTokenDO.getConsumerKey(),
-                accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis());
+                accessTokenDO.getAccessToken(), accessTokenDO.getConsumerKey(), accessTokenDO.getIssuedTime().getTime()
+                        + accessTokenDO.getValidityPeriodInMillis());
     }
 
     @Override
@@ -64,8 +62,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         refreshTokenDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
                 TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), revokeRequestDTO.getConsumerKey()),
-                PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, revokeRequestDTO.getConsumerKey(),
-                refreshTokenDO.getIssuedTime().getTime() + refreshTokenDO.getValidityPeriodInMillis());
+                revokeRequestDTO.getConsumerKey(), refreshTokenDO.getIssuedTime().getTime()
+                        + refreshTokenDO.getValidityPeriodInMillis());
     }
 
     @Override
@@ -91,9 +89,9 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (!TokenMgtUtil.isTokenRevokedDirectly(refreshTokenIdentifier, consumerKey,
-                PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN) && !TokenMgtUtil.isTokenRevokedIndirectly(
-                claimsSet.getSubject(), consumerKey, claimsSet.getIssueTime())) {
+        if (!TokenMgtUtil.isTokenRevokedDirectly(refreshTokenIdentifier, consumerKey)
+                && !TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
+                claimsSet.getIssueTime())) {
             validationDataDO = new RefreshTokenValidationDataDO();
             // set expiration state according to jwt claim in it.
             if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
@@ -135,8 +133,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (!TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey,
-                PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN) && !TokenMgtUtil.isTokenRevokedIndirectly(
+        if (!TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
+                && !TokenMgtUtil.isTokenRevokedIndirectly(
                 claimsSet.getSubject(), consumerKey, claimsSet.getIssueTime())) {
             accessTokenDO = new AccessTokenDO();
             String tokenId = UUID.randomUUID().toString();
@@ -164,19 +162,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     }
 
     @Override
-    public boolean isRefreshTokenType(OAuthRevocationRequestDTO revokeRequestDTO) throws IdentityOAuth2Exception {
+    public boolean isRefreshTokenType(OAuthRevocationRequestDTO revokeRequestDTO) {
 
-        boolean status = false;
-        if (StringUtils.equals(GrantType.REFRESH_TOKEN.toString(), revokeRequestDTO.getTokenType())) {
-            status = true;
-        } else {
-            if (OAuth2Util.isJWT(revokeRequestDTO.getToken())) {
-                SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
-                JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
-                return TokenMgtUtil.isRefreshTokenType(claimsSet);
-
-            }
-        }
-        return status;
+        return StringUtils.equals(GrantType.REFRESH_TOKEN.toString(), revokeRequestDTO.getTokenType());
     }
 }

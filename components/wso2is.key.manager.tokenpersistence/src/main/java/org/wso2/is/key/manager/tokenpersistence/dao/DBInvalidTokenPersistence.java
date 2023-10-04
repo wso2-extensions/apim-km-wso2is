@@ -41,10 +41,10 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     private static DBInvalidTokenPersistence instance = null;
     
     public static final String IS_INVALID_TOKEN =
-            "SELECT 1 FROM AM_INVALID_TOKENS WHERE SIGNATURE = ? AND TOKEN_TYPE = ? AND CONSUMER_KEY = ? ";
+            "SELECT 1 FROM AM_INVALID_TOKENS WHERE SIGNATURE = ? AND CONSUMER_KEY = ? ";
     
     public static final String INSERT_INVALID_TOKEN = 
-            "INSERT INTO AM_INVALID_TOKENS (UUID, SIGNATURE, CONSUMER_KEY, TOKEN_TYPE, EXPIRY_TIMESTAMP) "
+            "INSERT INTO AM_INVALID_TOKENS (UUID, SIGNATURE, CONSUMER_KEY, EXPIRY_TIMESTAMP) "
             + "VALUES (?,?,?,?,?)";
     public static final String DELETE_INVALID_TOKEN = "DELETE FROM AM_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
 
@@ -64,14 +64,13 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     
     
     @Override
-    public boolean isInvalidToken(String token, String type, String consumerKey) throws IdentityOAuth2Exception {
+    public boolean isInvalidToken(String token, String consumerKey) throws IdentityOAuth2Exception {
 
         log.debug("Validate invalid token from the database.");
         try (Connection connection = DBUtil.getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(IS_INVALID_TOKEN)) {
                 preparedStatement.setString(1, token);
-                preparedStatement.setString(2, type); //TODO: check whether why this is really needed
-                preparedStatement.setString(3, consumerKey);
+                preparedStatement.setString(2, consumerKey);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     return resultSet.next();
                 }
@@ -82,8 +81,9 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     }
 
     @Override
-    public void addInvalidToken(String token, String type, String consumerKey, Long expiryTime)
+    public void addInvalidToken(String token, String consumerKey, Long expiryTime)
             throws IdentityOAuth2Exception {
+
         log.debug("Insert invalid toke to the database");
         try (Connection connection = DBUtil.getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INVALID_TOKEN)) {
@@ -91,15 +91,13 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                 preparedStatement.setString(1, UUID.randomUUID().toString());
                 preparedStatement.setString(2, token);
                 preparedStatement.setString(3, consumerKey);
-                preparedStatement.setString(4, type);
-                preparedStatement.setLong(5, expiryTime);
+                preparedStatement.setLong(4, expiryTime);
                 preparedStatement.executeUpdate();
                 connection.commit();
             }
         } catch (SQLException e) {
             throw new IdentityOAuth2Exception("Error while checking existence of token as an invalid token.", e);
         }
-        
         removeExpiredJWTs();
     }
 

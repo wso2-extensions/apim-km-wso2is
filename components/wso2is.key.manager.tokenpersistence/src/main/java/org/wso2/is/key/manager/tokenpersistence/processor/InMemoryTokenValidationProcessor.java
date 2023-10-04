@@ -67,9 +67,7 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey,
-                TokenMgtUtil.isRefreshTokenType(claimsSet) ? PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN :
-                        PersistenceConstants.TOKEN_TYPE_ACCESS_TOKEN)
+        if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
                 || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
                 claimsSet.getIssueTime())) {
             throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");

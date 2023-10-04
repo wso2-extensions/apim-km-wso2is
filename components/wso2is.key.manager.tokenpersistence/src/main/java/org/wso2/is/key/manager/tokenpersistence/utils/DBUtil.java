@@ -31,20 +31,19 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 /*
- * DB util to access presistence related db
+ * DB util to access persistence related db.
  */
 public class DBUtil {
 
     private static final Log log = LogFactory.getLog(DBUtil.class);
-
     private static volatile DataSource dataSource = null;
     private static final String DEFAULT_DATASTORE = "jdbc/WSO2_PERSISTENCE_DB";
-    
+
     public static void initialize() throws IdentityRuntimeException {
+
         if (dataSource != null) {
             return;
         }
-
         synchronized (DBUtil.class) {
             if (dataSource == null) {
                 if (log.isDebugEnabled()) {
@@ -60,19 +59,21 @@ public class DBUtil {
                     Context ctx = new InitialContext();
                     dataSource = (DataSource) ctx.lookup(dataSourceName);
                 } catch (NamingException e) {
-                    throw new IdentityRuntimeException("Error while looking up the data " +
-                            "source: " + dataSourceName, e);
+                    throw new IdentityRuntimeException("Error while looking up the data " + "source: " + dataSourceName,
+                            e);
                 }
             }
         }
     }
+
     /**
-     * Utility method to get a new database connection
+     * Utility method to get a new database connection.
      *
      * @return Connection
      * @throws SQLException if failed to get Connection
      */
     public static Connection getConnection() throws SQLException {
+
         if (dataSource == null) {
             initialize();
         }

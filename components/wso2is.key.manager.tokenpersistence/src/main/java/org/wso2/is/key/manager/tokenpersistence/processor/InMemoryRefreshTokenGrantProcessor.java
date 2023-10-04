@@ -72,12 +72,15 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         // check whether the token is already revoked or invalidated directly.
         if (ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
                 TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(), tokenReq.getClientId()),
-                PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, tokenReq.getClientId())) {
+                tokenReq.getClientId())) {
             throw new IdentityOAuth2Exception("Invalid refresh token state.");
         }
-
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(tokenReq.getRefreshToken());
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+        // validate token type is refresh_token.
+        if (TokenMgtUtil.isRefreshTokenType(claimsSet)) {
+            throw new IdentityOAuth2Exception("Invalid refresh token. token_type must be refresh_token.");
+        }
         TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
         if (!TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
             throw new IdentityOAuth2Exception("Invalid token. Expiry time exceeded.");
@@ -95,7 +98,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
          * 2. check if user was changed.
          */
         if (TokenMgtUtil.isTokenRevokedDirectly(TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(),
-                tokenReq.getClientId()), tokenReq.getClientId(), PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN)
+                tokenReq.getClientId()), tokenReq.getClientId())
                 || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
                 claimsSet.getIssueTime())) {
             throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
@@ -142,8 +145,8 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
             }
         }
         //Make the old refresh token inactive and persist it.
-        ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(refreshToken,
-                PersistenceConstants.TOKEN_TYPE_REFRESH_TOKEN, clientId, tokenExpirationTime);
+        ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(refreshToken, clientId,
+                tokenExpirationTime);
     }
 
     @Override

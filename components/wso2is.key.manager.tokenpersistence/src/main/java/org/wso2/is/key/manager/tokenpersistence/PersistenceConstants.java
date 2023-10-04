@@ -28,5 +28,4 @@ public class PersistenceConstants {
     public static final String TOKEN_TYPE_ACCESS_TOKEN = "ACCESS_TOKEN";
     public static final String AUTHORIZATION_PARTY = "azp";
     public static final String SCOPE = "scope";
-    public static final String AUTHORIZED_USER_TYPE = "aut";
 }

@@ -47,14 +47,12 @@ import java.util.UUID;
  * Extended JWT Token Issuer to extend issuing of refresh token in JWT format.
  */
 public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
-    private static Log log = LogFactory.getLog(ExtendedJWTTokenIssuer.class);
+    private static final Log log = LogFactory.getLog(ExtendedJWTTokenIssuer.class);
     private static final String AUDIENCE = "aud";
     private static final String CLIENT_ID = "client_id";
     private static final String SCOPE = "scope";
     private static final String GIVEN_NAME = "given_name";
-
-
-    private Algorithm signatureAlgorithm = null;
+    private Algorithm signatureAlgorithm;
 
     public ExtendedJWTTokenIssuer() throws IdentityOAuth2Exception {
 

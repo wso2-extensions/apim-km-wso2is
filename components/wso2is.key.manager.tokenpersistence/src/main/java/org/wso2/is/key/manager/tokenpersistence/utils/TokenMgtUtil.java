@@ -66,6 +66,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Util class for token management related activities.
@@ -181,10 +182,9 @@ public class TokenMgtUtil {
      * Validate not before time of the JWT token.
      *
      * @param notBeforeTime Not before time
-     * @return True if the token is not used before the not before time, false otherwise.
-     * @throws IdentityOAuth2Exception If an error occurs while validating the not before time.
+     * @throws IdentityOAuth2Exception If the token is used before the not before time.
      */
-    public static boolean checkNotBeforeTime(Date notBeforeTime) throws IdentityOAuth2Exception {
+    public static void checkNotBeforeTime(Date notBeforeTime) throws IdentityOAuth2Exception {
 
         if (notBeforeTime != null) {
             long timeStampSkewMillis = OAuthServerConfiguration.getInstance().getTimeStampSkewInSeconds() * 1000;
@@ -200,7 +200,6 @@ public class TokenMgtUtil {
             }
             log.debug("Not Before Time(nbf) of Token was validated successfully.");
         }
-        return true;
     }
 
     /**
@@ -331,7 +330,7 @@ public class TokenMgtUtil {
         X509Certificate x509Certificate = null;
         JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
 
-        HashMap realm = (HashMap) jwtClaimsSet.getClaim(OAuthConstants.OIDCClaims.REALM);
+        Map realm = (HashMap) jwtClaimsSet.getClaim(OAuthConstants.OIDCClaims.REALM);
 
         // Get certificate from tenant if available in claims.
         if (MapUtils.isNotEmpty(realm)) {
@@ -419,16 +418,14 @@ public class TokenMgtUtil {
      *
      * @param tokenIdentifier Token Identifier
      * @param consumerKey     Consumer Key
-     * @param tokenType       Token Type
      * @return True if token is directly revoked
      * @throws IdentityOAuth2Exception If failed to check is token is directly revoked
      */
-    public static boolean isTokenRevokedDirectly(String tokenIdentifier, String consumerKey, String tokenType)
+    public static boolean isTokenRevokedDirectly(String tokenIdentifier, String consumerKey)
             throws IdentityOAuth2Exception {
 
         return ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
-                TokenMgtUtil.getTokenIdentifier(tokenIdentifier, consumerKey),
-                tokenType, consumerKey);
+                TokenMgtUtil.getTokenIdentifier(tokenIdentifier, consumerKey), consumerKey);
     }
 
     /**
