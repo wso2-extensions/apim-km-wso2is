@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.oauth2.OAuth2Service;
@@ -45,7 +44,7 @@ import javax.ws.rs.core.Response;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({RevokeOneTimeTokenApiServiceImpl.class, UserInfoUtil.class, OAuth2Util.class,
         PrivilegedCarbonContext.class})
-@SuppressStaticInitializationFor("org.wso2.carbon.identity.oauth2.util.OAuth2Util")
+//@SuppressStaticInitializationFor("org.wso2.carbon.identity.oauth2.util.OAuth2Util")
 public class RevokeOneTimeTokenApiServiceImplTest {
 
     private RevokeOneTimeTokenApiServiceImpl revokeService;
