@@ -62,7 +62,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
             // For backward compatibility, we check whether it is available in idn_oauth2_token table.
             RefreshTokenValidationDataDO validationDO = OpaqueTokenUtil
                     .validateOpaqueRefreshToken(tokenReqMessageContext);
-            // TODO: handle oauth cache
+            //TODO: handle oauth cache
             OAuthUtil.clearOAuthCache(tokenReq.getClientId(), validationDO.getAuthorizedUser(),
                     OAuth2Util.buildScopeString(validationDO.getScope()), "NONE");
             return validationDO;
@@ -108,7 +108,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         validationDataDO.setAuthorizedUser(authenticatedUser);
         // if not active, an IdentityOAuth2Exception should have been thrown at the beginning.
         validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
-        // TODO: handle oauth cache
+        //TODO: handle oauth cache
         OAuthUtil.clearOAuthCache(tokenReq.getClientId(), authenticatedUser,
                 OAuth2Util.buildScopeString(validationDataDO.getScope()), "NONE");
         return validationDataDO;
@@ -161,8 +161,8 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         accessTokenDO.setTokenBinding(tokReqMsgCtx.getTokenBinding());
         if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
             // not possible to determine the previous access token, hence setting default value false.
-            // TODO: need to decide how to determine the consented state for the previous access token or if previous
-            // grant type of access token is a supported grant for consented tokens.
+            //TODO: need to decide how to determine the consented state for the previous access token or if previous
+            //grant type of access token is a supported grant for consented tokens.
             accessTokenDO.setIsConsentedToken(false);
             tokReqMsgCtx.setConsentedToken(false);
         }
