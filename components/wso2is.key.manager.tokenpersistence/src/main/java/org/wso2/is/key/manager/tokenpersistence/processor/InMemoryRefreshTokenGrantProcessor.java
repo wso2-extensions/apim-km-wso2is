@@ -72,7 +72,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(tokenReq.getRefreshToken());
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         // validate token type is refresh_token.
-        if (TokenMgtUtil.isRefreshTokenType(claimsSet)) {
+        if (!TokenMgtUtil.isRefreshTokenType(claimsSet)) {
             throw new IdentityOAuth2Exception("Invalid refresh token. token_type must be refresh_token.");
         }
         TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
