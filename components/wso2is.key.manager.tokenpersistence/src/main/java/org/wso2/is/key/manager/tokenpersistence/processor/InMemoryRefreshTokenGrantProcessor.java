@@ -69,12 +69,6 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         }
         // validate JWT token signature, expiry time, not before time.
         log.debug("Refresh token is a JWT. Hence, validating signature, expiry time and indirect revocations.");
-        // check whether the token is already revoked or invalidated directly.
-        if (ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
-                TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(), tokenReq.getClientId()),
-                tokenReq.getClientId())) {
-            throw new IdentityOAuth2Exception("Invalid refresh token state.");
-        }
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(tokenReq.getRefreshToken());
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         // validate token type is refresh_token.
@@ -97,8 +91,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (TokenMgtUtil.isTokenRevokedDirectly(TokenMgtUtil.getTokenIdentifier(tokenReq.getRefreshToken(),
-                tokenReq.getClientId()), tokenReq.getClientId())
+        if (TokenMgtUtil.isTokenRevokedDirectly(tokenReq.getRefreshToken(), tokenReq.getClientId())
                 || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
                 claimsSet.getIssueTime())) {
             throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");

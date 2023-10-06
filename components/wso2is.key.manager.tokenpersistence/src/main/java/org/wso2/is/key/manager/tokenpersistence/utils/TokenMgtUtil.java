@@ -158,7 +158,7 @@ public class TokenMgtUtil {
             throws IdentityOAuth2Exception {
 
         try {
-            if (TokenMgtUtil.isInvalidSignature(signedJWT, getIDPForTokenIssuer(claimsSet))) {
+            if (!TokenMgtUtil.isValidSignature(signedJWT, getIDPForTokenIssuer(claimsSet))) {
                 throw new IdentityOAuth2Exception(("Invalid signature."));
             }
         } catch (JOSEException | ParseException e) {
@@ -323,7 +323,7 @@ public class TokenMgtUtil {
      * @throws IdentityOAuth2Exception If an error occurs while getting the tenant domain.
      * @throws ParseException          If an error occurs while parsing the JWT token.
      */
-    public static boolean isInvalidSignature(SignedJWT signedJWT, IdentityProvider idp) throws JOSEException,
+    public static boolean isValidSignature(SignedJWT signedJWT, IdentityProvider idp) throws JOSEException,
             IdentityOAuth2Exception, ParseException {
 
         JWSVerifier verifier = null;

@@ -30,8 +30,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-/*
- * DB util to access persistence related db.
+/**
+ * Utility class for database operations.
  */
 public class DBUtil {
 

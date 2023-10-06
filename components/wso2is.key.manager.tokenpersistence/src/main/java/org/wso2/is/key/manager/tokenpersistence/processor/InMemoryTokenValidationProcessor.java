@@ -39,14 +39,14 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
 
     private static final Log log = LogFactory.getLog(InMemoryTokenValidationProcessor.class);
 
-    public AccessTokenDO validateToken(String accessToken, boolean includeExpired)
+    public AccessTokenDO validateToken(String token, boolean includeExpired)
             throws IdentityOAuth2Exception {
 
         // check if token is JWT.
-        TokenMgtUtil.isJWTToken(accessToken);
+        TokenMgtUtil.isJWTToken(token);
         log.debug(String.format("Validating JWT Token with expiry %s", includeExpired));
         // validate JWT token signature, expiry time, not before time.
-        SignedJWT signedJWT = TokenMgtUtil.parseJWT(accessToken);
+        SignedJWT signedJWT = TokenMgtUtil.parseJWT(token);
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
         // expiry time verification.
@@ -60,14 +60,13 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
         // not before time verification.
         TokenMgtUtil.checkNotBeforeTime(claimsSet.getNotBeforeTime());
         String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
-        String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(accessToken, consumerKey);
         /*
          * check whether the token is already revoked through direct revocations and following indirect
          * revocations.
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
+        if (TokenMgtUtil.isTokenRevokedDirectly(token, consumerKey)
                 || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
                 claimsSet.getIssueTime())) {
             throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
@@ -89,7 +88,7 @@ public class InMemoryTokenValidationProcessor implements TokenValidationProcesso
             log.debug("Token is expired");
             validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
         }
-        validationDataDO.setAccessToken(accessToken);
+        validationDataDO.setAccessToken(TokenMgtUtil.getTokenIdentifier(token, consumerKey));
         //TODO:// handle oauth caching
         return validationDataDO;
     }

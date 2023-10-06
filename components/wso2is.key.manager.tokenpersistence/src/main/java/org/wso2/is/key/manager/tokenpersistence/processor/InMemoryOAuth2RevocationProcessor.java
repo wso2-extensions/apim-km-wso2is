@@ -59,6 +59,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
 
         //TODO:// Handle OAuth Cache
         //TODO:// Decide whether token binding is needed
+        //TODO:// handle code for backward compatibleness for migrating opaque refresh tokens
         refreshTokenDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
                 TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), revokeRequestDTO.getConsumerKey()),
@@ -81,15 +82,13 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         if (!revokeRequestDTO.getConsumerKey().equals(consumerKey)) {
             throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
         }
-        String refreshTokenIdentifier = TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(),
-                revokeRequestDTO.getConsumerKey());
         /*
          * check whether the token is not already revoked through direct revocations and following indirect
          * revocations.
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (!TokenMgtUtil.isTokenRevokedDirectly(refreshTokenIdentifier, consumerKey)
+        if (!TokenMgtUtil.isTokenRevokedDirectly(revokeRequestDTO.getToken(), consumerKey)
                 && !TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
                 claimsSet.getIssueTime())) {
             validationDataDO = new RefreshTokenValidationDataDO();
@@ -125,21 +124,19 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         if (!revokeRequestDTO.getConsumerKey().equals(consumerKey)) {
             throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
         }
-        String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(),
-                revokeRequestDTO.getConsumerKey());
         /*
          * check whether the token is not already revoked through direct revocations and following indirect
          * revocations, if so return nothing.
          * 1. check if consumer app was changed.
          * 2. check if user was changed.
          */
-        if (!TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
+        if (!TokenMgtUtil.isTokenRevokedDirectly(revokeRequestDTO.getToken(), consumerKey)
                 && !TokenMgtUtil.isTokenRevokedIndirectly(
                 claimsSet.getSubject(), consumerKey, claimsSet.getIssueTime())) {
             accessTokenDO = new AccessTokenDO();
             String tokenId = UUID.randomUUID().toString();
             accessTokenDO.setTokenId(tokenId); //TODO: check if we really need this
-            accessTokenDO.setAccessToken(accessTokenIdentifier);
+            accessTokenDO.setAccessToken(TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), consumerKey));
             accessTokenDO.setConsumerKey(consumerKey);
             // check if token is expired and set tokenState EXPIRED or ACTIVE.
             if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
