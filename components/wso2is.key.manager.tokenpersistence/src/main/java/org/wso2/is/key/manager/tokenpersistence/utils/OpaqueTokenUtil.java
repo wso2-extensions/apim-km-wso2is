@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
+import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 
@@ -50,6 +51,28 @@ public class OpaqueTokenUtil {
         if (validationBean.getAccessToken() == null) {
             if (log.isDebugEnabled()) {
                 log.debug("Invalid Refresh Token provided for Client with Client Id : " + tokenReq.getClientId());
+            }
+            throw new IdentityOAuth2Exception("Persisted access token data not found");
+        }
+        return validationBean;
+    }
+
+    /**
+     * Validate opaque refresh token from revocation request and return the validation data object.
+     *
+     * @param oAuthRevocationRequestDTO Revocation request DTO.
+     * @return RefreshTokenValidationDataDO  Refresh token validation data object.
+     * @throws IdentityOAuth2Exception if an error occurs while validating the refresh token.
+     */
+    public static RefreshTokenValidationDataDO validateOpaqueRefreshToken(
+            OAuthRevocationRequestDTO oAuthRevocationRequestDTO) throws IdentityOAuth2Exception {
+
+        RefreshTokenValidationDataDO validationBean = validateRefreshToken(oAuthRevocationRequestDTO.getConsumerKey(),
+                oAuthRevocationRequestDTO.getToken());
+        if (validationBean.getAccessToken() == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Invalid Refresh Token provided for Client with Client Id : "
+                        + oAuthRevocationRequestDTO.getConsumerKey());
             }
             throw new IdentityOAuth2Exception("Persisted access token data not found");
         }

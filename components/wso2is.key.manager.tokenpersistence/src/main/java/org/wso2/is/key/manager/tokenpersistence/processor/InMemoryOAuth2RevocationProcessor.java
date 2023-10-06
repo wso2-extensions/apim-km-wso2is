@@ -21,16 +21,21 @@ package org.wso2.is.key.manager.tokenpersistence.processor;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.oltu.oauth2.common.message.types.GrantType;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
+import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 
 import java.sql.Timestamp;
@@ -40,6 +45,8 @@ import java.util.UUID;
  * Token revocation related implementation for InMemory persistence.
  */
 public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProcessor {
+
+    private static final Log log = LogFactory.getLog(InMemoryOAuth2RevocationProcessor.class);
 
     @Override
     public void revokeAccessToken(OAuthRevocationRequestDTO revokeRequestDTO, AccessTokenDO accessTokenDO)
@@ -59,11 +66,12 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
 
         //TODO:// Handle OAuth Cache
         //TODO:// Decide whether token binding is needed
-        //TODO:// handle code for backward compatibleness for migrating opaque refresh tokens
+        String tokenIdentifier = OAuth2Util.isJWT(revokeRequestDTO.getToken()) ?
+                TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), revokeRequestDTO.getConsumerKey()) :
+                revokeRequestDTO.getToken();
         refreshTokenDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
-                TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), revokeRequestDTO.getConsumerKey()),
-                revokeRequestDTO.getConsumerKey(), refreshTokenDO.getIssuedTime().getTime()
+                tokenIdentifier, revokeRequestDTO.getConsumerKey(), refreshTokenDO.getIssuedTime().getTime()
                         + refreshTokenDO.getValidityPeriodInMillis());
     }
 
@@ -72,8 +80,15 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
             throws IdentityOAuth2Exception {
 
         RefreshTokenValidationDataDO validationDataDO = null;
-        TokenMgtUtil.isJWTToken(revokeRequestDTO.getToken());
-        //TODO:// handle code for backward compatibleness for migrating opaque refresh tokens
+        if (!OAuth2Util.isJWT(revokeRequestDTO.getToken())) {
+            log.debug("Refresh token is not a JWT. Hence, validating as an opaque token from database.");
+            // For backward compatibility, we check whether it is available in idn_oauth2_token table.
+            RefreshTokenValidationDataDO validationDO = OpaqueTokenUtil.validateOpaqueRefreshToken(revokeRequestDTO);
+            // TODO: handle oauth cache
+            OAuthUtil.clearOAuthCache(revokeRequestDTO.getConsumerKey(), validationDO.getAuthorizedUser(),
+                    OAuth2Util.buildScopeString(validationDO.getScope()), "NONE");
+            return validationDO;
+        }
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
