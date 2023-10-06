@@ -45,7 +45,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     
     public static final String INSERT_INVALID_TOKEN = 
             "INSERT INTO AM_INVALID_TOKENS (UUID, SIGNATURE, CONSUMER_KEY, EXPIRY_TIMESTAMP) "
-            + "VALUES (?,?,?,?,?)";
+            + "VALUES (?,?,?,?)";
     public static final String DELETE_INVALID_TOKEN = "DELETE FROM AM_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
 
     public static final String IS_INTERNALLY_REVOKED_CONSUMER_KEY = "SELECT 1 FROM AM_INTERNAL_TOKEN_REVOCATION WHERE "
