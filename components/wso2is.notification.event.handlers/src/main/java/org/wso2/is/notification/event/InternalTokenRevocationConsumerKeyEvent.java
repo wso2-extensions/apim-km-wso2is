@@ -19,43 +19,47 @@
 
 package org.wso2.is.notification.event;
 
-import org.wso2.is.notification.*;
+import org.wso2.is.notification.NotificationConstants;
 
-import java.util.*;
+import java.util.Properties;
+import java.util.UUID;
 
 /**
- * Token Revocation Event Model to send Event.
+ * Internal Token Revocation Consumer Key Event Model
  */
-public class InternalTokenRevocationEvent extends Event {
+public class InternalTokenRevocationConsumerKeyEvent extends Event {
     private static final long serialVersionUID = 1L;
 
-    private String revocationTime;
     private String consumerKey;
+    private boolean isRevokeAppOnly;
+    private long revocationTime;
     private String revocationType;
 
-    public InternalTokenRevocationEvent(String consumerKey, Properties properties) {
+    public InternalTokenRevocationConsumerKeyEvent(String consumerKey, boolean isRevokeAppOnly, Properties properties) {
 
         this.eventId = UUID.randomUUID().toString();
-        this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_EVENT;
+        this.timeStamp = System.currentTimeMillis();
+        this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENT;
         this.consumerKey = consumerKey;
-        this.revocationTime = String.valueOf(System.currentTimeMillis());
-        this.revocationType = (String) properties.getProperty("action");
+        this.isRevokeAppOnly = isRevokeAppOnly;
+        this.revocationTime = (long) properties.get("revocationTime");
 
     }
 
     public String getConsumerKey() {
         return consumerKey;
     }
+
     public void setConsumerKey(String consumerKey) {
 
         this.consumerKey = consumerKey;
     }
 
-    public String getRevocationTime() {
+    public long getRevocationTime() {
         return revocationTime;
     }
 
-    public void setRevocationTime(String revocationTime) {
+    public void setRevocationTime(long revocationTime) {
         this.revocationTime = revocationTime;
     }
 
@@ -67,6 +71,14 @@ public class InternalTokenRevocationEvent extends Event {
         this.revocationType = revocationType;
     }
 
+    public boolean isRevokeAppOnly() {
+        return isRevokeAppOnly;
+    }
+
+    public void setRevokeAppOnly(boolean revokeAppOnly) {
+        isRevokeAppOnly = revokeAppOnly;
+    }
+
     @Override
     public String toString() {
 
@@ -74,9 +86,9 @@ public class InternalTokenRevocationEvent extends Event {
                 "eventId='" + eventId + '\'' +
                 ", type='" + type + '\'' +
                 ", consumerKey='" + consumerKey + '\'' +
-                ", revocationTime=" + revocationTime +
-                ", revocationType=" + revocationType +
-                ", tenantId=" + tenantId +
+                ", isRevokeAppOnly=" + isRevokeAppOnly + '\'' +
+                ", revocationTime=" + revocationTime + '\'' +
+                ", revocationType=" + revocationType + '\'' +
                 ", tenantDomain='" + tenantDomain + '\'' +
                 '}';
     }

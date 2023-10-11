@@ -15,7 +15,8 @@ import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.oauth.event.OAuthEventInterceptor;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import org.wso2.is.notification.*;
+import org.wso2.is.notification.APIMTokenExchangeAuditLogger;
+import org.wso2.is.notification.ApimOauthEventInterceptor;
 
 /**
  * Activation class for notification

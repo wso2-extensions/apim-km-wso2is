@@ -33,8 +33,8 @@ public class ServiceReferenceHolder {
     private RealmService realmService;
     private RegistryService registryService;
     private TenantRegistryLoader tenantRegistryLoader;
-    private static ConfigurationContextService contextService;
-    private static InvalidTokenPersistenceService tokenPersistenceService;
+    private ConfigurationContextService contextService;
+    private InvalidTokenPersistenceService tokenPersistenceService;
     
     private ServiceReferenceHolder() {
 
@@ -71,12 +71,12 @@ public class ServiceReferenceHolder {
         this.tenantRegistryLoader = tenantRegistryLoader;
     }
 
-    public ConfigurationContextService getContextService() {
+    public synchronized ConfigurationContextService getContextService() {
         return contextService;
     }
 
-    public void setContextService(ConfigurationContextService contextService) {
-        ServiceReferenceHolder.contextService = contextService;
+    public synchronized void setContextService(ConfigurationContextService contextService) {
+        this.contextService = contextService;
     }
 
     public synchronized InvalidTokenPersistenceService getInvalidTokenPersistenceService() {
@@ -86,7 +86,7 @@ public class ServiceReferenceHolder {
         return tokenPersistenceService;
     }
 
-    public void setInvalidTokenPersistenceService(
+    public synchronized void setInvalidTokenPersistenceService(
             InvalidTokenPersistenceService invalidTokenPersistenceService) {
         tokenPersistenceService = invalidTokenPersistenceService;
     }

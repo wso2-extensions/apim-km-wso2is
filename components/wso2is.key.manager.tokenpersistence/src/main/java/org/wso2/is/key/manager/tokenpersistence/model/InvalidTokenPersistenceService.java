@@ -33,4 +33,8 @@ public interface InvalidTokenPersistenceService {
             throws IdentityOAuth2Exception;
 
     boolean isRevokedJWTConsumerKeyExist(String consumerKey, Date timeStamp) throws IdentityOAuth2Exception;
+    void revokeAccessTokensByUserEvent(String userID, long revocationTime) throws IdentityOAuth2Exception;
+
+    void revokeAccessTokensByConsumerKeyEvent(String consumerKey, boolean isRevokeAppOnly,
+                                              long revocationTime, int tenantId) throws IdentityOAuth2Exception;
 }

@@ -27,7 +27,8 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
-import org.wso2.carbon.identity.oauth.listener.*;
+import org.wso2.carbon.identity.oauth.handler.IndirectTokenRevocationHandler;
+import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenValidationProcessor;
@@ -36,8 +37,9 @@ import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import org.wso2.is.key.manager.tokenpersistence.adapter.ExtendedIndirectTokenRevocationHandlerImpl;
 import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
-import org.wso2.is.key.manager.tokenpersistence.listner.*;
+import org.wso2.is.key.manager.tokenpersistence.listner.APIMOAuthApplicationMgtListener;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryOAuth2RevocationProcessor;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryRefreshTokenGrantProcessor;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryTokenValidationProcessor;
@@ -70,6 +72,8 @@ public class TokenPersistenceServiceComponent {
                         new InMemoryTokenValidationProcessor(), null);
                 cxt.getBundleContext().registerService(OAuthApplicationMgtListener.class,
                         new APIMOAuthApplicationMgtListener(), null);
+                cxt.getBundleContext().registerService(IndirectTokenRevocationHandler.class,
+                        new ExtendedIndirectTokenRevocationHandlerImpl(), null);
             }
 
         } catch (Throwable e) {

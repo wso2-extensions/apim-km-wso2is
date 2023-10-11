@@ -25,7 +25,10 @@ package org.wso2.is.notification;
 public class NotificationConstants {
 
     public static final String TOKEN_REVOCATION_EVENT = "token_revocation";
-    public static final String INTERNAL_TOKEN_REVOCATION_EVENT = "internal_token_revocation";
+    public static final String INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENT
+            = "internal_token_revocation_consumer_key_event";
+    public static final String INTERNAL_TOKEN_REVOCATION_USER_EVENT
+            = "internal_token_revocation_user_event";
     public static final String NOTIFICATION_ENDPOINT = "notification_endpoint";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";

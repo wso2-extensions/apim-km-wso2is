@@ -28,18 +28,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.UUID;
 
 /**
- * 
  * RDBMS based invalid token persistence implementation
- *
  */
 public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService {
     private static final Log log = LogFactory.getLog(DBInvalidTokenPersistence.class);
     private static DBInvalidTokenPersistence instance = null;
-    
+
     public static final String IS_INVALID_TOKEN =
             "SELECT 1 FROM AM_INVALID_TOKENS WHERE SIGNATURE = ? AND CONSUMER_KEY = ? ";
     
@@ -51,18 +50,29 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     public static final String IS_INTERNALLY_REVOKED_CONSUMER_KEY = "SELECT 1 FROM AM_INTERNAL_TOKEN_REVOCATION WHERE "
             + "CONSUMER_KEY = ? AND TIME_REVOKED > ?";
     
+    public static final String INSERT_CONSUMER_KEY_EVENT_RULE = "INSERT " +
+            "INTO IDN_INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENTS\n" +
+            "(CONSUMER_KEY, IS_REVOKE_APP_ONLY, TIME_REVOKED, TENANT_ID)\n" +
+            "VALUES (?, ?, ?, ?) AS COLS\n" +
+            "ON DUPLICATE KEY UPDATE\n" +
+            "TIME_REVOKED = COLS.TIME_REVOKED";
+    public static final String INSERT_USER_EVENT_RULE = "INSERT " +
+            "INTO IDN_INTERNAL_TOKEN_REVOCATION_USER_EVENTS\n" +
+            "(USER_ID, TIME_REVOKED)\n" +
+            "VALUES (?, ?) AS COLS\n" +
+            "ON DUPLICATE KEY UPDATE\n" +
+            "TIME_REVOKED = COLS.TIME_REVOKED";
     private DBInvalidTokenPersistence() {
 
     }
     public static synchronized DBInvalidTokenPersistence getInstance() {
 
         if (instance == null) {
-            instance = new DBInvalidTokenPersistence();     
+            instance = new DBInvalidTokenPersistence();
         }
         return instance;
     }
-    
-    
+
     @Override
     public boolean isInvalidToken(String token, String consumerKey) throws IdentityOAuth2Exception {
 
@@ -137,6 +147,64 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
         } catch (SQLException e) {
             throw new IdentityOAuth2Exception("Error while checking existence of internally revoked JWT for consumer "
                     + "key: " + consumerKey, e);
+        }
+    }
+
+    @Override
+    public void revokeAccessTokensByUserEvent(String userID, long revocationTime)
+            throws IdentityOAuth2Exception {
+
+        try (Connection connection = DBUtil.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USER_EVENT_RULE)) {
+                preparedStatement.setString(1, userID);
+                preparedStatement.setTimestamp(2, new Timestamp(revocationTime));
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (log.isDebugEnabled()) {
+                    if (rowsAffected == 1) {
+                        log.debug("User event token revocation rule inserted successfully.");
+                    }
+                    if (rowsAffected == 2) {
+                        log.debug("User event token revocation rule updated successfully.");
+                    }
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new IdentityOAuth2Exception("Error while inserting user event revocation rule to db.", e);
+            }
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception("Error while inserting user event revocation rule to db.", e);
+        }
+    }
+
+    @Override
+    public void revokeAccessTokensByConsumerKeyEvent(String consumerKey, boolean isRevokeAppOnly,
+                                                     long revocationTime, int tenantId) throws IdentityOAuth2Exception {
+
+        try (Connection connection = DBUtil.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_CONSUMER_KEY_EVENT_RULE)) {
+                preparedStatement.setString(1, consumerKey);
+                preparedStatement.setBoolean(2, isRevokeAppOnly);
+                preparedStatement.setTimestamp(3, new Timestamp(revocationTime));
+                preparedStatement.setInt(4, tenantId);
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (log.isDebugEnabled()) {
+                    if (rowsAffected == 1) {
+                        log.debug("Consumer key event token revocation rule inserted successfully.");
+                    }
+                    if (rowsAffected == 2) {
+                        log.debug("Consumer key event token revocation rule updated successfully.");
+                    }
+                }
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new IdentityOAuth2Exception("Error while inserting consumer key event revocation rule to db.", e);
+            }
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception("Error while inserting consumer key event revocation rule to db.", e);
         }
     }
 }

@@ -2,7 +2,7 @@ package org.wso2.is.notification.internal;
 
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import org.wso2.is.notification.*;
+import org.wso2.is.notification.EventSender;
 
 /**
  * Holder class to hold service references used in notification.

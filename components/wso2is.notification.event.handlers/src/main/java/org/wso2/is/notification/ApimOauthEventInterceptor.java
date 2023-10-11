@@ -39,7 +39,8 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.RefreshGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.is.notification.event.*;
+import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
+import org.wso2.is.notification.event.TokenRevocationEvent;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
 import java.text.ParseException;
@@ -71,8 +72,8 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             if (StringUtils.isNotEmpty(usernameProperty) && StringUtils.isNotEmpty(passwordProperty)) {
                 username = NotificationUtil.replaceSystemProperty(usernameProperty);
                 password = NotificationUtil.replaceSystemProperty(passwordProperty).toCharArray();
-                ServiceReferenceHolder.getInstance()
-                        .setEventSender(new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap));
+                ServiceReferenceHolder.getInstance().setEventSender(
+                        new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap));
             } else {
                 ServiceReferenceHolder.getInstance().setEventSender(new EventSender(notificationEndpoint, headerMap));
             }
@@ -195,6 +196,20 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                 log.error("Error while resolving tenantDomain", e);
             }
         }
+    }
+
+    @Override
+    public void onPreTokenRevocationBySystem(String userUUID, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+    }
+
+    @Override
+    public void onPostTokenRevocationBySystem(String userUUID, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+
+        InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
+                new InternalTokenRevocationUserEvent(userUUID, params);
+        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationUserEvent);
     }
 
     @Override

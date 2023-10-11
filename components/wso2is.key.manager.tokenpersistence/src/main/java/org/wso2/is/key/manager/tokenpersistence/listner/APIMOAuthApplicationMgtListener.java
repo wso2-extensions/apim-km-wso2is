@@ -17,16 +17,24 @@
  */
 package org.wso2.is.key.manager.tokenpersistence.listner;
 
-import org.apache.commons.logging.*;
-import org.wso2.carbon.identity.oauth.*;
-import org.wso2.carbon.identity.oauth.dto.*;
-import org.wso2.carbon.identity.oauth.listener.*;
-import org.wso2.is.notification.*;
-import org.wso2.is.notification.event.*;
-import org.wso2.is.notification.internal.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 
-import java.util.*;
+import org.wso2.carbon.identity.oauth.IdentityOAuthAdminException;
+import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
+import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.is.notification.event.InternalTokenRevocationConsumerKeyEvent;
+import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
+import java.util.Calendar;
+import java.util.Properties;
+
+/**
+ * This class listens to OAuth application management events.
+ * It is used to revoke tokens when a consumer key is updated.
+ */
 public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListener {
 
     private static final Log log = LogFactory.getLog(APIMOAuthApplicationMgtListener.class);
@@ -43,7 +51,8 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
     }
 
     @Override
-    public void doPreUpdateConsumerApplication(OAuthConsumerAppDTO oAuthConsumerAppDTO) throws IdentityOAuthAdminException {
+    public void doPreUpdateConsumerApplication(OAuthConsumerAppDTO oAuthConsumerAppDTO)
+            throws IdentityOAuthAdminException {
 
     }
 
@@ -58,11 +67,26 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
     }
 
     @Override
-    public void doPostRevokeRegenerateOAuthSecret(String consumerKey, Properties properties)
+    public void doPostRegenerateClientSecret(String consumerKey, Properties properties)
             throws IdentityOAuthAdminException {
-        InternalTokenRevocationEvent internalTokenRevocationEvent
-                = new InternalTokenRevocationEvent(consumerKey, properties);
-        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationEvent);
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        long revocationTime = Calendar.getInstance().getTimeInMillis();
+        // revoke apps tokens only, when called by user events. revoke all tokens when it's a consumer key event
+        boolean isRevokeAppOnly = properties.get("isRevokeAppOnly") != null
+                && (boolean) properties.get("isRevokeAppOnly");
+        properties.put("revocationTime", revocationTime);
+
+        try {
+            org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder.getInstance()
+                    .getInvalidTokenPersistenceService()
+                    .revokeAccessTokensByConsumerKeyEvent(consumerKey, isRevokeAppOnly, revocationTime, tenantId);
+        } catch (IdentityOAuth2Exception e) {
+            log.error("Error while persisting revoking access tokens by consumer key event.", e);
+            throw new IdentityOAuthAdminException(e.getMessage(), e);
+        }
+        InternalTokenRevocationConsumerKeyEvent internalTokenRevocationConsumerKeyEvent
+                = new InternalTokenRevocationConsumerKeyEvent(consumerKey, isRevokeAppOnly, properties);
+        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationConsumerKeyEvent);
     }
 
 }
