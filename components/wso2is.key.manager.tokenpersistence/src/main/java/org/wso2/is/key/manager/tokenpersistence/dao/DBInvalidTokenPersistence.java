@@ -47,8 +47,9 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             + "VALUES (?,?,?,?)";
     public static final String DELETE_INVALID_TOKEN = "DELETE FROM AM_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
 
-    public static final String IS_INTERNALLY_REVOKED_CONSUMER_KEY = "SELECT 1 FROM AM_INTERNAL_TOKEN_REVOCATION WHERE "
-            + "CONSUMER_KEY = ? AND TIME_REVOKED > ?";
+    public static final String IS_INTERNALLY_REVOKED_CONSUMER_KEY = "SELECT 1 " +
+            "FROM IDN_INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENTS WHERE\n" +
+            "CONSUMER_KEY = ? AND TIME_REVOKED > ?";
     
     public static final String INSERT_CONSUMER_KEY_EVENT_RULE = "INSERT " +
             "INTO IDN_INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENTS\n" +
