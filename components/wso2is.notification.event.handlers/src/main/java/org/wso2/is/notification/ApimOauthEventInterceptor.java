@@ -208,7 +208,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             throws IdentityOAuth2Exception {
 
         InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
-                new InternalTokenRevocationUserEvent(userUUID, params);
+                new InternalTokenRevocationUserEvent(userUUID, params.get("subjectIdType").toString(), params);
         ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationUserEvent);
     }
 

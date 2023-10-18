@@ -30,18 +30,17 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
     private static final long serialVersionUID = 1L;
 
     private String consumerKey;
-    private boolean isRevokeAppOnly;
     private long revocationTime;
-    private String revocationType;
+    private String organization;
 
-    public InternalTokenRevocationConsumerKeyEvent(String consumerKey, boolean isRevokeAppOnly, Properties properties) {
+    public InternalTokenRevocationConsumerKeyEvent(String consumerKey, Properties properties) {
 
         this.eventId = UUID.randomUUID().toString();
         this.timeStamp = System.currentTimeMillis();
         this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENT;
         this.consumerKey = consumerKey;
-        this.isRevokeAppOnly = isRevokeAppOnly;
         this.revocationTime = (long) properties.get("revocationTime");
+        this.organization = properties.get("organization").toString();
 
     }
 
@@ -62,20 +61,12 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
         this.revocationTime = revocationTime;
     }
 
-    public String getRevocationType() {
-        return revocationType;
+    public String getOrganization() {
+        return organization;
     }
 
-    public void setRevocationType(String revocationType) {
-        this.revocationType = revocationType;
-    }
-
-    public boolean isRevokeAppOnly() {
-        return isRevokeAppOnly;
-    }
-
-    public void setRevokeAppOnly(boolean revokeAppOnly) {
-        isRevokeAppOnly = revokeAppOnly;
+    public void setOrganization(String organization) {
+        this.organization = organization;
     }
 
     @Override
@@ -85,9 +76,8 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
                 "eventId='" + eventId + '\'' +
                 ", type='" + type + '\'' +
                 ", consumerKey='" + consumerKey + '\'' +
-                ", isRevokeAppOnly=" + isRevokeAppOnly + '\'' +
                 ", revocationTime=" + revocationTime + '\'' +
-                ", revocationType=" + revocationType + '\'' +
+                ", organization=" + organization + '\'' +
                 ", tenantDomain='" + tenantDomain + '\'' +
                 '}';
     }

@@ -29,16 +29,69 @@ import java.util.UUID;
 public class InternalTokenRevocationUserEvent extends Event {
     private static final long serialVersionUID = 1L;
 
+    private String subjectId;
+    private String subjectIdType;
     private long revocationTime;
-    private String userUUID;
+    private String organization;
 
-    public InternalTokenRevocationUserEvent(String userUUID, Map<String, Object> params) {
+    public InternalTokenRevocationUserEvent(String subjectId, String subjectIdType, Map<String, Object> params) {
+
         this.eventId = UUID.randomUUID().toString();
         this.timeStamp = System.currentTimeMillis();
         this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_USER_EVENT;
-        this.tenantId = (int) params.get("tenantID");
+        this.tenantId = (int) params.get("tenantId");
         this.tenantDomain = params.get("tenantDomain").toString();
-        this.userUUID = userUUID;
+        this.subjectId = subjectId;
+        this.subjectIdType = subjectIdType;
         this.revocationTime = (long) params.get("revocationTime");
+        this.organization = params.get("organization").toString();
+    }
+
+    public String getSubjectId() {
+        return subjectId;
+    }
+
+    public void setSubjectId(String subjectId) {
+        this.subjectId = subjectId;
+    }
+
+    public String getSubjectIdType() {
+        return subjectIdType;
+    }
+
+    public void setSubjectIdType(String subjectIdType) {
+        this.subjectIdType = subjectIdType;
+    }
+
+    public long getRevocationTime() {
+        return revocationTime;
+    }
+
+    public void setRevocationTime(long revocationTime) {
+        this.revocationTime = revocationTime;
+    }
+
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    @Override
+    public String toString() {
+
+        return "InternalTokenRevocationUserEvent{" +
+                ", eventId='" + eventId + '\'' +
+                ", tenantId=" + tenantId + '\'' +
+                ", timeStamp=" + timeStamp + '\'' +
+                ", tenantDomain='" + tenantDomain + '\'' +
+                ", type='" + type + '\'' +
+                ", subjectId='" + subjectId + '\'' +
+                ", subjectIdType='" + subjectIdType + '\'' +
+                ", revocationTime=" + revocationTime + '\'' +
+                ", organization=" + organization + '\'' +
+                '}';
     }
 }
