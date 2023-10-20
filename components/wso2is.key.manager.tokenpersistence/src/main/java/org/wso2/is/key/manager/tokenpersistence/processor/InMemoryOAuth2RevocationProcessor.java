@@ -200,7 +200,10 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
      */
     @Override
     public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {
-        // todo : call OAuthUtil.revokeTokens(username, userStoreManager) for seamless migration?
+        // Calling OAuthUtil.revokeTokens to handle migrations.
+        // Old tokens in the db will be revoked in the old way, since new tokens wouldn't have the mandatory claim.
+        OAuthUtil.revokeTokens(username, userStoreManager);
+
         String userUUID = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(username);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         String organization = IdentityTenantUtil.getTenantDomain(tenantId);
