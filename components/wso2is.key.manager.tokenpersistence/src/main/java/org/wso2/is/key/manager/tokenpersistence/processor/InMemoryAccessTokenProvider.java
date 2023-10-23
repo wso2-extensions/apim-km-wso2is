@@ -23,7 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
-import org.wso2.carbon.identity.oauth.tokenprocessor.TokenValidationProcessor;
+import org.wso2.carbon.identity.oauth.tokenprocessor.AccessTokenProvider;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
@@ -35,11 +35,11 @@ import java.sql.Timestamp;
  * In Memory token validation processor for in memory token persistence. Token Validation processor is supposed to be
  * used during token introspection and user info endpoints where you need to validate the token before proceeding.
  */
-public class InMemoryTokenValidationProcessor implements TokenValidationProcessor {
+public class InMemoryAccessTokenProvider implements AccessTokenProvider {
 
-    private static final Log log = LogFactory.getLog(InMemoryTokenValidationProcessor.class);
+    private static final Log log = LogFactory.getLog(InMemoryAccessTokenProvider.class);
 
-    public AccessTokenDO validateToken(String token, boolean includeExpired)
+    public AccessTokenDO getVerifiedAccessToken(String token, boolean includeExpired)
             throws IdentityOAuth2Exception {
 
         // check if token is JWT.

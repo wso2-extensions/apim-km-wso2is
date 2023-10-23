@@ -33,6 +33,8 @@ import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
+import org.wso2.carbon.user.core.UserStoreException;
+import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
@@ -177,5 +179,10 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     public boolean isRefreshTokenType(OAuthRevocationRequestDTO revokeRequestDTO) {
 
         return StringUtils.equals(GrantType.REFRESH_TOKEN.toString(), revokeRequestDTO.getTokenType());
+    }
+
+    @Override
+    public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {
+        return false;
     }
 }
