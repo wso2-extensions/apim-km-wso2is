@@ -28,7 +28,6 @@ import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
-import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
@@ -102,10 +101,11 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
         validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                 - claimsSet.getIssueTime().getTime());
-        validationDataDO.setGrantType(PersistenceConstants.REFRESH_TOKEN);
         validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
         AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
         validationDataDO.setAuthorizedUser(authenticatedUser);
+        validationDataDO.setConsented(Boolean.parseBoolean(
+                claimsSet.getClaim(PersistenceConstants.IS_CONSENTED).toString()));
         // if not active, an IdentityOAuth2Exception should have been thrown at the beginning.
         validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
         //TODO: handle oauth cache
@@ -159,12 +159,9 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         accessTokenDO.setGrantType(tokenReq.getGrantType());
         accessTokenDO.setIssuedTime(timestamp);
         accessTokenDO.setTokenBinding(tokReqMsgCtx.getTokenBinding());
-        if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
-            // not possible to determine the previous access token, hence setting default value false.
-            //TODO: need to decide how to determine the consented state for the previous access token or if previous
-            //grant type of access token is a supported grant for consented tokens.
-            accessTokenDO.setIsConsentedToken(false);
-            tokReqMsgCtx.setConsentedToken(false);
+        if (validationBean.isConsented()) {
+            accessTokenDO.setIsConsentedToken(true);
+            tokReqMsgCtx.setConsentedToken(true);
         }
         return accessTokenDO;
     }

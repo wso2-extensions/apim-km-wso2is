@@ -24,8 +24,7 @@ package org.wso2.is.key.manager.tokenpersistence;
 public class PersistenceConstants {
     public static final String TOKEN_TYPE_ELEM = "token_type";
     public static final String REFRESH_TOKEN = "refresh_token";
-    public static final String TOKEN_TYPE_REFRESH_TOKEN = "REFRESH_TOKEN";
-    public static final String TOKEN_TYPE_ACCESS_TOKEN = "ACCESS_TOKEN";
+    public static final String IS_CONSENTED = "is_consented";
     public static final String AUTHORIZATION_PARTY = "azp";
     public static final String SCOPE = "scope";
 }

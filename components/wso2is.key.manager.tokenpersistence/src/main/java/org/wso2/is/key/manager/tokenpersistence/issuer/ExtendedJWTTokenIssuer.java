@@ -27,11 +27,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
+import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.JWTTokenIssuer;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
@@ -168,9 +171,10 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         String issuer = OAuth2Util.getIdTokenIssuer(spTenantDomain);
         long curTimeInMillis = Calendar.getInstance().getTimeInMillis();
 
+        AuthenticatedUser authenticatedUser = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext);
         String sub = getAuthenticatedSubjectIdentifier(authAuthzReqMessageContext, tokenReqMessageContext);
         if (StringUtils.isEmpty(sub)) {
-            sub = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext).toFullQualifiedUsername();
+            sub = authenticatedUser.toFullQualifiedUsername();
         }
         // Set the default claims.
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder();
@@ -190,8 +194,28 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (StringUtils.isNotEmpty(scope)) {
             jwtClaimsSetBuilder.claim(SCOPE, scope);
         }
-
+        if (tokenReqMessageContext != null) {
+            jwtClaimsSetBuilder.claim(PersistenceConstants.IS_CONSENTED, tokenReqMessageContext.isConsentedToken());
+        }
         jwtClaimsSetBuilder.expirationTime(new Date(curTimeInMillis + refreshTokenLifeTimeInMillis));
+        String userType = getAuthorizedUserType(authAuthzReqMessageContext, tokenReqMessageContext);
+        try {
+            /*
+             * The entity_id is used to identify the principal subject for the issuing token. For user access
+             * tokens, this is the user's unique ID. For application access tokens, this is the application's
+             * consumer key.
+             */
+            if (OAuthConstants.UserType.APPLICATION_USER.equals(userType)) {
+                jwtClaimsSetBuilder.claim(OAuth2Constants.ENTITY_ID, authenticatedUser.getUserId());
+            } else if (OAuthConstants.UserType.APPLICATION.equals(userType)) {
+                jwtClaimsSetBuilder.claim(OAuth2Constants.ENTITY_ID, oAuthAppDO.getOauthConsumerKey());
+            } else {
+                throw new IdentityOAuth2Exception("Invalid user type: " + userType);
+            }
+        } catch (UserIdNotFoundException e) {
+            throw new IdentityOAuth2Exception("User id not found for user: "
+                    + authenticatedUser.getLoggableMaskedUserId(), e);
+        }
         return jwtClaimsSetBuilder.build();
     }
 
@@ -287,5 +311,15 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
 
         AuthenticatedUser authenticatedUser = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext);
         return authenticatedUser.getAuthenticatedSubjectIdentifier();
+    }
+
+    private String getAuthorizedUserType(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
+                                         OAuthTokenReqMessageContext tokenReqMessageContext) {
+
+        if (tokenReqMessageContext != null) {
+            return (String) tokenReqMessageContext.getProperty(OAuthConstants.UserType.USER_TYPE);
+        } else {
+            return (String) authAuthzReqMessageContext.getProperty(OAuthConstants.UserType.USER_TYPE);
+        }
     }
 }
