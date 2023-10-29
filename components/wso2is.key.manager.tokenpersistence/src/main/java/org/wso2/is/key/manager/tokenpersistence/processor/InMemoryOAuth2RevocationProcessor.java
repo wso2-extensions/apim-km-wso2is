@@ -18,14 +18,8 @@
 
 package org.wso2.is.key.manager.tokenpersistence.processor;
 
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.oltu.oauth2.common.message.types.GrantType;
-import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
@@ -35,13 +29,8 @@ import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
-import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
-import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
-
-import java.sql.Timestamp;
-import java.util.UUID;
 
 /**
  * Token revocation related implementation for InMemory persistence.
@@ -54,8 +43,6 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     public void revokeAccessToken(OAuthRevocationRequestDTO revokeRequestDTO, AccessTokenDO accessTokenDO)
             throws IdentityOAuth2Exception {
 
-        //TODO:// Handle OAuth Cache
-        //TODO:// Decide whether token binding is needed
         accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
                 accessTokenDO.getAccessToken(), accessTokenDO.getConsumerKey(), accessTokenDO.getIssuedTime().getTime()
@@ -66,8 +53,6 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     public void revokeRefreshToken(OAuthRevocationRequestDTO revokeRequestDTO,
                                    RefreshTokenValidationDataDO refreshTokenDO) throws IdentityOAuth2Exception {
 
-        //TODO:// Handle OAuth Cache
-        //TODO:// Decide whether token binding is needed
         String tokenIdentifier = OAuth2Util.isJWT(revokeRequestDTO.getToken()) ?
                 TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), revokeRequestDTO.getConsumerKey()) :
                 revokeRequestDTO.getToken();
@@ -77,109 +62,112 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                         + refreshTokenDO.getValidityPeriodInMillis());
     }
 
-    @Override
-    public RefreshTokenValidationDataDO getRevocableRefreshToken(OAuthRevocationRequestDTO revokeRequestDTO)
-            throws IdentityOAuth2Exception {
+//    @Override
+//    public RefreshTokenValidationDataDO getRevocableRefreshToken(OAuthRevocationRequestDTO revokeRequestDTO)
+//            throws IdentityOAuth2Exception {
+//
+//        RefreshTokenValidationDataDO validationDataDO = null;
+//        if (!OAuth2Util.isJWT(revokeRequestDTO.getToken())) {
+//            log.debug("Refresh token is not a JWT. Hence, validating as an opaque token from database.");
+//            // For backward compatibility, we check whether it is available in idn_oauth2_token table.
+//            RefreshTokenValidationDataDO validationDO = OpaqueTokenUtil.validateOpaqueRefreshToken(revokeRequestDTO);
+//            OAuthUtil.clearOAuthCache(revokeRequestDTO.getConsumerKey(), validationDO.getAuthorizedUser(),
+//                    OAuth2Util.buildScopeString(validationDO.getScope()), "NONE");
+//            return validationDO;
+//        }
+//        SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
+//        JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+//        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
+//        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+//        // validate consumer key in the request against the token.
+//        if (!revokeRequestDTO.getConsumerKey().equals(consumerKey)) {
+//            throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
+//        }
+//        /*
+//         * check whether the token is not already revoked through direct revocations and following indirect
+//         * revocations.
+//         * 1. check if consumer app was changed.
+//         * 2. check if user was changed.
+//         */
+//        if (!TokenMgtUtil.isTokenRevokedDirectly(revokeRequestDTO.getToken(), consumerKey)
+//                && !TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)) {
+//            validationDataDO = new RefreshTokenValidationDataDO();
+//            // set expiration state according to jwt claim in it.
+//            if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
+//                validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
+//            } else {
+//                validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
+//            }
+//            // set other fields from jwt claims.
+//            validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
+//            validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
+//                    - claimsSet.getIssueTime().getTime());
+//            validationDataDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE)));
+//            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
+//            validationDataDO.setAuthorizedUser(authenticatedUser);
+//        }
+//        return validationDataDO;
+//    }
 
-        RefreshTokenValidationDataDO validationDataDO = null;
-        if (!OAuth2Util.isJWT(revokeRequestDTO.getToken())) {
-            log.debug("Refresh token is not a JWT. Hence, validating as an opaque token from database.");
-            // For backward compatibility, we check whether it is available in idn_oauth2_token table.
-            RefreshTokenValidationDataDO validationDO = OpaqueTokenUtil.validateOpaqueRefreshToken(revokeRequestDTO);
-            // TODO: handle oauth cache
-            OAuthUtil.clearOAuthCache(revokeRequestDTO.getConsumerKey(), validationDO.getAuthorizedUser(),
-                    OAuth2Util.buildScopeString(validationDO.getScope()), "NONE");
-            return validationDO;
-        }
-        SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
-        JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
-        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
-        // validate consumer key in the request against the token.
-        if (!revokeRequestDTO.getConsumerKey().equals(consumerKey)) {
-            throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
-        }
-        /*
-         * check whether the token is not already revoked through direct revocations and following indirect
-         * revocations.
-         * 1. check if consumer app was changed.
-         * 2. check if user was changed.
-         */
-        if (!TokenMgtUtil.isTokenRevokedDirectly(revokeRequestDTO.getToken(), consumerKey)
-                && !TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
-                claimsSet.getIssueTime())) {
-            validationDataDO = new RefreshTokenValidationDataDO();
-            // set expiration state according to jwt claim in it.
-            if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
-                validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
-            } else {
-                validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
-            }
-            // set other fields from jwt claims.
-            validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
-            validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
-                    - claimsSet.getIssueTime().getTime());
-            validationDataDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE)));
-            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
-            validationDataDO.setAuthorizedUser(authenticatedUser);
-            //TODO:// handle oauth caching
-        }
-        return validationDataDO;
-    }
-
-    @Override
-    public AccessTokenDO getRevocableAccessToken(OAuthRevocationRequestDTO revokeRequestDTO)
-            throws IdentityOAuth2Exception {
-
-        AccessTokenDO accessTokenDO = null;
-        TokenMgtUtil.isJWTToken(revokeRequestDTO.getToken());
-        SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
-        JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
-        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
-        // validate consumer key in the request against the token.
-        if (!revokeRequestDTO.getConsumerKey().equals(consumerKey)) {
-            throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
-        }
-        /*
-         * check whether the token is not already revoked through direct revocations and following indirect
-         * revocations, if so return nothing.
-         * 1. check if consumer app was changed.
-         * 2. check if user was changed.
-         */
-        if (!TokenMgtUtil.isTokenRevokedDirectly(revokeRequestDTO.getToken(), consumerKey)
-                && !TokenMgtUtil.isTokenRevokedIndirectly(
-                claimsSet.getSubject(), consumerKey, claimsSet.getIssueTime())) {
-            accessTokenDO = new AccessTokenDO();
-            String tokenId = UUID.randomUUID().toString();
-            accessTokenDO.setTokenId(tokenId); //TODO: check if we really need this
-            accessTokenDO.setAccessToken(TokenMgtUtil.getTokenIdentifier(revokeRequestDTO.getToken(), consumerKey));
-            accessTokenDO.setConsumerKey(consumerKey);
-            // check if token is expired and set tokenState EXPIRED or ACTIVE.
-            if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
-                accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
-            } else {
-                accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
-            }
-            // TODO:// need to decide how to determine the consented state for the previous access token or if previous
-            accessTokenDO.setIsConsentedToken(false);
-            // set other fields from jwt claims.
-            accessTokenDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
-            accessTokenDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
-                    - claimsSet.getIssueTime().getTime());
-            accessTokenDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE)));
-            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
-            accessTokenDO.setAuthzUser(authenticatedUser);
-            //TODO:// handle oauth caching
-        }
-        return accessTokenDO;
-    }
-
-    @Override
-    public boolean isRefreshTokenType(OAuthRevocationRequestDTO revokeRequestDTO) {
-
-        return StringUtils.equals(GrantType.REFRESH_TOKEN.toString(), revokeRequestDTO.getTokenType());
-    }
+//    @Override
+//    public AccessTokenDO getRevocableAccessToken(OAuthRevocationRequestDTO revokeRequestDTO)
+//            throws IdentityOAuth2Exception {
+//
+//        AccessTokenDO accessTokenDO = null;
+//        TokenMgtUtil.isJWTToken(revokeRequestDTO.getToken());
+//        SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
+//        JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+//        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
+//        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+//        // validate consumer key in the request against the token.
+//        if (!revokeRequestDTO.getConsumerKey().equals(consumerKey)) {
+//            throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
+//        }
+//        String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
+//        /*
+//         * check whether the token is not already revoked through direct revocations and following indirect
+//         * revocations, if so return nothing.
+//         * 1. check if consumer app was changed.
+//         * 2. check if user was changed.
+//         */
+//        if (!TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
+//                && !TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)) {
+//            Optional<AccessTokenDO> tokenDO = TokenMgtUtil.getTokenDOFromCache(accessTokenIdentifier);
+//            if (tokenDO.isPresent()) {
+//                accessTokenDO = tokenDO.get();
+//                if (log.isDebugEnabled()) {
+//                    log.debug("Retrieved active access token from OAuthCache for token Identifier: " +
+//                            accessTokenDO.getTokenId());
+//                }
+//            } else {
+//                // cache miss, load the access token info from the database.
+//                accessTokenDO = new AccessTokenDO();
+//                String tokenId = UUID.randomUUID().toString();
+//                accessTokenDO.setTokenId(tokenId); //TODO: check if we really need this
+//                accessTokenDO.setAccessToken(accessTokenIdentifier);
+//                accessTokenDO.setConsumerKey(consumerKey);
+//                // check if token is expired and set tokenState EXPIRED or ACTIVE.
+//                if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
+//                    accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
+//                } else {
+//                    accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
+//                }
+//                // TODO:// need to decide how to determine the consented state for the previous access token or
+//                if previous
+//                accessTokenDO.setIsConsentedToken(false);
+//                // set other fields from jwt claims.
+//                accessTokenDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
+//                accessTokenDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
+//                        - claimsSet.getIssueTime().getTime());
+//                accessTokenDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE)));
+//                AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
+//                accessTokenDO.setAuthzUser(authenticatedUser);
+//                // Add the token back to the cache in the case of a cache miss.
+//                TokenMgtUtil.addTokenToCache(accessTokenIdentifier, accessTokenDO);
+//            }
+//        }
+//        return accessTokenDO;
+//    }
 
     @Override
     public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {

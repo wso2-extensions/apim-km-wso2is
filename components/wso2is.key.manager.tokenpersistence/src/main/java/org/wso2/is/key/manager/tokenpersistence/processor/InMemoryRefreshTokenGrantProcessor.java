@@ -23,7 +23,6 @@ import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
@@ -59,12 +58,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         if (!OAuth2Util.isJWT(tokenReq.getRefreshToken())) {
             log.debug("Refresh token is not a JWT. Hence, validating as an opaque token from database.");
             // For backward compatibility, we check whether it is available in idn_oauth2_token table.
-            RefreshTokenValidationDataDO validationDO = OpaqueTokenUtil
-                    .validateOpaqueRefreshToken(tokenReqMessageContext);
-            //TODO: handle oauth cache
-            OAuthUtil.clearOAuthCache(tokenReq.getClientId(), validationDO.getAuthorizedUser(),
-                    OAuth2Util.buildScopeString(validationDO.getScope()), "NONE");
-            return validationDO;
+            return OpaqueTokenUtil.validateOpaqueRefreshToken(tokenReqMessageContext);
         }
         // validate JWT token signature, expiry time, not before time.
         log.debug("Refresh token is a JWT. Hence, validating signature, expiry time and indirect revocations.");
@@ -91,8 +85,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
          * 2. check if user was changed.
          */
         if (TokenMgtUtil.isTokenRevokedDirectly(tokenReq.getRefreshToken(), tokenReq.getClientId())
-                || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet.getSubject(), consumerKey,
-                claimsSet.getIssueTime())) {
+                || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)) {
             throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
         }
         // create new RefreshTokenValidationDO.
@@ -108,9 +101,6 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 claimsSet.getClaim(PersistenceConstants.IS_CONSENTED).toString()));
         // if not active, an IdentityOAuth2Exception should have been thrown at the beginning.
         validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
-        //TODO: handle oauth cache
-        OAuthUtil.clearOAuthCache(tokenReq.getClientId(), authenticatedUser,
-                OAuth2Util.buildScopeString(validationDataDO.getScope()), "NONE");
         return validationDataDO;
     }
 
