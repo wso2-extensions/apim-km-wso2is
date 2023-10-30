@@ -183,7 +183,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         jwtClaimsSetBuilder.claim(PersistenceConstants.AUTHORIZATION_PARTY, consumerKey);
         jwtClaimsSetBuilder.issueTime(new Date(curTimeInMillis));
         jwtClaimsSetBuilder.jwtID(UUID.randomUUID().toString());
-        jwtClaimsSetBuilder.notBeforeTime(new Date(curTimeInMillis));
         jwtClaimsSetBuilder.claim(CLIENT_ID, consumerKey);
         // TODO: check whether we need the user name in the refresh token. we can derive it using the userID as well.
         jwtClaimsSetBuilder.claim(GIVEN_NAME,
