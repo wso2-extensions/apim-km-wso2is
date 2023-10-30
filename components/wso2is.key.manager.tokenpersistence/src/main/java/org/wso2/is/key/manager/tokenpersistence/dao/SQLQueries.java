@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com)
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,15 +16,15 @@
  * under the License.
  */
 
-package org.wso2.is.key.manager.tokenpersistence;
+package org.wso2.is.key.manager.tokenpersistence.dao;
 
 /**
- * Constants related to persistence component.
+ * SQL Queries related to tokens.
  */
-public class PersistenceConstants {
-    public static final String TOKEN_TYPE_ELEM = "token_type";
-    public static final String REFRESH_TOKEN = "refresh_token";
-    public static final String IS_CONSENTED = "is_consented";
-    public static final String AUTHORIZATION_PARTY = "azp";
-    public static final String SCOPE = "scope";
+public class SQLQueries {
+
+    public static final String IS_INVALID_TOKEN = "SELECT 1 FROM IDN_OAUTH2_ACCESS_TOKEN WHERE "
+            + "(ACCESS_TOKEN_HASH=? OR REFRESH_TOKEN_HASH=?) AND (TOKEN_STATE='INACTIVE' OR TOKEN_STATE='REVOKED' OR "
+            + "TOKEN_STATE='EXPIRED'))";
+
 }

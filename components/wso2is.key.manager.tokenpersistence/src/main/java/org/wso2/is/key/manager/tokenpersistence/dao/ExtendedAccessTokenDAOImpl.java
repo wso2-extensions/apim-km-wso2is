@@ -19,10 +19,16 @@
 package org.wso2.is.key.manager.tokenpersistence.dao;
 
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
+import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAOImpl;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -32,8 +38,7 @@ import java.util.Set;
  * An extension for AccessTokenDAOImpl when handling non-persistent access/refresh tokens.
  */
 
-public class ExtendedAccessTokenDAOImpl implements AccessTokenDAO {
-
+public class ExtendedAccessTokenDAOImpl extends AccessTokenDAOImpl {
 
     @Override
     public void insertAccessToken(String accessToken, String consumerKey, AccessTokenDO accessTokenDO,
@@ -195,11 +200,12 @@ public class ExtendedAccessTokenDAOImpl implements AccessTokenDAO {
 
     @Override
     public void invalidateAndCreateNewAccessToken(String oldAccessTokenId, String tokenState, String consumerKey,
-            String tokenStateId, AccessTokenDO accessTokenDO, String userStoreDomain, String grantType)
+                                                  String tokenStateId, AccessTokenDO accessTokenDO,
+                                                  String userStoreDomain, String grantType)
             throws IdentityOAuth2Exception {
 
     }
-    
+
     @Override
     public void updateUserStoreDomain(int tenantId, String currentUserStoreDomain, String newUserStoreDomain) {
 
@@ -213,5 +219,31 @@ public class ExtendedAccessTokenDAOImpl implements AccessTokenDAO {
     @Override
     public void updateAccessTokenState(String tokenId, String tokenState) {
 
+    }
+
+    /**
+     * Checks if the provided access token is invalid. An access token is considered invalid if its token state is one
+     * of 'INACTIVE', 'REVOKED', or 'EXPIRED'.
+     *
+     * @param accessTokenIdentifier The unique identifier of the access token.
+     * @return {@code true} if the access token is invalid, {@code false} otherwise.
+     * @throws IdentityOAuth2Exception If an error occurs while checking the token's validity.
+     */
+    public boolean isInvalidToken(String accessTokenIdentifier) throws IdentityOAuth2Exception {
+
+        String sql = SQLQueries.IS_INVALID_TOKEN;
+        sql = OAuth2Util.getTokenPartitionedSqlByToken(sql, accessTokenIdentifier);
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, getHashingPersistenceProcessor()
+                    .getProcessedAccessTokenIdentifier(accessTokenIdentifier));
+            preparedStatement.setString(2, getHashingPersistenceProcessor()
+                    .getProcessedAccessTokenIdentifier(accessTokenIdentifier));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                return resultSet.next();
+            }
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception("Error while checking state of token as an invalid token.", e);
+        }
     }
 }

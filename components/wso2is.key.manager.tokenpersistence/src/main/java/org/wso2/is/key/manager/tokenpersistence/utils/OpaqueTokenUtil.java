@@ -18,14 +18,21 @@
 
 package org.wso2.is.key.manager.tokenpersistence.utils;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.base.IdentityConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
-import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
+import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
+import org.wso2.carbon.identity.openidconnect.OIDCClaimUtil;
 
 /**
  * Util class to handle opaque tokens. This is provided to handle backward compatibility
@@ -60,21 +67,20 @@ public class OpaqueTokenUtil {
     /**
      * Validate opaque refresh token from revocation request and return the validation data object.
      *
-     * @param oAuthRevocationRequestDTO Revocation request DTO.
+     * @param token       Refresh Token
+     * @param consumerKey Consumer Key
      * @return RefreshTokenValidationDataDO  Refresh token validation data object.
      * @throws IdentityOAuth2Exception if an error occurs while validating the refresh token.
      */
-    public static RefreshTokenValidationDataDO validateOpaqueRefreshToken(
-            OAuthRevocationRequestDTO oAuthRevocationRequestDTO) throws IdentityOAuth2Exception {
+    public static RefreshTokenValidationDataDO validateOpaqueRefreshToken(String token, String consumerKey)
+            throws IdentityOAuth2Exception {
 
-        RefreshTokenValidationDataDO validationBean = validateRefreshToken(oAuthRevocationRequestDTO.getConsumerKey(),
-                oAuthRevocationRequestDTO.getToken());
+        RefreshTokenValidationDataDO validationBean = validateRefreshToken(consumerKey, token);
         if (validationBean.getAccessToken() == null) {
             if (log.isDebugEnabled()) {
-                log.debug("Invalid Refresh Token provided for Client with Client Id : "
-                        + oAuthRevocationRequestDTO.getConsumerKey());
+                log.debug(String.format("Invalid Refresh Token provided for Client with Client Id : %s", consumerKey));
             }
-            throw new IdentityOAuth2Exception("Persisted access token data not found");
+            throw new IdentityOAuth2Exception("Persisted access token data not found.");
         }
         return validationBean;
     }
@@ -90,7 +96,41 @@ public class OpaqueTokenUtil {
     private static RefreshTokenValidationDataDO validateRefreshToken(String clientId, String refreshToken)
             throws IdentityOAuth2Exception {
 
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
+                log.debug("Validating refresh token(hashed): " + DigestUtils.sha256Hex(refreshToken) + " client: "
+                        + clientId);
+            } else {
+                log.debug("Validating refresh token for client: " + clientId);
+            }
+        }
         return OAuthTokenPersistenceFactory.getInstance().getTokenManagementDAO()
                 .validateRefreshToken(clientId, refreshToken);
+    }
+
+    /**
+     * Validate Token Consent for Opaque tokens.
+     *
+     * @param validationBean RefreshTokenValidationDataDO
+     */
+    public static void validateTokenConsent(RefreshTokenValidationDataDO validationBean)
+            throws IdentityOAuth2Exception {
+
+        if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
+            String previousGrantType = validationBean.getGrantType();
+            // Check if the previous grant type is consent refresh token type or not.
+            if (!OAuthConstants.GrantTypes.REFRESH_TOKEN.equals(previousGrantType)) {
+                // If the previous grant type is not a refresh token, then check if it's a consent token or not.
+                if (OIDCClaimUtil.isConsentBasedClaimFilteringApplicable(previousGrantType)) {
+                    validationBean.setConsented(true);
+                }
+            } else {
+                /* When previousGrantType == refresh_token, we need to check whether the original grant type
+                 is consented or not. */
+                AccessTokenDO accessTokenDOFromTokenIdentifier = OAuth2Util.getAccessTokenDOFromTokenIdentifier(
+                        validationBean.getAccessToken(), false);
+                validationBean.setConsented(accessTokenDOFromTokenIdentifier.isConsentedToken());
+            }
+        }
     }
 }

@@ -30,7 +30,7 @@ import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
-import org.wso2.carbon.identity.oauth.tokenprocessor.TokenValidationProcessor;
+import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
@@ -40,7 +40,7 @@ import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.listner.APIMOAuthApplicationMgtListener;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryOAuth2RevocationProcessor;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryRefreshTokenGrantProcessor;
-import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryTokenValidationProcessor;
+import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryTokenProvider;
 
 /**
  * KeyManager persistence component to handle token persistence
@@ -66,6 +66,8 @@ public class TokenPersistenceServiceComponent {
                         new InMemoryOAuth2RevocationProcessor(), null);
                 cxt.getBundleContext().registerService(RefreshTokenGrantProcessor.class,
                         new InMemoryRefreshTokenGrantProcessor(), null);
+                cxt.getBundleContext().registerService(TokenProvider.class,
+                        new InMemoryTokenProvider(), null);
                 cxt.getBundleContext().registerService(TokenValidationProcessor.class,
                         new InMemoryTokenValidationProcessor(), null);
                 cxt.getBundleContext().registerService(OAuthApplicationMgtListener.class,

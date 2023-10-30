@@ -41,11 +41,18 @@ import org.wso2.carbon.identity.application.common.util.IdentityApplicationManag
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.oauth.OAuthUtil;
+import org.wso2.carbon.identity.oauth.cache.CacheEntry;
+import org.wso2.carbon.identity.oauth.cache.OAuthCache;
+import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
+import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
+import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.token.OauthTokenIssuer;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -57,6 +64,7 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
+import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 
 import java.security.PublicKey;
@@ -67,6 +75,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Util class for token management related activities.
@@ -106,6 +115,23 @@ public class TokenMgtUtil {
         } catch (InvalidOAuthClientException e) {
             throw new IdentityOAuth2Exception(
                     "Error while retrieving oauth issuer for the app with clientId: " + consumerKey, e);
+        }
+    }
+
+    /**
+     * Get token identifier (JTI) for JWT.
+     *
+     * @param claimsSet Claim Set
+     * @return JTI
+     * @throws IdentityOAuth2Exception if JTI claim is not present in the JWTClaimSet of the access token
+     */
+    public static String getTokenIdentifier(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
+
+        String jwtId = claimsSet.getJWTID();
+        if (jwtId == null) {
+            throw new IdentityOAuth2Exception("JTI could not be retrieved from the JWT token.");
+        } else {
+            return jwtId;
         }
     }
 
@@ -399,22 +425,37 @@ public class TokenMgtUtil {
     /**
      * Check if token is in-directly revoked through a user related or client application related change action.
      *
-     * @param authenticatedSubjectIdentifier Authenticated Subject Identifier
-     * @param consumerKey                    Consumer Key
-     * @param tokenIssuedTime                Token Issued Time
      * @return True if token is in-directly revoked
      * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked
      */
-    public static boolean isTokenRevokedIndirectly(String authenticatedSubjectIdentifier, String consumerKey,
-                                                   Date tokenIssuedTime) throws IdentityOAuth2Exception {
+    public static boolean isTokenRevokedIndirectly(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
         //TODO:// check if revoked by user action and remove following return statement.
-        return ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+        Date tokenIssuedTime = claimsSet.getIssueTime();
+        String authSubjIdentifier = claimsSet.getSubject();
+        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+        boolean isRevoked = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                 .isRevokedJWTConsumerKeyExist(consumerKey, tokenIssuedTime);
+        if (isRevoked) {
+            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
+            String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE));
+            String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
+            // if revoked, remove the token information from oauth cache.
+            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                    OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
+            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                    OAuth2Util.buildScopeString(scopes));
+            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
+            OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
+            String tenantDomain = authenticatedUser.getTenantDomain();
+            OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
+        }
+        return isRevoked;
     }
 
     /**
-     * Check if token is directly revoked by calling revoked token endpoint.
+     * Check if token is directly revoked by calling revoked token endpoint. This seamlessly validates both current
+     * tokens and migrated tokens.
      *
      * @param tokenIdentifier Token Identifier
      * @param consumerKey     Consumer Key
@@ -424,9 +465,100 @@ public class TokenMgtUtil {
     public static boolean isTokenRevokedDirectly(String tokenIdentifier, String consumerKey)
             throws IdentityOAuth2Exception {
 
-        return ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().isInvalidToken(
-                TokenMgtUtil.getTokenIdentifier(tokenIdentifier, consumerKey), consumerKey);
+        /*
+         * Clearing of cache is already handled when direct revocation happens through oauth2 revocation service.
+         * Hence, no need of clearing cache.
+         */
+        boolean isInvalid = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+                .isInvalidToken(tokenIdentifier, consumerKey);
+        if (!isInvalid) {
+            /*
+             * Token can be a migrated one from a previous product version. Hence, validating it against old token
+             * table.
+             */
+            AccessTokenDAO accessTokenDAO = OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO();
+            if (accessTokenDAO instanceof ExtendedAccessTokenDAOImpl) {
+                isInvalid = ((ExtendedAccessTokenDAOImpl) accessTokenDAO).isInvalidToken(tokenIdentifier);
+            } else {
+                throw new IdentityOAuth2Exception("Invalid AccessTokenDAO Implementation is used");
+            }
+        }
+        return isInvalid;
     }
+
+    /**
+     * Get AccessTokenDO from cache.
+     *
+     * @param accessTokenIdentifier Identifier
+     * @return Optional AccessTokenDO
+     */
+    public static Optional<AccessTokenDO> getTokenDOFromCache(String accessTokenIdentifier) {
+
+        AccessTokenDO accessTokenDO = null;
+        if (OAuthCache.getInstance().isEnabled()) {
+            CacheEntry result = OAuthCache.getInstance().getValueFromCache(getOAuthCacheKey(accessTokenIdentifier));
+            // cache hit, do the type check.
+            if (result instanceof AccessTokenDO) {
+                accessTokenDO = (AccessTokenDO) result;
+                if (log.isDebugEnabled() && IdentityUtil.isTokenLoggable(
+                        IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                    log.debug(String.format("Hit OAuthCache for accessTokenIdentifier: %s", accessTokenIdentifier));
+                } else {
+                    log.debug("Hit OAuthCache with accessTokenIdentifier");
+                }
+            }
+        }
+        return Optional.ofNullable(accessTokenDO);
+    }
+
+    /**
+     * Adds an access token and its associated information to the OAuth cache for efficient retrieval.
+     *
+     * @param accessTokenIdentifier The identifier of the access token to be cached.
+     * @param accessTokenDO         The AccessTokenDO (Access Token Data Object) containing information about the
+     *                              access token.
+     */
+    public static void addTokenToCache(String accessTokenIdentifier, AccessTokenDO accessTokenDO) {
+
+        if (OAuthCache.getInstance().isEnabled()) {
+            OAuthCache.getInstance().addToCache(
+                    TokenMgtUtil.getOAuthCacheKey(accessTokenIdentifier), accessTokenDO);
+            if (log.isDebugEnabled()) {
+                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                    log.debug(String.format("Access token(hashed): %s added to OAuthCache.",
+                            DigestUtils.sha256Hex(accessTokenIdentifier)));
+                } else {
+                    log.debug("Access token added to OAuthCache.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Get OAuth cache key for access token identifier.
+     *
+     * @param accessTokenIdentifier Access token Id
+     * @return OAuth Cache Key
+     */
+    public static OAuthCacheKey getOAuthCacheKey(String accessTokenIdentifier) {
+
+        return new OAuthCacheKey(accessTokenIdentifier);
+    }
+
+    public static void removeTokenFromCache(String accessTokenIdentifier, String consumerKey) {
+
+        OAuthCache.getInstance().clearCacheEntry(new OAuthCacheKey(accessTokenIdentifier));
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                log.debug("Access token(hashed): " + DigestUtils.sha256Hex(accessTokenIdentifier + " is expired"
+                        + ". Therefore cleared it from cache."));
+            } else {
+                log.debug("Existing access token for client: " + consumerKey + " is expired. "
+                        + "Therefore cleared it from cache.");
+            }
+        }
+    }
+
 
     /**
      * Check if provided JWT token is a refresh token or not.
