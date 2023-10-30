@@ -23,9 +23,15 @@ import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.base.IdentityConstants;
+import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.oauth.IdentityOAuthAdminException;
+import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
+import org.wso2.carbon.identity.oauth.dao.OAuthAppDAO;
+import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
@@ -34,8 +40,14 @@ import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
+import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
+
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class provides the implementation for revoking access tokens and refresh tokens in the context of InMemory
@@ -98,9 +110,75 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                         + refreshTokenDO.getValidityPeriodInMillis());
     }
 
+    /**
+     * Handle rule persistence and propagation for token revocation due to internal user events
+     *
+     * @param username         user on which the event occurred
+     * @param userStoreManager user store manager
+     * @throws UserStoreException
+     */
     @Override
     public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {
+        // Calling OAuthUtil.revokeTokens to handle migrations.
+        // Old tokens in the db will be revoked in the old way, since new tokens wouldn't have the mandatory claim.
+        OAuthUtil.revokeTokens(username, userStoreManager);
 
-        return false;
+        String userUUID = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(username);
+        int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
+        String organization = IdentityTenantUtil.getTenantDomain(tenantId);
+
+        long revocationTime = Calendar.getInstance().getTimeInMillis();
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("subjectId", userUUID);
+        params.put("subjectIdType", "USER_ID");
+        params.put("revocationTime", revocationTime);
+        params.put("organization", organization);
+        params.put("tenantId", tenantId);
+        params.put("tenantDomain", organization);
+        params.put("username", username);
+
+
+        OAuthUtil.invokePreRevocationBySystemListeners(userUUID, params);
+        try {
+            ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+                    .revokeAccessTokensByUserEvent(userUUID, "USER_ID", revocationTime, organization);
+            revokeAppTokensOfUser(params);
+        } catch (IdentityOAuth2Exception e) {
+            log.error("Error while persisting revoke rules for tokens by user event.", e);
+            return false;
+        }
+        OAuthUtil.invokePostRevocationBySystemListeners(userUUID, params);
+
+        return true;
+    }
+
+    /**
+     * Revokes the app tokens of the user.
+     *
+     * @param params parameters required to revoke the app tokens.
+     */
+    private void revokeAppTokensOfUser(Map<String, Object> params) {
+        // get client ids for the apps owned by user since the 'sub' claim for these are the consumer key.
+        // The app tokens for those consumer keys should also be revoked
+
+        OAuthAppDAO oAuthAppDAO = new OAuthAppDAO();
+        try {
+            OAuthAppDO[] oAuthAppDOs = oAuthAppDAO
+                    .getOAuthConsumerAppsOfUser((String) params.get("username"), (int) params.get("tenantId"));
+            for (OAuthAppDO oAuthAppDO : oAuthAppDOs) {
+                String consumerKey = oAuthAppDO.getOauthConsumerKey();
+                String subjectIdType = "CLIENT_ID";
+                ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+                        .revokeAccessTokensByUserEvent(consumerKey, subjectIdType,
+                                (long) params.get("revocationTime"), params.get("organization").toString());
+                InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
+                        new InternalTokenRevocationUserEvent(consumerKey, subjectIdType, params);
+                org.wso2.is.notification.internal.ServiceReferenceHolder.getInstance()
+                        .getEventSender().publishEvent(internalTokenRevocationUserEvent);
+            }
+        } catch (IdentityOAuthAdminException | IdentityOAuth2Exception e) {
+            log.error("Error while persisting revoke rules for app tokens by user event.", e);
+        }
     }
 }

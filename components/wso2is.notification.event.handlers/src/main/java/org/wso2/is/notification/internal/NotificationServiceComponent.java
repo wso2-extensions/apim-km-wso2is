@@ -26,6 +26,7 @@ public class NotificationServiceComponent {
 
     private static final Log log = LogFactory.getLog(NotificationServiceComponent.class);
     ServiceRegistration<OAuthEventInterceptor> serviceRegistration;
+    ServiceRegistration<OAuthEventInterceptor> internalTokenRevocationService;
     private ServiceRegistration<OAuthEventInterceptor> auditLoggerServiceRegistration;
 
     @Activate
@@ -92,6 +93,9 @@ public class NotificationServiceComponent {
 
         if (serviceRegistration != null) {
             serviceRegistration.unregister();
+        }
+        if (internalTokenRevocationService != null) {
+            internalTokenRevocationService.unregister();
         }
         if (auditLoggerServiceRegistration != null) {
             auditLoggerServiceRegistration.unregister();
