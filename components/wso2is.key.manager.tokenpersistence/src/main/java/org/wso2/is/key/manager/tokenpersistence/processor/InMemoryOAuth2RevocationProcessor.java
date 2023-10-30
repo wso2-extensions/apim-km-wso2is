@@ -23,12 +23,10 @@ import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.base.IdentityConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.apache.oltu.oauth2.common.message.types.GrantType;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
-import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.IdentityOAuthAdminException;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
@@ -43,18 +41,13 @@ import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
-import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
-import org.wso2.carbon.user.core.UserStoreException;
-import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
 
-import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * This class provides the implementation for revoking access tokens and refresh tokens in the context of InMemory
@@ -115,12 +108,6 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
                 refreshTokenIdentifier, revokeRequestDTO.getConsumerKey(), refreshTokenDO.getIssuedTime().getTime()
                         + refreshTokenDO.getValidityPeriodInMillis());
-    }
-
-    @Override
-    public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {
-
-        return false;
     }
 
     /**

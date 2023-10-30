@@ -66,10 +66,7 @@ public class TokenPersistenceServiceComponent {
                         new InMemoryOAuth2RevocationProcessor(), null);
                 cxt.getBundleContext().registerService(RefreshTokenGrantProcessor.class,
                         new InMemoryRefreshTokenGrantProcessor(), null);
-                cxt.getBundleContext().registerService(TokenProvider.class,
-                        new InMemoryTokenProvider(), null);
-                cxt.getBundleContext().registerService(TokenValidationProcessor.class,
-                        new InMemoryTokenValidationProcessor(), null);
+                cxt.getBundleContext().registerService(TokenProvider.class, new InMemoryTokenProvider(), null);
                 cxt.getBundleContext().registerService(OAuthApplicationMgtListener.class,
                         new APIMOAuthApplicationMgtListener(), null);
             }

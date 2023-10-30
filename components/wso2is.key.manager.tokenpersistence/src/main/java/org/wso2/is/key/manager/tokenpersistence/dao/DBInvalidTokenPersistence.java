@@ -36,10 +36,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 /**
- * RDBMS based invalid token persistence implementation
- *
  * RDBMS based invalid token persistence implementation.
- *
  */
 public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService {
     private static final Log log = LogFactory.getLog(DBInvalidTokenPersistence.class);
