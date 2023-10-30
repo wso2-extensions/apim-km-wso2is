@@ -502,11 +502,9 @@ public class TokenMgtUtil {
                 accessTokenDO = (AccessTokenDO) result;
                 if (log.isDebugEnabled() && IdentityUtil.isTokenLoggable(
                         IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
-                    log.debug("Hit OAuthCache for accessTokenIdentifier: " + accessTokenIdentifier);
+                    log.debug(String.format("Hit OAuthCache for accessTokenIdentifier: %s", accessTokenIdentifier));
                 } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Hit OAuthCache with accessTokenIdentifier");
-                    }
+                    log.debug("Hit OAuthCache with accessTokenIdentifier");
                 }
             }
         }
@@ -526,7 +524,12 @@ public class TokenMgtUtil {
             OAuthCache.getInstance().addToCache(
                     TokenMgtUtil.getOAuthCacheKey(accessTokenIdentifier), accessTokenDO);
             if (log.isDebugEnabled()) {
-                log.debug("Access Token Info object was added back to the cache.");
+                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                    log.debug(String.format("Access token(hashed): %s added to OAuthCache.",
+                            DigestUtils.sha256Hex(accessTokenIdentifier)));
+                } else {
+                    log.debug("Access token added to OAuthCache.");
+                }
             }
         }
     }
