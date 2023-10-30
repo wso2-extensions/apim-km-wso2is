@@ -29,11 +29,9 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.identity.openidconnect.OIDCClaimUtil;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
@@ -64,8 +62,9 @@ public class InMemoryTokenProvider implements TokenProvider {
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         if (!TokenMgtUtil.isRefreshTokenType(claimsSet)) {
             TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-            String consumerKeyFromToken = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
-            //TODO:// validate consumer key in the request against the token.
+            // No need to validate the consumer key in the token with the consumer key in the verification request, as
+            // it is done by the calling functions.
+            String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             if (log.isDebugEnabled()) {
                 if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
@@ -91,7 +90,7 @@ public class InMemoryTokenProvider implements TokenProvider {
              * 1. check if consumer app was changed.
              * 2. check if user was changed.
              */
-            if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKeyFromToken)
+            if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
                     || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)) {
                 throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
             }
@@ -110,7 +109,7 @@ public class InMemoryTokenProvider implements TokenProvider {
                 // create new AccessTokenDO with validated token information.
                 validationDataDO = new AccessTokenDO();
                 validationDataDO.setAccessToken(accessTokenIdentifier);
-                validationDataDO.setConsumerKey(consumerKeyFromToken);
+                validationDataDO.setConsumerKey(consumerKey);
                 validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
                 validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                         - claimsSet.getIssueTime().getTime());
