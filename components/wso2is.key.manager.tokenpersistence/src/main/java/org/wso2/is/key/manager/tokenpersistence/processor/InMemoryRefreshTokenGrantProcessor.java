@@ -34,9 +34,7 @@ import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
-import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 
 import java.sql.Timestamp;
