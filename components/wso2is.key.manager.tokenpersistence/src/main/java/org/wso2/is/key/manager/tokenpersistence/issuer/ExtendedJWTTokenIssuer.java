@@ -27,14 +27,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
-import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.JWTTokenIssuer;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
@@ -44,6 +41,7 @@ import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -51,11 +49,7 @@ import java.util.UUID;
  */
 public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
     private static final Log log = LogFactory.getLog(ExtendedJWTTokenIssuer.class);
-    private static final String AUDIENCE = "aud";
-    private static final String CLIENT_ID = "client_id";
-    private static final String SCOPE = "scope";
-    private static final String GIVEN_NAME = "given_name";
-    private Algorithm signatureAlgorithm;
+    private final Algorithm signatureAlgorithm;
 
     public ExtendedJWTTokenIssuer() throws IdentityOAuth2Exception {
 
@@ -66,6 +60,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
 
     @Override
     public String refreshToken(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws OAuthSystemException {
+
         if (log.isDebugEnabled()) {
             log.debug("Refresh token request with authorization request message context message context. Authorized "
                     + "user " + oAuthAuthzReqMessageContext.getAuthorizationReqDTO().getUser().getLoggableUserId());
@@ -79,6 +74,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
 
     @Override
     public String refreshToken(OAuthTokenReqMessageContext tokReqMsgCtx) throws OAuthSystemException {
+
         if (log.isDebugEnabled()) {
             log.debug("Refresh token request with token request message context. Authorized user "
                     + tokReqMsgCtx.getAuthorizedUser().getLoggableUserId());
@@ -105,7 +101,8 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
                 request.getAuthorizationReqDTO().getConsumerKey());
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder(jwtClaimsSet);
 
-        if (request.getApprovedScope() != null && Arrays.asList((request.getApprovedScope())).contains(AUDIENCE)) {
+        if (request.getApprovedScope() != null && Arrays.asList((request.getApprovedScope())).contains(
+                PersistenceConstants.JWTClaim.AUDIENCE)) {
             jwtClaimsSetBuilder.audience(Arrays.asList(request.getApprovedScope()));
         }
         jwtClaimsSet = jwtClaimsSetBuilder.build();
@@ -130,7 +127,8 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
                 request.getOauth2AccessTokenReqDTO().getClientId());
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder(jwtClaimsSet);
 
-        if (request.getScope() != null && Arrays.asList((request.getScope())).contains(AUDIENCE)) {
+        if (request.getScope() != null && Arrays.asList((request.getScope()))
+                .contains(PersistenceConstants.JWTClaim.AUDIENCE)) {
             jwtClaimsSetBuilder.audience(Arrays.asList(request.getScope()));
         }
         jwtClaimsSet = jwtClaimsSetBuilder.build();
@@ -139,7 +137,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         }
         return signJWT(jwtClaimsSet, request, null);
     }
-
 
     /**
      * Create a JWT claim set according to the JWT format.
@@ -154,66 +151,58 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
                                                              OAuthTokenReqMessageContext tokenReqMessageContext,
                                                              String consumerKey) throws IdentityOAuth2Exception {
 
-        // loading the stored application data
+        // loading the stored application data.
         OAuthAppDO oAuthAppDO;
+        String spTenantDomain;
         try {
-            oAuthAppDO = OAuth2Util.getAppInformationByClientId(consumerKey);
+            if (authAuthzReqMessageContext != null) {
+                spTenantDomain = authAuthzReqMessageContext.getAuthorizationReqDTO().getTenantDomain();
+            } else {
+                spTenantDomain = tokenReqMessageContext.getOauth2AccessTokenReqDTO().getTenantDomain();
+            }
+            oAuthAppDO = OAuth2Util.getAppInformationByClientId(consumerKey, spTenantDomain);
         } catch (InvalidOAuthClientException e) {
             throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: " + consumerKey, e);
         }
         long refreshTokenLifeTimeInMillis = getRefreshTokenLifeTimeInMillis(oAuthAppDO);
-        String spTenantDomain;
-        if (authAuthzReqMessageContext != null) {
-            spTenantDomain = authAuthzReqMessageContext.getAuthorizationReqDTO().getTenantDomain();
-        } else {
-            spTenantDomain = tokenReqMessageContext.getOauth2AccessTokenReqDTO().getTenantDomain();
-        }
         String issuer = OAuth2Util.getIdTokenIssuer(spTenantDomain);
         long curTimeInMillis = Calendar.getInstance().getTimeInMillis();
-
         AuthenticatedUser authenticatedUser = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext);
-        String sub = getAuthenticatedSubjectIdentifier(authAuthzReqMessageContext, tokenReqMessageContext);
-        if (StringUtils.isEmpty(sub)) {
-            sub = authenticatedUser.toFullQualifiedUsername();
-        }
+        String sub = getSubjectClaim(authenticatedUser);
         // Set the default claims.
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder();
         jwtClaimsSetBuilder.issuer(issuer);
         jwtClaimsSetBuilder.subject(sub);
-        jwtClaimsSetBuilder.claim(PersistenceConstants.AUTHORIZATION_PARTY, consumerKey);
+        jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY, consumerKey);
         jwtClaimsSetBuilder.issueTime(new Date(curTimeInMillis));
         jwtClaimsSetBuilder.jwtID(UUID.randomUUID().toString());
-        jwtClaimsSetBuilder.claim(CLIENT_ID, consumerKey);
-        // TODO: check whether we need the user name in the refresh token. we can derive it using the userID as well.
-        jwtClaimsSetBuilder.claim(GIVEN_NAME,
-                getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext).toFullQualifiedUsername());
-        jwtClaimsSetBuilder.claim(PersistenceConstants.TOKEN_TYPE_ELEM, PersistenceConstants.REFRESH_TOKEN);
-
-        String scope = getScope(authAuthzReqMessageContext, tokenReqMessageContext);
+        jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.CLIENT_ID, consumerKey);
+        setEntityIdClaim(jwtClaimsSetBuilder, authAuthzReqMessageContext, tokenReqMessageContext, authenticatedUser,
+                oAuthAppDO);
+        String scope = getScope(authAuthzReqMessageContext, tokenReqMessageContext, sub);
         if (StringUtils.isNotEmpty(scope)) {
-            jwtClaimsSetBuilder.claim(SCOPE, scope);
+            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.SCOPE, scope);
         }
+        // claim to identify the JWT as a refresh token.
+        jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM, PersistenceConstants.REFRESH_TOKEN);
+        jwtClaimsSetBuilder.expirationTime(
+                calculateRefreshTokenExpiryTime(refreshTokenLifeTimeInMillis, curTimeInMillis));
+        /*
+         * This is a spec (openid-connect-core-1_0:2.0) requirement for ID tokens. But we are keeping this in JWT as
+         * well.
+         */
+        List<String> audience = OAuth2Util.getOIDCAudience(consumerKey, oAuthAppDO);
+        jwtClaimsSetBuilder.audience(audience);
+        /*
+         * is_consented claim is used to identity whether user claims should be filtered based on consent for the token
+         * during ID token generation and user info endpoint.
+         */
         if (tokenReqMessageContext != null) {
-            jwtClaimsSetBuilder.claim(PersistenceConstants.IS_CONSENTED, tokenReqMessageContext.isConsentedToken());
-        }
-        jwtClaimsSetBuilder.expirationTime(new Date(curTimeInMillis + refreshTokenLifeTimeInMillis));
-        String userType = getAuthorizedUserType(authAuthzReqMessageContext, tokenReqMessageContext);
-        try {
-            /*
-             * The entity_id is used to identify the principal subject for the issuing token. For user access
-             * tokens, this is the user's unique ID. For application access tokens, this is the application's
-             * consumer key.
-             */
-            if (OAuthConstants.UserType.APPLICATION_USER.equals(userType)) {
-                jwtClaimsSetBuilder.claim(OAuth2Constants.ENTITY_ID, authenticatedUser.getUserId());
-            } else if (OAuthConstants.UserType.APPLICATION.equals(userType)) {
-                jwtClaimsSetBuilder.claim(OAuth2Constants.ENTITY_ID, oAuthAppDO.getOauthConsumerKey());
-            } else {
-                throw new IdentityOAuth2Exception("Invalid user type: " + userType);
-            }
-        } catch (UserIdNotFoundException e) {
-            throw new IdentityOAuth2Exception("User id not found for user: "
-                    + authenticatedUser.getLoggableMaskedUserId(), e);
+            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.IS_CONSENTED,
+                    tokenReqMessageContext.isConsentedToken());
+        } else {
+            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.IS_CONSENTED,
+                    authAuthzReqMessageContext.isConsentedToken());
         }
         return jwtClaimsSetBuilder.build();
     }
@@ -236,8 +225,8 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
             lifetimeInMillis = OAuthServerConfiguration.getInstance()
                     .getRefreshTokenValidityPeriodInSeconds() * 1000;
             if (log.isDebugEnabled()) {
-                log.debug("Application access token time was 0ms. Setting default refresh token " +
-                        "lifetime : " + lifetimeInMillis + "ms.");
+                log.debug("Application specific refresh token expiry time was 0ms. Setting default refresh token "
+                        + "lifetime : " + lifetimeInMillis + "ms.");
             }
         }
         if (log.isDebugEnabled()) {
@@ -263,7 +252,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         } else {
             authenticatedUser = tokenReqMessageContext.getAuthorizedUser();
         }
-
         if (authenticatedUser == null) {
             throw new IdentityOAuth2Exception("Authenticated user is null for the request.");
         }
@@ -273,12 +261,13 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
     /**
      * To get the scope of the token to be added to the JWT claims.
      *
-     * @param authAuthzReqMessageContext Auth Request Message Context.
-     * @param tokenReqMessageContext     Token Request Message Context.
+     * @param authAuthzReqMessageContext Auth Request Message Context
+     * @param tokenReqMessageContext     Token Request Message Context
+     * @param subject                    Subject Identifier
      * @return scope of token.
      */
     protected String getScope(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
-                              OAuthTokenReqMessageContext tokenReqMessageContext) throws IdentityOAuth2Exception {
+                              OAuthTokenReqMessageContext tokenReqMessageContext, String subject) {
 
         String[] scope;
         String scopeString = null;
@@ -290,8 +279,8 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (ArrayUtils.isNotEmpty(scope)) {
             scopeString = OAuth2Util.buildScopeString(scope);
             if (log.isDebugEnabled()) {
-                log.debug("Scope exist for the jwt access token with subject " + getAuthenticatedSubjectIdentifier(
-                        authAuthzReqMessageContext, tokenReqMessageContext) + " and the scope is " + scopeString);
+                log.debug("Scope exist for the jwt access token with subject " + subject + " and the scope is "
+                        + scopeString);
             }
         }
         return scopeString;
@@ -300,25 +289,34 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
     /**
      * To get authenticated subject identifier.
      *
-     * @param authAuthzReqMessageContext Auth Request Message Context.
-     * @param tokenReqMessageContext     Token request message context.
+     * @param authenticatedUser Authorized User
      * @return authenticated subject identifier.
      */
-    protected String getAuthenticatedSubjectIdentifier(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
-                                                       OAuthTokenReqMessageContext tokenReqMessageContext)
-            throws IdentityOAuth2Exception {
+    protected String getSubjectClaim(AuthenticatedUser authenticatedUser) {
 
-        AuthenticatedUser authenticatedUser = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext);
         return authenticatedUser.getAuthenticatedSubjectIdentifier();
     }
 
-    private String getAuthorizedUserType(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
-                                         OAuthTokenReqMessageContext tokenReqMessageContext) {
+    /**
+     * Calculates refresh token expiry time.
+     *
+     * @param refreshTokenLifeTimeInMillis refreshTokenLifeTimeInMillis
+     * @param curTimeInMillis              currentTimeInMillis
+     * @return expirationTime
+     */
+    private Date calculateRefreshTokenExpiryTime(Long refreshTokenLifeTimeInMillis, Long curTimeInMillis) {
 
-        if (tokenReqMessageContext != null) {
-            return (String) tokenReqMessageContext.getProperty(OAuthConstants.UserType.USER_TYPE);
+        Date expirationTime;
+        // When refreshTokenLifeTimeInMillis is equal to Long.MAX_VALUE the curTimeInMillis +
+        // accessTokenLifeTimeInMillis can be a negative value
+        if (curTimeInMillis + refreshTokenLifeTimeInMillis < curTimeInMillis) {
+            expirationTime = new Date(Long.MAX_VALUE);
         } else {
-            return (String) authAuthzReqMessageContext.getProperty(OAuthConstants.UserType.USER_TYPE);
+            expirationTime = new Date(curTimeInMillis + refreshTokenLifeTimeInMillis);
         }
+        if (log.isDebugEnabled()) {
+            log.debug("Refresh token expiry time : " + expirationTime + "ms.");
+        }
+        return expirationTime;
     }
 }

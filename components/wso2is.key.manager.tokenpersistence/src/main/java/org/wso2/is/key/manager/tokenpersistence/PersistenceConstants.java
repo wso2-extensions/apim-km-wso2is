@@ -22,9 +22,19 @@ package org.wso2.is.key.manager.tokenpersistence;
  * Constants related to persistence component.
  */
 public class PersistenceConstants {
-    public static final String TOKEN_TYPE_ELEM = "token_type";
     public static final String REFRESH_TOKEN = "refresh_token";
-    public static final String IS_CONSENTED = "is_consented";
-    public static final String AUTHORIZATION_PARTY = "azp";
-    public static final String SCOPE = "scope";
+
+    /**
+     * Constants for JWT Claims.
+     */
+    public static class JWTClaim {
+
+        public static final String AUDIENCE = "aud";
+        public static final String CLIENT_ID = "client_id";
+        public static final String SCOPE = "scope";
+        public static final String GIVEN_NAME = "given_name";
+        public static final String AUTHORIZATION_PARTY = "azp";
+        public static final String IS_CONSENTED = "is_consented";
+        public static final String TOKEN_TYPE_ELEM = "token_type";
+    }
 }

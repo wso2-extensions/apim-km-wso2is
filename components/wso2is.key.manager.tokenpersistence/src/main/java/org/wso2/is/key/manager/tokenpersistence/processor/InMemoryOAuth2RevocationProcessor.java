@@ -111,24 +111,22 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     }
 
     /**
-     * Handle rule persistence and propagation for token revocation due to internal user events
+     * Handles rule persistence and propagation for token revocation due to internal user events.
      *
      * @param username         user on which the event occurred
      * @param userStoreManager user store manager
-     * @throws UserStoreException
+     * @throws UserStoreException if an error occurs while handling user change events
      */
     @Override
     public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {
+
         // Calling OAuthUtil.revokeTokens to handle migrations.
         // Old tokens in the db will be revoked in the old way, since new tokens wouldn't have the mandatory claim.
         OAuthUtil.revokeTokens(username, userStoreManager);
-
         String userUUID = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(username);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         String organization = IdentityTenantUtil.getTenantDomain(tenantId);
-
         long revocationTime = Calendar.getInstance().getTimeInMillis();
-
         Map<String, Object> params = new HashMap<>();
         params.put("subjectId", userUUID);
         params.put("subjectIdType", "USER_ID");
@@ -137,8 +135,6 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         params.put("tenantId", tenantId);
         params.put("tenantDomain", organization);
         params.put("username", username);
-
-
         OAuthUtil.invokePreRevocationBySystemListeners(userUUID, params);
         try {
             ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
@@ -149,7 +145,6 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
             return false;
         }
         OAuthUtil.invokePostRevocationBySystemListeners(userUUID, params);
-
         return true;
     }
 
@@ -159,9 +154,9 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
      * @param params parameters required to revoke the app tokens.
      */
     private void revokeAppTokensOfUser(Map<String, Object> params) {
-        // get client ids for the apps owned by user since the 'sub' claim for these are the consumer key.
-        // The app tokens for those consumer keys should also be revoked
 
+        // Get client ids for the apps owned by user since the 'sub' claim for these are the consumer key.
+        // The app tokens for those consumer keys should also be revoked.
         OAuthAppDAO oAuthAppDAO = new OAuthAppDAO();
         try {
             OAuthAppDO[] oAuthAppDOs = oAuthAppDAO

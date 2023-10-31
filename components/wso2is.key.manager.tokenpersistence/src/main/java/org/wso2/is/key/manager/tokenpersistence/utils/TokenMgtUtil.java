@@ -279,7 +279,7 @@ public class TokenMgtUtil {
             // if useUserIdForDefaultSubject is enabled, consider the user id as the subject identifier.
             // else consider the username as the subject identifier.
             ServiceProviderProperty[] spProperties = TokenMgtUtil.getServiceProvider(
-                    (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY),
+                    (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY),
                     TokenMgtUtil.getTenantDomain()).getSpProperties();
             boolean useUserIdForDefaultSubject = false;
             if (spProperties != null) {
@@ -433,12 +433,12 @@ public class TokenMgtUtil {
         //TODO:// check if revoked by user action and remove following return statement.
         Date tokenIssuedTime = claimsSet.getIssueTime();
         String authSubjIdentifier = claimsSet.getSubject();
-        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
         boolean isRevoked = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                 .isRevokedJWTConsumerKeyExist(consumerKey, tokenIssuedTime);
         if (isRevoked) {
             AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
-            String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE));
+            String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE));
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             // if revoked, remove the token information from oauth cache.
             OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
@@ -569,12 +569,12 @@ public class TokenMgtUtil {
      */
     public static boolean isRefreshTokenType(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
-        if (claimsSet.getClaim(PersistenceConstants.TOKEN_TYPE_ELEM) != null
+        if (claimsSet.getClaim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM) != null
                 && PersistenceConstants.REFRESH_TOKEN.equals(
-                claimsSet.getClaim(PersistenceConstants.TOKEN_TYPE_ELEM).toString())) {
+                claimsSet.getClaim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM).toString())) {
             return true;
         }
-        if (claimsSet.getClaim(PersistenceConstants.TOKEN_TYPE_ELEM) != null) {
+        if (claimsSet.getClaim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM) != null) {
             throw new IdentityOAuth2Exception("Invalid token type received");
         }
         return false;

@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -43,7 +44,7 @@ import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryRefreshTokenGr
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryTokenProvider;
 
 /**
- * KeyManager persistence component to handle token persistence
+ * KeyManager persistence component to handle non-token persistence.
  */
 @Component(
         name = "key.manager.token.persistence.component",
@@ -56,10 +57,9 @@ public class TokenPersistenceServiceComponent {
     @Activate
     protected void activate(ComponentContext cxt) {
 
-        log.info("Activating TokenPersistenceServiceComponent ...");
+        log.info("Activating TokenPersistenceServiceComponent...");
         try {
-            boolean enable = Boolean.parseBoolean(System.getProperty("token.persistence.enable"));
-            if (!enable) {
+            if (!OAuth2Util.isTokenPersistenceEnabled()) {
                 log.info("Token persistence is not enabled. Registering related services..");
                 cxt.getBundleContext().registerService(AccessTokenDAO.class, new ExtendedAccessTokenDAOImpl(), null);
                 cxt.getBundleContext().registerService(OAuth2RevocationProcessor.class,
@@ -70,7 +70,6 @@ public class TokenPersistenceServiceComponent {
                 cxt.getBundleContext().registerService(OAuthApplicationMgtListener.class,
                         new APIMOAuthApplicationMgtListener(), null);
             }
-
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
         }
@@ -141,9 +140,8 @@ public class TokenPersistenceServiceComponent {
         }
     }
 
-
     @Reference(
-            name = "tenant.registryloader",
+            name = "tenant.registry.loader",
             service = org.wso2.carbon.registry.core.service.TenantRegistryLoader.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,

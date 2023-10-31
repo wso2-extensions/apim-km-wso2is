@@ -52,6 +52,7 @@ public class InMemoryTokenProvider implements TokenProvider {
 
     private static final Log log = LogFactory.getLog(InMemoryTokenProvider.class);
 
+    @Override
     public AccessTokenDO getVerifiedAccessToken(String token, boolean includeExpired) throws IdentityOAuth2Exception {
 
         AccessTokenDO validationDataDO = null;
@@ -64,7 +65,7 @@ public class InMemoryTokenProvider implements TokenProvider {
             TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
             // No need to validate the consumer key in the token with the consumer key in the verification request, as
             // it is done by the calling functions.
-            String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+            String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             if (log.isDebugEnabled()) {
                 if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
@@ -113,7 +114,7 @@ public class InMemoryTokenProvider implements TokenProvider {
                 validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
                 validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                         - claimsSet.getIssueTime().getTime());
-                Object scopes = claimsSet.getClaim(PersistenceConstants.SCOPE);
+                Object scopes = claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE);
                 validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
                 AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
                 validationDataDO.setAuthzUser(authenticatedUser);
@@ -146,7 +147,8 @@ public class InMemoryTokenProvider implements TokenProvider {
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         if (TokenMgtUtil.isRefreshTokenType(claimsSet)) {
             TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-            String consumerKeyFromToken = (String) claimsSet.getClaim(PersistenceConstants.AUTHORIZATION_PARTY);
+            String consumerKeyFromToken = (String) claimsSet
+                    .getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
             // validate consumer key in the request against the token.
             if (!StringUtils.equals(consumerKey, consumerKeyFromToken)) {
                 throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
@@ -182,8 +184,8 @@ public class InMemoryTokenProvider implements TokenProvider {
             validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
             validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                     - claimsSet.getIssueTime().getTime());
-            validationDataDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.SCOPE)));
-            validationDataDO.setConsented((boolean) claimsSet.getClaim(PersistenceConstants.IS_CONSENTED));
+            validationDataDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE)));
+            validationDataDO.setConsented((boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
             AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
             validationDataDO.setAuthorizedUser(authenticatedUser);
         }

@@ -26,7 +26,7 @@ import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
 
 /**
- * Service holder to keep track on osgi Services.
+ * Holder class to hold service references used in non-token persistence.
  */
 public class ServiceReferenceHolder {
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
@@ -80,6 +80,7 @@ public class ServiceReferenceHolder {
     }
 
     public synchronized InvalidTokenPersistenceService getInvalidTokenPersistenceService() {
+
         if (tokenPersistenceService == null) {
             tokenPersistenceService = DBInvalidTokenPersistence.getInstance();
         }
@@ -88,7 +89,7 @@ public class ServiceReferenceHolder {
 
     public synchronized void setInvalidTokenPersistenceService(
             InvalidTokenPersistenceService invalidTokenPersistenceService) {
+
         tokenPersistenceService = invalidTokenPersistenceService;
     }
-
 }
