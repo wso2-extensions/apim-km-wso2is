@@ -77,7 +77,7 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
         try {
             org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder.getInstance()
                     .getInvalidTokenPersistenceService()
-                    .revokeAccessTokensByConsumerKeyEvent(consumerKey, revocationTime, organization);
+                    .revokeTokensByConsumerKeyEvent(consumerKey, revocationTime, organization);
         } catch (IdentityOAuth2Exception e) {
             log.error("Error while persisting revoking access tokens by consumer key event.", e);
             throw new IdentityOAuthAdminException(e.getMessage(), e);

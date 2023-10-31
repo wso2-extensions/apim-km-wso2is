@@ -18,11 +18,14 @@
 
 package org.wso2.is.key.manager.tokenpersistence.dao;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.base.IdentityConstants;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
-import org.wso2.is.key.manager.tokenpersistence.utils.DBUtil;
+import org.wso2.is.key.manager.tokenpersistence.utils.PersistenceDatabaseUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,41 +45,10 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     private static final Log log = LogFactory.getLog(DBInvalidTokenPersistence.class);
     private static final DBInvalidTokenPersistence instance = new DBInvalidTokenPersistence();
 
-    public static final String IS_INVALID_TOKEN =
-            "SELECT 1 FROM AM_INVALID_TOKENS WHERE SIGNATURE = ? AND CONSUMER_KEY = ? ";
-    
-    public static final String INSERT_INVALID_TOKEN = 
-            "INSERT INTO AM_INVALID_TOKENS (UUID, SIGNATURE, CONSUMER_KEY, EXPIRY_TIMESTAMP) "
-            + "VALUES (?,?,?,?)";
-    public static final String DELETE_INVALID_TOKEN = "DELETE FROM AM_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
-
-    public static final String IS_INTERNALLY_REVOKED_CONSUMER_KEY = "SELECT 1 " +
-            "FROM IDN_INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENTS WHERE " +
-            "CONSUMER_KEY = ? AND TIME_REVOKED > ?";
-    
-    public static final String INSERT_CONSUMER_KEY_EVENT_RULE = "INSERT " +
-            "INTO IDN_INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENTS " +
-            "(CONSUMER_KEY, TIME_REVOKED, ORGANIZATION) " +
-            "VALUES (?, ?, ?)";
-
-    public static final String UPDATE_CONSUMER_KEY_EVENT_RULE = "UPDATE " +
-            "IDN_INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENTS " +
-            "SET TIME_REVOKED = ? " +
-            "WHERE CONSUMER_KEY = ? AND ORGANIZATION = ?";
-
-    public static final String INSERT_USER_EVENT_RULE = "INSERT " +
-            "INTO IDN_INTERNAL_TOKEN_REVOCATION_USER_EVENTS " +
-            "(SUBJECT_ID, SUBJECT_ID_TYPE, TIME_REVOKED, ORGANIZATION) " +
-            "VALUES (?, ?, ?, ?)";
-
-    public static final String UPDATE_USER_EVENT_RULE = "UPDATE " +
-            "IDN_INTERNAL_TOKEN_REVOCATION_USER_EVENTS " +
-            "SET TIME_REVOKED = ? " +
-            "WHERE SUBJECT_ID = ? AND SUBJECT_ID_TYPE = ? AND ORGANIZATION = ?";
-
     private DBInvalidTokenPersistence() {
 
     }
+
     public static synchronized DBInvalidTokenPersistence getInstance() {
 
         return instance;
@@ -85,9 +57,16 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     @Override
     public boolean isInvalidToken(String token, String consumerKey) throws IdentityOAuth2Exception {
 
-        log.debug("Validate invalid token from the database.");
-        try (Connection connection = DBUtil.getConnection()) {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(IS_INVALID_TOKEN)) {
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                log.debug(String.format("Validating the token: %s from the database.",
+                        DigestUtils.sha256Hex(token)));
+            } else {
+                log.debug("Validating the token from the database.");
+            }
+        }
+        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(SQLQueries.IS_INVALID_TOKEN)) {
                 preparedStatement.setString(1, token);
                 preparedStatement.setString(2, consumerKey);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -104,8 +83,8 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             throws IdentityOAuth2Exception {
 
         log.debug("Insert invalid toke to the database");
-        try (Connection connection = DBUtil.getConnection()) {
-            try (PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INVALID_TOKEN)) {
+        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
+            try (PreparedStatement preparedStatement = connection.prepareStatement(SQLQueries.INSERT_INVALID_TOKEN)) {
                 connection.setAutoCommit(false);
                 preparedStatement.setString(1, UUID.randomUUID().toString());
                 preparedStatement.setString(2, token);
@@ -122,8 +101,8 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
 
     public void removeExpiredJWTs() throws IdentityOAuth2Exception {
 
-        try (Connection connection = DBUtil.getConnection(); PreparedStatement ps =
-                connection.prepareStatement(DELETE_INVALID_TOKEN)) {
+        try (Connection connection = PersistenceDatabaseUtil.getConnection(); PreparedStatement ps =
+                connection.prepareStatement(SQLQueries.DELETE_INVALID_TOKEN)) {
             connection.setAutoCommit(false);
             ps.setLong(1, System.currentTimeMillis());
             ps.executeUpdate();
@@ -133,23 +112,22 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
         }
     }
 
-    /**
-     * Check whether any internally revoked JWT rule is present for the given consumer key which is revoked after the
-     * given timestamp.
-     *
-     * @param consumerKey Consumer key of the application.
-     * @param timeStamp   Timestamp to check the revoked JWT.
-     * @throws IdentityOAuth2Exception If an error occurs while checking the existence of the revoked JWT.
-     */
-    public boolean isRevokedJWTConsumerKeyExist(String consumerKey, Date timeStamp) throws IdentityOAuth2Exception {
+    @Override
+    public boolean isTokenRevokedForConsumerKey(String consumerKey, Date tokenIssuedTime)
+            throws IdentityOAuth2Exception {
 
+        /*
+         * Check whether any internally revoked event is persisted for the given consumer key which is revoked after
+         * the given token issued timestamp.
+         */
         if (log.isDebugEnabled()) {
-            log.debug("Check whether internally revoked JWT rule is present for the consumer key: " + consumerKey);
+            log.debug(String.format("Check whether any internally revoked event is present for the consumer key: %s "
+                    + "after issuing the token at: %s", consumerKey, tokenIssuedTime));
         }
-        try (Connection connection = DBUtil.getConnection();
-             PreparedStatement ps = connection.prepareStatement(IS_INTERNALLY_REVOKED_CONSUMER_KEY)) {
+        try (Connection connection = PersistenceDatabaseUtil.getConnection();
+             PreparedStatement ps = connection.prepareStatement(SQLQueries.IS_APP_REVOKED_EVENT)) {
             ps.setString(1, consumerKey);
-            ps.setTimestamp(2, new java.sql.Timestamp(timeStamp.getTime()));
+            ps.setTimestamp(2, new java.sql.Timestamp(tokenIssuedTime.getTime()));
             try (ResultSet resultSet = ps.executeQuery()) {
                 return resultSet.next();
             }
@@ -160,12 +138,37 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     }
 
     @Override
-    public void revokeAccessTokensByUserEvent(String subjectId, String subjectIdType,
-                                              long revocationTime, String organization) throws IdentityOAuth2Exception {
+    public boolean isTokenRevokedForSubjectEntity(String entityId, Date tokenIssuedTime)
+            throws IdentityOAuth2Exception {
 
-        try (Connection connection = DBUtil.getConnection()) {
+        /*
+         * Check whether any internally revoked event is persisted for the given entity which is revoked after
+         * the given token issued timestamp.
+         */
+        if (log.isDebugEnabled()) {
+            log.debug(String.format("Check whether any internally revoked event is present for the subject entity "
+                    + "id: %s after issuing the token at: %s", entityId, tokenIssuedTime));
+        }
+        try (Connection connection = PersistenceDatabaseUtil.getConnection();
+             PreparedStatement ps = connection.prepareStatement(SQLQueries.IS_SUBJECT_ENTITY_REVOKED_EVENT)) {
+            ps.setString(1, entityId);
+            ps.setTimestamp(2, new java.sql.Timestamp(tokenIssuedTime.getTime()));
+            try (ResultSet resultSet = ps.executeQuery()) {
+                return resultSet.next();
+            }
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception("Error while checking existence of internally revoked JWT for subject "
+                    + "entity id: " + entityId, e);
+        }
+    }
+
+    @Override
+    public void revokeTokensByUserEvent(String subjectId, String subjectIdType,
+                                        long revocationTime, String organization) throws IdentityOAuth2Exception {
+
+        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
             connection.setAutoCommit(false);
-            String updateQuery = UPDATE_USER_EVENT_RULE;
+            String updateQuery = SQLQueries.UPDATE_SUBJECT_ENTITY_REVOKED_EVENT;
             try (PreparedStatement ps = connection.prepareStatement(updateQuery)) {
                 ps.setTimestamp(1, new Timestamp(revocationTime),
                         Calendar.getInstance(TimeZone.getTimeZone("UTC")));
@@ -179,7 +182,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                         log.debug("User event token revocation rule not found. Inserting new rule.");
                     }
                     connection.rollback();
-                    String insertQuery = INSERT_USER_EVENT_RULE;
+                    String insertQuery = SQLQueries.INSERT_SUBJECT_ENTITY_REVOKED_EVENT;
                     try (PreparedStatement ps1 = connection.prepareStatement(insertQuery)) {
                         ps1.setString(1, subjectId);
                         ps1.setString(2, subjectIdType);
@@ -210,12 +213,12 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     }
 
     @Override
-        public void revokeAccessTokensByConsumerKeyEvent(String consumerKey, long revocationTime, String organization)
+    public void revokeTokensByConsumerKeyEvent(String consumerKey, long revocationTime, String organization)
             throws IdentityOAuth2Exception {
 
-        try (Connection connection = DBUtil.getConnection()) {
+        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
             connection.setAutoCommit(false);
-            String updateQuery = UPDATE_CONSUMER_KEY_EVENT_RULE;
+            String updateQuery = SQLQueries.UPDATE_APP_REVOKED_EVENT;
             try (PreparedStatement ps = connection.prepareStatement(updateQuery)) {
                 ps.setTimestamp(1, new Timestamp(revocationTime),
                         Calendar.getInstance(TimeZone.getTimeZone("UTC")));
@@ -229,7 +232,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                         log.debug("Consumer key event token revocation rule not found. Inserting new rule.");
                     }
                     connection.rollback();
-                    String insertQuery = INSERT_CONSUMER_KEY_EVENT_RULE;
+                    String insertQuery = SQLQueries.INSERT_SUBJECT_ENTITY_REVOKED_EVENT;
                     try (PreparedStatement ps1 = connection.prepareStatement(insertQuery)) {
                         ps1.setString(1, consumerKey);
                         ps1.setTimestamp(2, new Timestamp(revocationTime),

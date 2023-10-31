@@ -49,6 +49,7 @@ import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
@@ -123,7 +124,7 @@ public class TokenMgtUtil {
      *
      * @param claimsSet Claim Set
      * @return JTI
-     * @throws IdentityOAuth2Exception if JTI claim is not present in the JWTClaimSet of the access token
+     * @throws IdentityOAuth2Exception if JTI claim is not present in the JWTClaimSet of the access token.
      */
     public static String getTokenIdentifier(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
@@ -147,9 +148,15 @@ public class TokenMgtUtil {
         try {
             return SignedJWT.parse(accessToken);
         } catch (ParseException e) {
+            if (log.isDebugEnabled()) {
+                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                    log.debug(String.format("Failed to parse the received token: %s", accessToken));
+                } else {
+                    log.debug("Failed to parse the received token.");
+                }
+            }
             throw new IdentityOAuth2Exception("Error while parsing token.", e);
         }
-
     }
 
     /**
@@ -218,9 +225,9 @@ public class TokenMgtUtil {
             long currentTimeInMillis = System.currentTimeMillis();
             if (currentTimeInMillis + timeStampSkewMillis < notBeforeTimeMillis) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Token is used before Not_Before_Time." + ", Not Before Time(ms) : " + notBeforeTimeMillis
-                            + ", TimeStamp Skew : " + timeStampSkewMillis + ", Current Time : " + currentTimeInMillis
-                            + ". Token Rejected and validation terminated.");
+                    log.debug(String.format("Token is used before Not_Before_Time. Not Before Time(ms) : %s, TimeStamp "
+                                    + "Skew : %s, Current Time : %s. Token Rejected and validation terminated.",
+                            notBeforeTimeMillis, timeStampSkewMillis, currentTimeInMillis));
                 }
                 throw new IdentityOAuth2Exception("Token is used before Not_Before_Time.");
             }
@@ -355,9 +362,7 @@ public class TokenMgtUtil {
         JWSVerifier verifier = null;
         X509Certificate x509Certificate = null;
         JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
-
         Map realm = (HashMap) jwtClaimsSet.getClaim(OAuthConstants.OIDCClaims.REALM);
-
         // Get certificate from tenant if available in claims.
         if (MapUtils.isNotEmpty(realm)) {
             String tenantDomain = null;
@@ -375,8 +380,8 @@ public class TokenMgtUtil {
             x509Certificate = resolveSignerCertificate(idp);
         }
         if (x509Certificate == null) {
-            throw new IdentityOAuth2Exception("Unable to locate certificate for Identity Provider: " + idp
-                    .getDisplayName());
+            throw new IdentityOAuth2Exception("Unable to locate certificate for Identity Provider: "
+                    + idp.getDisplayName());
         }
         String alg = signedJWT.getHeader().getAlgorithm().getName();
         if (StringUtils.isEmpty(alg)) {
@@ -418,24 +423,35 @@ public class TokenMgtUtil {
     public static void isJWTToken(String token) throws IdentityOAuth2Exception {
 
         if (!OAuth2Util.isJWT(token)) {
+            if (log.isDebugEnabled()) {
+                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                    log.debug(String.format("Token is not a JWT: %s", DigestUtils.sha256Hex(token)));
+                } else {
+                    log.debug("Token is not a JWT");
+                }
+            }
             throw new IdentityOAuth2Exception("Invalid token type received");
         }
+        log.debug("Token is a valid JWT.");
     }
 
     /**
      * Check if token is in-directly revoked through a user related or client application related change action.
      *
-     * @return True if token is in-directly revoked
-     * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked
+     * @return True if token is in-directly revoked.
+     * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked.
      */
     public static boolean isTokenRevokedIndirectly(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
-        //TODO:// check if revoked by user action and remove following return statement.
         Date tokenIssuedTime = claimsSet.getIssueTime();
-        String authSubjIdentifier = claimsSet.getSubject();
+        String entityId = (String) claimsSet.getClaim(OAuth2Constants.ENTITY_ID);
         String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
         boolean isRevoked = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                .isRevokedJWTConsumerKeyExist(consumerKey, tokenIssuedTime);
+                .isTokenRevokedForConsumerKey(consumerKey, tokenIssuedTime);
+        if (!isRevoked) {
+            isRevoked = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+                    .isTokenRevokedForSubjectEntity(entityId, tokenIssuedTime);
+        }
         if (isRevoked) {
             AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
             String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE));
@@ -480,7 +496,8 @@ public class TokenMgtUtil {
             if (accessTokenDAO instanceof ExtendedAccessTokenDAOImpl) {
                 isInvalid = ((ExtendedAccessTokenDAOImpl) accessTokenDAO).isInvalidToken(tokenIdentifier);
             } else {
-                throw new IdentityOAuth2Exception("Invalid AccessTokenDAO Implementation is used");
+                throw new IdentityOAuth2Exception("Failed to check if the token is directly revoked. Unsupported DAO "
+                        + "Implementation.");
             }
         }
         return isInvalid;
@@ -577,19 +594,27 @@ public class TokenMgtUtil {
         if (claimsSet.getClaim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM) != null) {
             throw new IdentityOAuth2Exception("Invalid token type received");
         }
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                log.debug(String.format("The refresh_token claim missing in the JWT: %s. Hence not considering as a "
+                        + "valid refresh token.", DigestUtils.sha256Hex(getTokenIdentifier(claimsSet))));
+            } else {
+                log.debug("The refresh_token claim missing in the JWT. Hence not considering as a " +
+                        "valid refresh token.");
+            }
+        }
         return false;
     }
 
     /**
-     * The default implementation resolves one certificate to Identity Provider and ignores the JWT header.
-     * Override this method, to resolve and enforce the certificate in any other way
-     * such as x5t attribute of the header.
+     * The default implementation resolves one certificate to Identity Provider.
      *
-     * @param idp The identity provider, if you need it.
+     * @param idp The identity provider
      * @return the resolved X509 Certificate, to be used to validate the JWT signature.
      * @throws IdentityOAuth2Exception something goes wrong.
      */
     private static X509Certificate resolveSignerCertificate(IdentityProvider idp) throws IdentityOAuth2Exception {
+
         X509Certificate x509Certificate;
         String tenantDomain = getTenantDomain();
         try {
@@ -602,23 +627,30 @@ public class TokenMgtUtil {
         return x509Certificate;
     }
 
+    /**
+     * Checks if a token is active based on its expiration time and a timestamp skew.
+     *
+     * @param expirationTime The expiration time of the token to be checked.
+     * @return {@code true} if the token is active (not expired), {@code false} if the token is expired.
+     */
     public static boolean isActive(Date expirationTime) {
+
+        // Calculate the timestamp skew in milliseconds.
         long timeStampSkewMillis = OAuthServerConfiguration.getInstance().getTimeStampSkewInSeconds() * 1000;
+        // Convert the expiration time, current time, and calculate the threshold time.
         long expirationTimeInMillis = expirationTime.getTime();
         long currentTimeInMillis = System.currentTimeMillis();
+        // Check if the current time is greater than the threshold time.
         if ((currentTimeInMillis + timeStampSkewMillis) > expirationTimeInMillis) {
             if (log.isDebugEnabled()) {
-                log.debug("Token is expired." +
-                        ", Expiration Time(ms) : " + expirationTimeInMillis +
-                        ", TimeStamp Skew : " + timeStampSkewMillis +
-                        ", Current Time : " + currentTimeInMillis + ". Token Rejected and validation terminated.");
+                log.debug(String.format("Token is expired. Expiration Time(ms) : %s, TimeStamp Skew : %s, "
+                                + "Current Time : %s. Token Rejected and validation terminated.",
+                        expirationTimeInMillis, timeStampSkewMillis, currentTimeInMillis));
             }
-            return false;
+            return false; // Token is expired
         }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Expiration Time(exp) of Token was validated successfully.");
-        }
+        // Token is not expired
+        log.debug("Expiration Time(exp) of Token was validated successfully.");
         return true;
     }
 

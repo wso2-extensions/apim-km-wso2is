@@ -31,11 +31,11 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 /**
- * Utility class for database operations.
+ * Utility class for database operations in WSO2_PERSISTENCE_DB.
  */
-public class DBUtil {
+public class PersistenceDatabaseUtil {
 
-    private static final Log log = LogFactory.getLog(DBUtil.class);
+    private static final Log log = LogFactory.getLog(PersistenceDatabaseUtil.class);
     private static volatile DataSource dataSource = null;
     private static final String DEFAULT_DATASTORE = "jdbc/WSO2_PERSISTENCE_DB";
 
@@ -44,23 +44,20 @@ public class DBUtil {
         if (dataSource != null) {
             return;
         }
-        synchronized (DBUtil.class) {
+        synchronized (PersistenceDatabaseUtil.class) {
             if (dataSource == null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Initializing data source");
+                    log.debug("Initializing invalid token data source");
                 }
-
-                String dataSourceName = System.getProperty("revoked.token.datasource");
+                String dataSourceName = System.getProperty("invalid.token.datasource");
                 if (dataSourceName == null) {
                     dataSourceName = DEFAULT_DATASTORE;
                 }
-
                 try {
                     Context ctx = new InitialContext();
                     dataSource = (DataSource) ctx.lookup(dataSourceName);
                 } catch (NamingException e) {
-                    throw new IdentityRuntimeException("Error while looking up the data " + "source: " + dataSourceName,
-                            e);
+                    throw new IdentityRuntimeException("Error while looking up the data source: " + dataSourceName, e);
                 }
             }
         }

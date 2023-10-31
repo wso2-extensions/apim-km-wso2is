@@ -52,48 +52,66 @@ public class InMemoryTokenProvider implements TokenProvider {
 
     private static final Log log = LogFactory.getLog(InMemoryTokenProvider.class);
 
+    /**
+     * Retrieves and verifies JWT access token based on the JWT claims with an option to include expired tokens
+     * as valid in the verification process.
+     *
+     * @param token          The access token JWT to retrieve and verify.
+     * @param includeExpired A boolean flag indicating whether to include expired tokens in the verification.
+     *                       Set to true to include expired tokens, false to exclude them.
+     * @return The AccessTokenDO if the token is valid (ACTIVE or, optionally, EXPIRED), or null if the token
+     * is not found either in ACTIVE or EXPIRED states when includeExpired is true. The method should throw
+     * IllegalArgumentException if the access token is in an inactive or invalid state (e.g., 'REVOKED')
+     * when includeExpired is false.
+     * @throws IdentityOAuth2Exception If there is an error during the access token retrieval or verification process.
+     */
     @Override
     public AccessTokenDO getVerifiedAccessToken(String token, boolean includeExpired) throws IdentityOAuth2Exception {
 
         AccessTokenDO validationDataDO = null;
-        // check if token is JWT.
+        // check if token is JWT, if not throw error.
         TokenMgtUtil.isJWTToken(token);
-        // validate JWT token signature, expiry time, not before time.
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(token);
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+        // get JTI of the token.
+        String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
+        // check if token_type is refresh_token, if yes, throw no active token error.
         if (!TokenMgtUtil.isRefreshTokenType(claimsSet)) {
-            TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-            // No need to validate the consumer key in the token with the consumer key in the verification request, as
-            // it is done by the calling functions.
-            String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
-            String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             if (log.isDebugEnabled()) {
                 if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
-                    log.debug(String.format("Validating JWT Token: %s with expiry: %s", includeExpired,
+                    log.debug(String.format("Validating JWT access token: %s with expiry: %s", includeExpired,
                             DigestUtils.sha256Hex(accessTokenIdentifier)));
                 } else {
-                    log.debug("Retrieved access token from cache to verify.");
+                    log.debug(String.format("Validating JWT access token with expiry: %s", includeExpired));
                 }
             }
+            // validate JWT token signature.
+            TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
+            /*
+             * No need to validate the consumer key in the token with the consumer key in the verification request, as
+             * it is done by the calling functions. eg: OAuth2Service.revokeTokenByOAuthClient().
+             */
+            String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
             // expiry time verification.
             boolean isTokenActive = true;
             if (!TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
                 if (!includeExpired) {
-                    throw new IdentityOAuth2Exception("Invalid Access Token. ACTIVE access token is not found.");
+                    // this means the token is not active, so we can't proceed further.
+                    handleInvalidAccessTokenError(accessTokenIdentifier);
                 }
                 isTokenActive = false;
             }
             // not before time verification.
             TokenMgtUtil.checkNotBeforeTime(claimsSet.getNotBeforeTime());
             /*
-             * check whether the token is already revoked through direct revocations and following indirect
-             * revocations.
+             * check whether the token is already revoked through direct revocations and through following indirect
+             * revocation events.
              * 1. check if consumer app was changed.
              * 2. check if user was changed.
              */
             if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
                     || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)) {
-                throw new IllegalArgumentException("Invalid Access Token. ACTIVE access token is not found.");
+                handleInvalidAccessTokenError(accessTokenIdentifier);
             }
             Optional<AccessTokenDO> accessTokenDO = TokenMgtUtil.getTokenDOFromCache(accessTokenIdentifier);
             if (accessTokenDO.isPresent()) {
@@ -123,10 +141,16 @@ public class InMemoryTokenProvider implements TokenProvider {
                 } else {
                     validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
                 }
-                // TODO:// Read is_consented claim and set attribute
+                if (claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED) != null) {
+                    validationDataDO.setIsConsentedToken(
+                            (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
+                }
                 // Add the token back to the cache in the case of a cache miss.
                 TokenMgtUtil.addTokenToCache(accessTokenIdentifier, validationDataDO);
             }
+        } else {
+            // not a valid access token.
+            handleInvalidAccessTokenError(accessTokenIdentifier);
         }
         return validationDataDO;
     }
@@ -145,14 +169,8 @@ public class InMemoryTokenProvider implements TokenProvider {
         }
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(token);
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+        // if token_type is not refresh_token, return null.
         if (TokenMgtUtil.isRefreshTokenType(claimsSet)) {
-            TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-            String consumerKeyFromToken = (String) claimsSet
-                    .getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
-            // validate consumer key in the request against the token.
-            if (!StringUtils.equals(consumerKey, consumerKeyFromToken)) {
-                throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
-            }
             String refreshTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             if (log.isDebugEnabled()) {
                 if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
@@ -161,6 +179,13 @@ public class InMemoryTokenProvider implements TokenProvider {
                 } else {
                     log.debug("Validating JWT refresh token.");
                 }
+            }
+            TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
+            String consumerKeyFromToken = (String) claimsSet
+                    .getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
+            // validate consumer key in the request against the token.
+            if (!StringUtils.equals(consumerKey, consumerKeyFromToken)) {
+                throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
             }
             validationDataDO = new RefreshTokenValidationDataDO();
             // set expiration state according to jwt claim in it. Not throwing error when token is expired.
@@ -185,10 +210,31 @@ public class InMemoryTokenProvider implements TokenProvider {
             validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                     - claimsSet.getIssueTime().getTime());
             validationDataDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE)));
-            validationDataDO.setConsented((boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
+            if (claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED) != null) {
+                validationDataDO.setConsented(
+                        (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
+            }
             AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
             validationDataDO.setAuthorizedUser(authenticatedUser);
         }
         return validationDataDO;
+    }
+
+    /**
+     * Handles throwing of error when active or valid access token not found.
+     *
+     * @param tokenIdentifier Token Identifier (JTI) of the JWT
+     */
+    private void handleInvalidAccessTokenError(String tokenIdentifier) {
+
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                log.debug(String.format("Failed to validate the JWT Access Token %s in memory.",
+                        DigestUtils.sha256Hex(tokenIdentifier)));
+            } else {
+                log.debug("Failed to validate the JWT Access Token in memory.");
+            }
+        }
+        throw new IllegalArgumentException(OAuth2Util.ACCESS_TOKEN_IS_NOT_ACTIVE_ERROR_MESSAGE);
     }
 }

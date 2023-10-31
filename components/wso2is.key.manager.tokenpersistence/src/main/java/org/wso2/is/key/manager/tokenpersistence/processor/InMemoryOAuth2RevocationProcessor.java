@@ -138,7 +138,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         OAuthUtil.invokePreRevocationBySystemListeners(userUUID, params);
         try {
             ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                    .revokeAccessTokensByUserEvent(userUUID, "USER_ID", revocationTime, organization);
+                    .revokeTokensByUserEvent(userUUID, "USER_ID", revocationTime, organization);
             revokeAppTokensOfUser(params);
         } catch (IdentityOAuth2Exception e) {
             log.error("Error while persisting revoke rules for tokens by user event.", e);
@@ -165,7 +165,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 String consumerKey = oAuthAppDO.getOauthConsumerKey();
                 String subjectIdType = "CLIENT_ID";
                 ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                        .revokeAccessTokensByUserEvent(consumerKey, subjectIdType,
+                        .revokeTokensByUserEvent(consumerKey, subjectIdType,
                                 (long) params.get("revocationTime"), params.get("organization").toString());
                 InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
                         new InternalTokenRevocationUserEvent(consumerKey, subjectIdType, params);

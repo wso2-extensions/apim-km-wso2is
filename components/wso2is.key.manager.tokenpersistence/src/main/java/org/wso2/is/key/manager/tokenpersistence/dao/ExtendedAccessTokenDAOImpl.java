@@ -231,7 +231,7 @@ public class ExtendedAccessTokenDAOImpl extends AccessTokenDAOImpl {
      */
     public boolean isInvalidToken(String accessTokenIdentifier) throws IdentityOAuth2Exception {
 
-        String sql = SQLQueries.IS_INVALID_TOKEN;
+        String sql = SQLQueries.IS_INVALID_LEGACY_TOKEN;
         sql = OAuth2Util.getTokenPartitionedSqlByToken(sql, accessTokenIdentifier);
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
