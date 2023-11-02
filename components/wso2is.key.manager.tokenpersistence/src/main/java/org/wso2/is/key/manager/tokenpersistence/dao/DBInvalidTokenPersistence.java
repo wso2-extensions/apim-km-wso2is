@@ -87,8 +87,8 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                 log.debug(String.format("Insert invalid token (hashed): %s for consumer key: %s with expiry time: %s",
                         DigestUtils.sha256Hex(token), consumerKey, expiryTime));
             } else {
-                log.debug(String.format("Insert invalid token for consumer key: %s with expiry time: %s",
-                        DigestUtils.sha256Hex(token), consumerKey, expiryTime));
+                log.debug(String.format("Insert invalid token for consumer key: %s with expiry time: %s", consumerKey,
+                        expiryTime));
             }
         }
         try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
@@ -100,21 +100,31 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                 preparedStatement.setLong(4, expiryTime);
                 preparedStatement.executeUpdate();
                 connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new IdentityOAuth2Exception(String.format("Failed to add invalid token for consumer key: %s with "
+                        + "expiry time: %s", consumerKey, expiryTime), e);
             }
         } catch (SQLException e) {
-            throw new IdentityOAuth2Exception("Error while checking existence of token as an invalid token.", e);
+            throw new IdentityOAuth2Exception(String.format("Failed to add invalid token for consumer key: %s with "
+                    + "expiry time: %s", consumerKey, expiryTime), e);
         }
         removeExpiredJWTs();
     }
 
     public void removeExpiredJWTs() throws IdentityOAuth2Exception {
 
-        try (Connection connection = PersistenceDatabaseUtil.getConnection(); PreparedStatement ps =
-                connection.prepareStatement(SQLQueries.DELETE_INVALID_TOKEN)) {
-            connection.setAutoCommit(false);
-            ps.setLong(1, System.currentTimeMillis());
-            ps.executeUpdate();
-            connection.commit();
+        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
+            try (PreparedStatement ps =
+                         connection.prepareStatement(SQLQueries.DELETE_INVALID_TOKEN)) {
+                connection.setAutoCommit(false);
+                ps.setLong(1, System.currentTimeMillis());
+                ps.executeUpdate();
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
+            }
         } catch (SQLException e) {
             throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
         }
@@ -129,7 +139,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
          * the given token issued timestamp.
          */
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Check whether any internally revoked event is present for the consumer key: %s "
+            log.debug(String.format("Checking whether any internally revoked event is present for the consumer key: %s "
                     + "after issuing the token at: %s", consumerKey, tokenIssuedTime));
         }
         try (Connection connection = PersistenceDatabaseUtil.getConnection();
