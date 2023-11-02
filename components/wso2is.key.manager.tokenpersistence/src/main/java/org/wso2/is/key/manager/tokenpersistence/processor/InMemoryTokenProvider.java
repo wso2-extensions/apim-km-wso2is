@@ -155,22 +155,32 @@ public class InMemoryTokenProvider implements TokenProvider {
         return validationDataDO;
     }
 
+    /**
+     * Retrieves and verifies a refresh token.
+     *
+     * @param refreshToken The refresh token to retrieve and verify
+     * @param consumerKey  Consumer key
+     * @return The RefreshTokenValidationDataDO if the token is valid (ACTIVE, EXPIRED or REVOKED), or null if the token
+     * is not found in either states.
+     * @throws IdentityOAuth2Exception If there is an error during the access token retrieval or verification process.
+     */
     @Override
-    public RefreshTokenValidationDataDO getVerifiedRefreshToken(String token, String consumerKey)
+    public RefreshTokenValidationDataDO getVerifiedRefreshToken(String refreshToken, String consumerKey)
             throws IdentityOAuth2Exception {
 
         RefreshTokenValidationDataDO validationDataDO = null;
-        if (!OAuth2Util.isJWT(token)) {
+        if (!OAuth2Util.isJWT(refreshToken)) {
             log.debug("Refresh token is not a JWT. Hence, validating as an migrated opaque token from database.");
             // For backward compatibility, we check whether it is available in idn_oauth2_token table.
-            validationDataDO = OpaqueTokenUtil.validateOpaqueRefreshToken(token, consumerKey);
+            validationDataDO = OpaqueTokenUtil.validateOpaqueRefreshToken(refreshToken, consumerKey);
             OpaqueTokenUtil.validateTokenConsent(validationDataDO);
             return validationDataDO;
         }
-        SignedJWT signedJWT = TokenMgtUtil.parseJWT(token);
+        SignedJWT signedJWT = TokenMgtUtil.parseJWT(refreshToken);
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
         // if token_type is not refresh_token, return null.
         if (TokenMgtUtil.isRefreshTokenType(claimsSet)) {
+            validationDataDO = new RefreshTokenValidationDataDO();
             String refreshTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             if (log.isDebugEnabled()) {
                 if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
@@ -187,7 +197,6 @@ public class InMemoryTokenProvider implements TokenProvider {
             if (!StringUtils.equals(consumerKey, consumerKeyFromToken)) {
                 throw new IdentityOAuth2Exception("Invalid refresh token. Consumer key does not match.");
             }
-            validationDataDO = new RefreshTokenValidationDataDO();
             // set expiration state according to jwt claim in it. Not throwing error when token is expired.
             if (TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
                 /*

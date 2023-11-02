@@ -45,8 +45,7 @@ public interface InvalidTokenPersistenceService {
      * @param expiryTime  The expiry time set for the token during generation.
      * @throws IdentityOAuth2Exception If an error occurs while marking the token as invalid.
      */
-    void addInvalidToken(String token, String consumerKey, Long expiryTime)
-            throws IdentityOAuth2Exception;
+    void addInvalidToken(String token, String consumerKey, Long expiryTime) throws IdentityOAuth2Exception;
 
     /**
      * Check if a token has been revoked as a result of any changes in the consumer app associated with the token

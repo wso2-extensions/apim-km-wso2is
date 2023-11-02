@@ -82,7 +82,15 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
     public void addInvalidToken(String token, String consumerKey, Long expiryTime)
             throws IdentityOAuth2Exception {
 
-        log.debug("Insert invalid toke to the database");
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                log.debug(String.format("Insert invalid token (hashed): %s for consumer key: %s with expiry time: %s",
+                        DigestUtils.sha256Hex(token), consumerKey, expiryTime));
+            } else {
+                log.debug(String.format("Insert invalid token for consumer key: %s with expiry time: %s",
+                        DigestUtils.sha256Hex(token), consumerKey, expiryTime));
+            }
+        }
         try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQLQueries.INSERT_INVALID_TOKEN)) {
                 connection.setAutoCommit(false);

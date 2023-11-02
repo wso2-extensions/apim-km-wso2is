@@ -48,6 +48,7 @@ import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
+import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
@@ -678,5 +679,24 @@ public class TokenMgtUtil {
                     tenantDomain);
         }
         return serviceProvider;
+    }
+
+    public static OAuthAppDO getOAuthApp(String clientId) throws IdentityOAuth2Exception {
+
+        OAuthAppDO oAuthAppDO;
+        try {
+            oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId);
+        } catch (InvalidOAuthClientException e) {
+            throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: "
+                    + clientId, e);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Service Provider specific expiry time enabled for application : " +
+                    clientId + ". Application access token expiry time : " +
+                    oAuthAppDO.getApplicationAccessTokenExpiryTime() + ", User access token expiry time : " +
+                    oAuthAppDO.getUserAccessTokenExpiryTime() + ", Refresh token expiry time : "
+                    + oAuthAppDO.getRefreshTokenExpiryTime());
+        }
+        return oAuthAppDO;
     }
 }

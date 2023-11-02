@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
+import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.JWTTokenIssuer;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
@@ -154,6 +155,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         // loading the stored application data.
         OAuthAppDO oAuthAppDO;
         String spTenantDomain;
+        long refreshTokenLifeTimeInMillis;
         try {
             if (authAuthzReqMessageContext != null) {
                 spTenantDomain = authAuthzReqMessageContext.getAuthorizationReqDTO().getTenantDomain();
@@ -164,9 +166,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         } catch (InvalidOAuthClientException e) {
             throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: " + consumerKey, e);
         }
-        long refreshTokenLifeTimeInMillis = getRefreshTokenLifeTimeInMillis(oAuthAppDO);
         String issuer = OAuth2Util.getIdTokenIssuer(spTenantDomain);
-        long curTimeInMillis = Calendar.getInstance().getTimeInMillis();
         AuthenticatedUser authenticatedUser = getAuthenticatedUser(authAuthzReqMessageContext, tokenReqMessageContext);
         String sub = getSubjectClaim(authenticatedUser);
         // Set the default claims.
@@ -174,7 +174,16 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         jwtClaimsSetBuilder.issuer(issuer);
         jwtClaimsSetBuilder.subject(sub);
         jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY, consumerKey);
-        jwtClaimsSetBuilder.issueTime(new Date(curTimeInMillis));
+        if (tokenReqMessageContext != null) {
+            refreshTokenLifeTimeInMillis = getRefreshTokenLifeTimeInMillis(oAuthAppDO, tokenReqMessageContext);
+        } else {
+            refreshTokenLifeTimeInMillis = getRefreshTokenLifeTimeInMillis(oAuthAppDO, authAuthzReqMessageContext);
+        }
+        long curTimeInMillis = Calendar.getInstance().getTimeInMillis();
+        Date issuedTime = new Date(curTimeInMillis);
+        jwtClaimsSetBuilder.issueTime(getRefreshTokenIssuedTime(tokenReqMessageContext, oAuthAppDO, issuedTime));
+        jwtClaimsSetBuilder.expirationTime(
+                calculateRefreshTokenExpiryTime(refreshTokenLifeTimeInMillis, curTimeInMillis));
         jwtClaimsSetBuilder.jwtID(UUID.randomUUID().toString());
         jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.CLIENT_ID, consumerKey);
         setEntityIdClaim(jwtClaimsSetBuilder, authAuthzReqMessageContext, tokenReqMessageContext, authenticatedUser,
@@ -185,8 +194,6 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         }
         // claim to identify the JWT as a refresh token.
         jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM, PersistenceConstants.REFRESH_TOKEN);
-        jwtClaimsSetBuilder.expirationTime(
-                calculateRefreshTokenExpiryTime(refreshTokenLifeTimeInMillis, curTimeInMillis));
         /*
          * This is a spec (openid-connect-core-1_0:2.0) requirement for ID tokens. But we are keeping this in JWT as
          * well.
@@ -208,31 +215,136 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
     }
 
     /**
-     * Get token validity period for the Self contained JWT Access Token.
+     * Get token validity period for the Self contained JWT Access Token from OAuthApp or OAuthServer Configuration.
      *
      * @param oAuthAppDO OAuthApp
      * @return Refresh Token Life Time in milliseconds
      */
-    protected long getRefreshTokenLifeTimeInMillis(OAuthAppDO oAuthAppDO) {
+    private long getRefreshTokenLifeTimeInMillisFromConfig(OAuthAppDO oAuthAppDO) {
 
-        long lifetimeInMillis;
+        String consumerKey = oAuthAppDO.getOauthConsumerKey();
+        long refreshTokenValidityPeriodInMillis;
         if (oAuthAppDO.getRefreshTokenExpiryTime() != 0) {
-            lifetimeInMillis = oAuthAppDO.getRefreshTokenExpiryTime() * 1000;
+            refreshTokenValidityPeriodInMillis =
+                    oAuthAppDO.getRefreshTokenExpiryTime() * PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
             if (log.isDebugEnabled()) {
-                log.debug("Refresh Token Life time set to : " + lifetimeInMillis + "ms.");
+                log.debug("OAuth application id : " + consumerKey + ", refresh token validity time " +
+                        refreshTokenValidityPeriodInMillis + "ms");
             }
         } else {
-            lifetimeInMillis = OAuthServerConfiguration.getInstance()
-                    .getRefreshTokenValidityPeriodInSeconds() * 1000;
+            refreshTokenValidityPeriodInMillis = OAuthServerConfiguration.getInstance()
+                    .getRefreshTokenValidityPeriodInSeconds() * PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
+        }
+        return refreshTokenValidityPeriodInMillis;
+    }
+
+    /**
+     * Get token validity period for the Self contained JWT Access Token.
+     *
+     * @param oAuthAppDO             OAuthApp
+     * @param tokenReqMessageContext TokenRequestMessageContext
+     * @return Refresh Token Life Time in milliseconds
+     */
+    private long getRefreshTokenLifeTimeInMillis(OAuthAppDO oAuthAppDO,
+                                                   OAuthTokenReqMessageContext tokenReqMessageContext) {
+
+        String consumerKey = oAuthAppDO.getOauthConsumerKey();
+        long refreshTokenValidityPeriodInMillis = 0;
+        long validityPeriodFromMsgContext = tokenReqMessageContext.getRefreshTokenvalidityPeriod();
+        if (validityPeriodFromMsgContext > 0) {
+            refreshTokenValidityPeriodInMillis = validityPeriodFromMsgContext *
+                    PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
             if (log.isDebugEnabled()) {
-                log.debug("Application specific refresh token expiry time was 0ms. Setting default refresh token "
-                        + "lifetime : " + lifetimeInMillis + "ms.");
+                log.debug("OAuth application id : " + consumerKey + ", using refresh token " +
+                        "validity period configured from OAuthTokenReqMessageContext: " +
+                        refreshTokenValidityPeriodInMillis + " ms");
+            }
+        } else if (tokenReqMessageContext.getProperty(PersistenceConstants.PREV_ACCESS_TOKEN) != null) {
+            RefreshTokenValidationDataDO validationBean =
+                    (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
+                            PersistenceConstants.PREV_ACCESS_TOKEN);
+            if (isRenewRefreshToken(oAuthAppDO.getRenewRefreshTokenEnabled())
+                    && !OAuthServerConfiguration.getInstance().isExtendRenewedTokenExpiryTimeEnabled()) {
+                // If refresh token renewal enabled and extend token expiry disabled, set the old token issued and
+                // validity.
+                refreshTokenValidityPeriodInMillis = validationBean.getValidityPeriodInMillis();
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("JWT Self Signed Refresh Token Life time set to : " + lifetimeInMillis + "ms.");
+        if (refreshTokenValidityPeriodInMillis == 0) {
+            refreshTokenValidityPeriodInMillis = getRefreshTokenLifeTimeInMillisFromConfig(oAuthAppDO);
         }
-        return lifetimeInMillis;
+        if (log.isDebugEnabled()) {
+            log.debug("JWT Self Signed Refresh Token Life time set to : " + refreshTokenValidityPeriodInMillis + "ms.");
+        }
+        return refreshTokenValidityPeriodInMillis;
+    }
+
+    /**
+     * Get token validity period for the Self contained JWT Access Token.
+     *
+     * @param oAuthAppBean     OAuthApp
+     * @param oauthAuthzMsgCtx OAuthAuthhorizationRequestMessageContext
+     * @return Refresh Token Life Time in milliseconds
+     */
+    private long getRefreshTokenLifeTimeInMillis(OAuthAppDO oAuthAppBean,
+                                                                 OAuthAuthzReqMessageContext oauthAuthzMsgCtx) {
+
+        long refreshTokenValidityPeriodInMillis = 0;
+        long refreshTokenValidityPeriod = oauthAuthzMsgCtx.getRefreshTokenvalidityPeriod();
+        if (refreshTokenValidityPeriod > 0) {
+            refreshTokenValidityPeriodInMillis = oauthAuthzMsgCtx.getRefreshTokenvalidityPeriod() *
+                    PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
+            if (log.isDebugEnabled()) {
+                log.debug("OAuth application id : " + oAuthAppBean.getOauthConsumerKey() + ", using refresh token " +
+                        "validity period configured from OAuthAuthzReqMessageContext: " +
+                        refreshTokenValidityPeriodInMillis + " ms");
+            }
+        }
+        if (refreshTokenValidityPeriodInMillis == 0) {
+            refreshTokenValidityPeriodInMillis = getRefreshTokenLifeTimeInMillisFromConfig(oAuthAppBean);
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("JWT Self Signed Refresh Token Life time set to : " + refreshTokenValidityPeriodInMillis + "ms.");
+        }
+        return refreshTokenValidityPeriodInMillis;
+    }
+
+    private Date getRefreshTokenIssuedTime(OAuthTokenReqMessageContext tokenReqMessageContext,
+                                             OAuthAppDO oAuthAppDO, Date currentTime) {
+
+        Date refreshTokenIssuedTime = currentTime;
+        if (tokenReqMessageContext != null &&
+                tokenReqMessageContext.getProperty(PersistenceConstants.PREV_ACCESS_TOKEN) != null) {
+            RefreshTokenValidationDataDO validationBean =
+                    (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
+                            PersistenceConstants.PREV_ACCESS_TOKEN);
+            if (isRenewRefreshToken(oAuthAppDO.getRenewRefreshTokenEnabled()) &&
+                    !OAuthServerConfiguration.getInstance().isExtendRenewedTokenExpiryTimeEnabled()) {
+                // If refresh token renewal enabled and extend token expiry disabled, set the old token issued and
+                // validity.
+                refreshTokenIssuedTime = validationBean.getIssuedTime();
+            }
+            if (refreshTokenIssuedTime == null) {
+                refreshTokenIssuedTime = currentTime;
+            }
+        }
+        return refreshTokenIssuedTime;
+    }
+
+    private boolean isRenewRefreshToken(String renewRefreshToken) {
+
+        if (StringUtils.isNotBlank(renewRefreshToken)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Reading the Oauth application specific renew " +
+                        "refresh token value as " + renewRefreshToken + " from the IDN_OIDC_PROPERTY table");
+            }
+            return Boolean.parseBoolean(renewRefreshToken);
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Reading the global renew refresh token value from the identity.xml");
+            }
+            return OAuthServerConfiguration.getInstance().isRefreshTokenRenewalEnabled();
+        }
     }
 
     /**
