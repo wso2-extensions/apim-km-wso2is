@@ -226,14 +226,14 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         long refreshTokenValidityPeriodInMillis;
         if (oAuthAppDO.getRefreshTokenExpiryTime() != 0) {
             refreshTokenValidityPeriodInMillis =
-                    oAuthAppDO.getRefreshTokenExpiryTime() * PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
+                    oAuthAppDO.getRefreshTokenExpiryTime() * PersistenceConstants.SECONDS_TO_MILLISECONDS_FACTOR;
             if (log.isDebugEnabled()) {
                 log.debug("OAuth application id : " + consumerKey + ", refresh token validity time " +
                         refreshTokenValidityPeriodInMillis + "ms");
             }
         } else {
             refreshTokenValidityPeriodInMillis = OAuthServerConfiguration.getInstance()
-                    .getRefreshTokenValidityPeriodInSeconds() * PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
+                    .getRefreshTokenValidityPeriodInSeconds() * PersistenceConstants.SECONDS_TO_MILLISECONDS_FACTOR;
         }
         return refreshTokenValidityPeriodInMillis;
     }
@@ -253,7 +253,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         long validityPeriodFromMsgContext = tokenReqMessageContext.getRefreshTokenvalidityPeriod();
         if (validityPeriodFromMsgContext > 0) {
             refreshTokenValidityPeriodInMillis = validityPeriodFromMsgContext *
-                    PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
+                    PersistenceConstants.SECONDS_TO_MILLISECONDS_FACTOR;
             if (log.isDebugEnabled()) {
                 log.debug("OAuth application id : " + consumerKey + ", using refresh token " +
                         "validity period configured from OAuthTokenReqMessageContext: " +
@@ -293,7 +293,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         long refreshTokenValidityPeriod = oauthAuthzMsgCtx.getRefreshTokenvalidityPeriod();
         if (refreshTokenValidityPeriod > 0) {
             refreshTokenValidityPeriodInMillis = oauthAuthzMsgCtx.getRefreshTokenvalidityPeriod() *
-                    PersistenceConstants.SECONDS_TO_MILISECONDS_FACTOR;
+                    PersistenceConstants.SECONDS_TO_MILLISECONDS_FACTOR;
             if (log.isDebugEnabled()) {
                 log.debug("OAuth application id : " + oAuthAppBean.getOauthConsumerKey() + ", using refresh token " +
                         "validity period configured from OAuthAuthzReqMessageContext: " +
