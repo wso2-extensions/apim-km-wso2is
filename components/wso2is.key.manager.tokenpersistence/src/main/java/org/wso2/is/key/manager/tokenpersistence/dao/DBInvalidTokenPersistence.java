@@ -250,7 +250,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                         log.debug("Consumer key event token revocation rule not found. Inserting new rule.");
                     }
                     connection.rollback();
-                    String insertQuery = SQLQueries.INSERT_SUBJECT_ENTITY_REVOKED_EVENT;
+                    String insertQuery = SQLQueries.INSERT_APP_REVOKED_EVENT;
                     try (PreparedStatement ps1 = connection.prepareStatement(insertQuery)) {
                         ps1.setString(1, consumerKey);
                         ps1.setTimestamp(2, new Timestamp(revocationTime),

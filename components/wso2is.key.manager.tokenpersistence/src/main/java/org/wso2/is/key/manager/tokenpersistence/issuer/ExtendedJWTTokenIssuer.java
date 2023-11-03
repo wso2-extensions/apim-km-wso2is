@@ -27,12 +27,14 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
+import org.wso2.carbon.identity.application.authentication.framework.exception.UserIdNotFoundException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.JWTTokenIssuer;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
@@ -204,12 +206,14 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
          * is_consented claim is used to identity whether user claims should be filtered based on consent for the token
          * during ID token generation and user info endpoint.
          */
-        if (tokenReqMessageContext != null) {
-            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.IS_CONSENTED,
-                    tokenReqMessageContext.isConsentedToken());
-        } else {
-            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.IS_CONSENTED,
-                    authAuthzReqMessageContext.isConsentedToken());
+        if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
+            if (tokenReqMessageContext != null) {
+                jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.IS_CONSENTED,
+                        tokenReqMessageContext.isConsentedToken());
+            } else {
+                jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.IS_CONSENTED,
+                        authAuthzReqMessageContext.isConsentedToken());
+            }
         }
         return jwtClaimsSetBuilder.build();
     }
@@ -431,4 +435,38 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         }
         return expirationTime;
     }
+
+    protected void setEntityIdClaim(JWTClaimsSet.Builder jwtClaimsSetBuilder,
+                                    OAuthAuthzReqMessageContext authAuthzReqMessageContext,
+                                    OAuthTokenReqMessageContext tokenReqMessageContext,
+                                    AuthenticatedUser authenticatedUser, OAuthAppDO oAuthAppDO)
+            throws IdentityOAuth2Exception {
+
+        if (!OAuth2Util.isTokenPersistenceEnabled()) {
+            try {
+                String userType = getAuthorizedUserType(authAuthzReqMessageContext, tokenReqMessageContext);
+                if ("APPLICATION_USER".equals(userType)) {
+                    jwtClaimsSetBuilder.claim("entity_id", authenticatedUser.getUserId());
+                } else {
+                    if (!"APPLICATION".equals(userType)) {
+                        throw new IdentityOAuth2Exception("Invalid user type: " + userType);
+                    }
+
+                    jwtClaimsSetBuilder.claim("entity_id", oAuthAppDO.getOauthConsumerKey());
+                }
+            } catch (UserIdNotFoundException ex) {
+                throw new IdentityOAuth2Exception("User id not found for user: "
+                        + authenticatedUser.getLoggableMaskedUserId(), ex);
+            }
+        }
+    }
+
+    private String getAuthorizedUserType(OAuthAuthzReqMessageContext authAuthzReqMessageContext,
+                                         OAuthTokenReqMessageContext tokenReqMessageContext) {
+
+        return tokenReqMessageContext != null ? (String) tokenReqMessageContext.getProperty("USER_TYPE")
+                : (String) authAuthzReqMessageContext.getProperty("USER_TYPE");
+    }
+
+
 }

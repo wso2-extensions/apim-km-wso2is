@@ -65,6 +65,18 @@ public class OpaqueTokenUtil {
     }
 
     /**
+     * Find opaque refresh token from database.
+     *
+     * @param refreshToken Refresh token
+     * @return AccessTokenDO  Access token data object.
+     * @throws IdentityOAuth2Exception If an error occurs while retrieving the refresh token.
+     */
+    public static AccessTokenDO findRefreshToken(String refreshToken) throws IdentityOAuth2Exception {
+
+        return OAuthTokenPersistenceFactory.getInstance().getTokenManagementDAO().getRefreshToken(refreshToken);
+    }
+
+    /**
      * Validate opaque refresh token from revocation request and return the validation data object.
      *
      * @param token       Refresh Token

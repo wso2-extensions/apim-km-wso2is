@@ -129,7 +129,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         accessTokenDO.setIssuedTime(timestamp);
         accessTokenDO.setTokenBinding(tokReqMsgCtx.getTokenBinding());
         // If refresh token in request was consented, set the consented true on new access token and refresh token.
-        if (validationBean.isConsented()) {
+        if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled() && validationBean.isConsented()) {
             accessTokenDO.setIsConsentedToken(true);
             tokReqMsgCtx.setConsentedToken(true);
         }
