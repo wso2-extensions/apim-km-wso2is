@@ -44,6 +44,7 @@ import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -100,11 +101,18 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                     log.debug("Invalidating previous refresh token.");
                 }
             }
-            OAuthAppDO oAuthAppDO = TokenMgtUtil.getOAuthApp(tokenReq.getClientId());
-            if (!isRenewRefreshToken(oAuthAppDO.getRenewRefreshTokenEnabled())) {
-                // Make the old refresh token inactive and persist it.
-                ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                        .addInvalidToken(refreshTokenIdentifier, clientId, tokenExpirationTime);
+            Optional<OAuthAppDO> oAuthAppDO = TokenMgtUtil.getOAuthApp(tokenReq.getClientId());
+            if (oAuthAppDO.isPresent()) {
+                if (isRenewRefreshToken(oAuthAppDO.get().getRenewRefreshTokenEnabled())) {
+                    // Make the old refresh token inactive and persist it.
+                    ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+                            .addInvalidToken(refreshTokenIdentifier, clientId, tokenExpirationTime);
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug(String.format("OAuth App not found for Client Id: %s", tokenReq.getClientId()));
+                }
+                throw new IdentityOAuth2Exception("OAuth App not found for Client Id: " + tokenReq.getClientId());
             }
         } catch (ParseException e) {
             throw new IdentityOAuth2Exception("Error while parsing refresh token while persisting.", e);

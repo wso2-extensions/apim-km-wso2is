@@ -258,14 +258,61 @@ public class TokenMgtUtil {
      */
     public static AuthenticatedUser getAuthenticatedUser(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
-        String username = getUserNameFromJWTClaims(claimsSet);
-        String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-        AuthenticatedUser authenticatedUser = OAuth2Util.createAuthenticatedUser(
-                UserCoreUtil.removeDomainFromName(tenantAwareUsername),
-                IdentityUtil.extractDomainFromName(tenantAwareUsername).toUpperCase(),
-                MultitenantUtils.getTenantDomain(username),
-                getIDPForTokenIssuer(claimsSet).getIdentityProviderName());
-        authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
+        AuthenticatedUser authenticatedUser;
+        if (claimsSet.getClaim(OAuth2Constants.ENTITY_ID) != null) {
+            authenticatedUser = resolveAuthenticatedUserFromEntityId((String)
+                    claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
+        } else {
+            String username = getUserNameFromSubject(claimsSet);
+            if (username == null) {
+                authenticatedUser = new AuthenticatedUser();
+                authenticatedUser.setUserName(claimsSet.getSubject());
+            } else {
+                String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
+                authenticatedUser = OAuth2Util.createAuthenticatedUser(
+                        UserCoreUtil.removeDomainFromName(tenantAwareUsername),
+                        IdentityUtil.extractDomainFromName(tenantAwareUsername).toUpperCase(),
+                        MultitenantUtils.getTenantDomain(username),
+                        getIDPForTokenIssuer(claimsSet).getIdentityProviderName());
+            }
+        }
+        if (authenticatedUser != null) {
+            authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
+        }
+        return authenticatedUser;
+    }
+
+    /**
+     * Get authenticated user from the entity ID.
+     *
+     * @param entityId Entity ID JWT Claim value which uniquely identifies the subject principle of the JWT. Eg: user
+     * @return Username
+     * @throws IdentityOAuth2Exception If an error occurs while getting the authenticated user
+     */
+    private static AuthenticatedUser resolveAuthenticatedUserFromEntityId(String entityId)
+            throws IdentityOAuth2Exception {
+
+        AuthenticatedUser authenticatedUser = null;
+        // Assume entity Id is client Id
+        Optional<OAuthAppDO> consumerApp = getOAuthApp(entityId);
+        if (consumerApp.isPresent()) {
+            authenticatedUser = consumerApp.get().getAppOwner();
+        } else {
+            // Assume entity ID is userId
+            RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
+            try {
+                int tenantId = realmService.getTenantManager().getTenantId(TokenMgtUtil.getTenantDomain());
+                AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager) realmService
+                        .getTenantUserRealm(tenantId).getUserStoreManager();
+                String userName = userStoreManager.getUserNameFromUserID(entityId);
+                if (StringUtils.isNotBlank(userName)) {
+                    authenticatedUser = OAuth2Util.getUserFromUserName(userName);
+                }
+            } catch (UserStoreException e) {
+                throw new IdentityOAuth2Exception("Error while getting username from JWT.", e);
+            }
+        }
+
         return authenticatedUser;
     }
 
@@ -276,7 +323,7 @@ public class TokenMgtUtil {
      * @return Username
      * @throws IdentityOAuth2Exception If an error occurs while getting the username from the JWT claims.
      */
-    public static String getUserNameFromJWTClaims(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
+    private static String getUserNameFromSubject(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
         String userName = claimsSet.getSubject();
         RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
@@ -307,6 +354,13 @@ public class TokenMgtUtil {
         return userName;
     }
 
+    /**
+     * Get Resident Identity Provider for the given issuer in JWT.
+     *
+     * @param jwtIssuer JWT Issuer
+     * @return IdentityProvider
+     * @throws IdentityOAuth2Exception If an error occurs while getting the Resident Identity Provider.
+     */
     public static IdentityProvider getResidentIDPForIssuer(String jwtIssuer) throws IdentityOAuth2Exception {
 
         String tenantDomain = getTenantDomain();
@@ -458,14 +512,16 @@ public class TokenMgtUtil {
             String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE));
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             // if revoked, remove the token information from oauth cache.
-            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                    OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
-            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                    OAuth2Util.buildScopeString(scopes));
-            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
-            OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
-            String tenantDomain = authenticatedUser.getTenantDomain();
-            OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
+            if (authenticatedUser != null) {
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                        OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                        OAuth2Util.buildScopeString(scopes));
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
+                OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
+                String tenantDomain = authenticatedUser.getTenantDomain();
+                OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
+            }
         }
         return isRevoked;
     }
@@ -563,21 +619,6 @@ public class TokenMgtUtil {
         return new OAuthCacheKey(accessTokenIdentifier);
     }
 
-    public static void removeTokenFromCache(String accessTokenIdentifier, String consumerKey) {
-
-        OAuthCache.getInstance().clearCacheEntry(new OAuthCacheKey(accessTokenIdentifier));
-        if (log.isDebugEnabled()) {
-            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
-                log.debug("Access token(hashed): " + DigestUtils.sha256Hex(accessTokenIdentifier + " is expired"
-                        + ". Therefore cleared it from cache."));
-            } else {
-                log.debug("Existing access token for client: " + consumerKey + " is expired. "
-                        + "Therefore cleared it from cache.");
-            }
-        }
-    }
-
-
     /**
      * Check if provided JWT token is a refresh token or not.
      *
@@ -655,6 +696,14 @@ public class TokenMgtUtil {
         return true;
     }
 
+    /**
+     * Get the service provider for the given client id.
+     *
+     * @param clientId     Client Id
+     * @param tenantDomain Tenant Domain
+     * @return Service Provider
+     * @throws IdentityOAuth2Exception If an error occurred while retrieving the service provider.
+     */
     public static ServiceProvider getServiceProvider(String clientId, String tenantDomain)
             throws IdentityOAuth2Exception {
 
@@ -681,22 +730,29 @@ public class TokenMgtUtil {
         return serviceProvider;
     }
 
-    public static OAuthAppDO getOAuthApp(String clientId) throws IdentityOAuth2Exception {
+    /**
+     * Get the OAuthAppDO for the provided client id.
+     *
+     * @param clientId Client Id
+     * @return OAuthAppDO for the provided client id. Null if the client id is not found.
+     * @throws IdentityOAuth2Exception Error while retrieving the OAuthAppDO.
+     */
+    public static Optional<OAuthAppDO> getOAuthApp(String clientId) throws IdentityOAuth2Exception {
 
-        OAuthAppDO oAuthAppDO;
+        OAuthAppDO oAuthAppDO = null;
         try {
             oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId);
+            if (log.isDebugEnabled()) {
+                log.debug("Retrieved OAuth application : " + clientId + ". Authorized user : "
+                        + oAuthAppDO.getAppOwner().toString());
+            }
         } catch (InvalidOAuthClientException e) {
-            throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: "
-                    + clientId, e);
+            if (!e.getMessage()
+                    .contains(OAuthConstants.OAuthError.AuthorizationResponsei18nKey.APPLICATION_NOT_FOUND)) {
+                throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: "
+                        + clientId, e);
+            }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Service Provider specific expiry time enabled for application : " +
-                    clientId + ". Application access token expiry time : " +
-                    oAuthAppDO.getApplicationAccessTokenExpiryTime() + ", User access token expiry time : " +
-                    oAuthAppDO.getUserAccessTokenExpiryTime() + ", Refresh token expiry time : "
-                    + oAuthAppDO.getRefreshTokenExpiryTime());
-        }
-        return oAuthAppDO;
+        return Optional.ofNullable(oAuthAppDO);
     }
 }

@@ -138,8 +138,7 @@ public class InMemoryTokenProvider implements TokenProvider {
                         - claimsSet.getIssueTime().getTime());
                 Object scopes = claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE);
                 validationDataDO.setScope(TokenMgtUtil.getScopes(scopes));
-                AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
-                validationDataDO.setAuthzUser(authenticatedUser);
+                validationDataDO.setAuthzUser(TokenMgtUtil.getAuthenticatedUser(claimsSet));
                 if (isTokenActive) {
                     validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);
                 } else {
