@@ -257,6 +257,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                 Calendar.getInstance(TimeZone.getTimeZone("UTC")));
                         ps1.setString(3, organization);
                         ps1.execute();
+                        connection.commit();
                     } catch (SQLIntegrityConstraintViolationException e) {
                         log.warn("Consumer key event token revocation rule already persisted");
                         connection.rollback();
