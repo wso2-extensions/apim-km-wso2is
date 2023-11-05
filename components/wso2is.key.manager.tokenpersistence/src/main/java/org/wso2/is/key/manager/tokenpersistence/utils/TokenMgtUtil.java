@@ -28,7 +28,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
@@ -55,7 +54,6 @@ import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
-import org.wso2.carbon.identity.oauth2.token.OauthTokenIssuer;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
@@ -88,37 +86,6 @@ public class TokenMgtUtil {
     private static final String OIDC_IDP_ENTITY_ID = "IdPEntityId";
     private static final String ALGO_PREFIX = "RS";
     private static final String ALGO_PREFIX_PS = "PS";
-
-    /**
-     * Get the JTI of the JWT token passed using the OAuthTokenIssuer of the given consumer app.
-     *
-     * @param token       Token
-     * @param consumerKey Consumer key
-     * @return JTI of the JWT token
-     * @throws IdentityOAuth2Exception If an error occurs while getting the JTI
-     */
-    public static String getTokenIdentifier(String token, String consumerKey)
-            throws IdentityOAuth2Exception {
-
-        String accessTokenHash = token;
-        try {
-            OauthTokenIssuer oauthTokenIssuer = OAuth2Util.getOAuthTokenIssuerForOAuthApp(consumerKey);
-            //check for persist alias for the token type
-            if (oauthTokenIssuer.usePersistedAccessTokenAlias()) {
-                accessTokenHash = oauthTokenIssuer.getAccessTokenHash(token);
-            }
-            return accessTokenHash;
-        } catch (OAuthSystemException e) {
-            if (log.isDebugEnabled() && IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
-                log.debug("Error while getting access token hash for token(hashed): " + DigestUtils
-                        .sha256Hex(accessTokenHash));
-            }
-            throw new IdentityOAuth2Exception("Error while getting access token hash.", e);
-        } catch (InvalidOAuthClientException e) {
-            throw new IdentityOAuth2Exception(
-                    "Error while retrieving oauth issuer for the app with clientId: " + consumerKey, e);
-        }
-    }
 
     /**
      * Get token identifier (JTI) for JWT.
@@ -611,7 +578,7 @@ public class TokenMgtUtil {
     /**
      * Get OAuth cache key for access token identifier.
      *
-     * @param accessTokenIdentifier Access token Id
+     * @param accessTokenIdentifier Access token ID
      * @return OAuth Cache Key
      */
     public static OAuthCacheKey getOAuthCacheKey(String accessTokenIdentifier) {
@@ -731,7 +698,7 @@ public class TokenMgtUtil {
     }
 
     /**
-     * Get the OAuthAppDO for the provided client id.
+     * Get the OAuthAppDO for the provided client id. Assumes that client id is unique across tenants.
      *
      * @param clientId Client Id
      * @return OAuthAppDO for the provided client id. Null if the client id is not found.
@@ -741,7 +708,7 @@ public class TokenMgtUtil {
 
         OAuthAppDO oAuthAppDO = null;
         try {
-            oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId);
+            oAuthAppDO = OAuth2Util.getAppInformationByClientIdOnly(clientId);
             if (log.isDebugEnabled()) {
                 log.debug("Retrieved OAuth application : " + clientId + ". Authorized user : "
                         + oAuthAppDO.getAppOwner().toString());

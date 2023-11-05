@@ -26,11 +26,9 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
-import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
-import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.openidconnect.OIDCClaimUtil;
 
@@ -41,28 +39,6 @@ import org.wso2.carbon.identity.openidconnect.OIDCClaimUtil;
 public class OpaqueTokenUtil {
 
     private static final Log log = LogFactory.getLog(OpaqueTokenUtil.class);
-
-    /**
-     * Validate opaque refresh token and return the validation data object.
-     *
-     * @param tokenReqMessageContext Token request message context.
-     * @return RefreshTokenValidationDataDO  Refresh token validation data object.
-     * @throws IdentityOAuth2Exception if an error occurs while validating the refresh token.
-     */
-    public static RefreshTokenValidationDataDO validateOpaqueRefreshToken(
-            OAuthTokenReqMessageContext tokenReqMessageContext) throws IdentityOAuth2Exception {
-
-        OAuth2AccessTokenReqDTO tokenReq = tokenReqMessageContext.getOauth2AccessTokenReqDTO();
-        RefreshTokenValidationDataDO validationBean = validateRefreshToken(tokenReq.getClientId(),
-                tokenReq.getRefreshToken());
-        if (validationBean.getAccessToken() == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Invalid Refresh Token provided for Client with Client Id : " + tokenReq.getClientId());
-            }
-            throw new IdentityOAuth2Exception("Persisted access token data not found");
-        }
-        return validationBean;
-    }
 
     /**
      * Find opaque refresh token from database.
