@@ -67,7 +67,7 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
     }
 
     @Override
-    public void doPostRegenerateClientSecret(String consumerKey, Properties properties)
+    public void doPostTokenRevocationOnClientAppEvent(String consumerKey, Properties properties)
             throws IdentityOAuthAdminException {
         long revocationTime = Calendar.getInstance().getTimeInMillis();
         String organization = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();

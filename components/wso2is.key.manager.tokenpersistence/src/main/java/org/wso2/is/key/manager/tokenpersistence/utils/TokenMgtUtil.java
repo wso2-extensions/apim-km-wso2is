@@ -245,6 +245,9 @@ public class TokenMgtUtil {
         }
         if (authenticatedUser != null) {
             authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
+            if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null) {
+                authenticatedUser.setFederatedUser(true);
+            }
         }
         return authenticatedUser;
     }
@@ -279,7 +282,6 @@ public class TokenMgtUtil {
                 throw new IdentityOAuth2Exception("Error while getting username from JWT.", e);
             }
         }
-
         return authenticatedUser;
     }
 

@@ -18,10 +18,7 @@
 
 package org.wso2.is.key.manager.tokenpersistence.internal;
 
-import org.wso2.carbon.registry.core.service.RegistryService;
-import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
 
@@ -31,9 +28,9 @@ import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceSer
 public class ServiceReferenceHolder {
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
-    private RegistryService registryService;
-    private TenantRegistryLoader tenantRegistryLoader;
-    private ConfigurationContextService contextService;
+//    private RegistryService registryService;
+//    private TenantRegistryLoader tenantRegistryLoader;
+//    private ConfigurationContextService contextService;
     private InvalidTokenPersistenceService tokenPersistenceService;
     
     private ServiceReferenceHolder() {
@@ -53,30 +50,6 @@ public class ServiceReferenceHolder {
     public RealmService getRealmService() {
 
         return realmService;
-    }
-
-    public RegistryService getRegistryService() {
-        return registryService;
-    }
-
-    public void setRegistryService(RegistryService registryService) {
-        this.registryService = registryService;
-    }
-
-    public TenantRegistryLoader getTenantRegistryLoader() {
-        return tenantRegistryLoader;
-    }
-
-    public void setTenantRegistryLoader(TenantRegistryLoader tenantRegistryLoader) {
-        this.tenantRegistryLoader = tenantRegistryLoader;
-    }
-
-    public synchronized ConfigurationContextService getContextService() {
-        return contextService;
-    }
-
-    public synchronized void setContextService(ConfigurationContextService contextService) {
-        this.contextService = contextService;
     }
 
     public synchronized InvalidTokenPersistenceService getInvalidTokenPersistenceService() {

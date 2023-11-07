@@ -33,10 +33,7 @@ import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.registry.core.service.RegistryService;
-import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.listner.APIMOAuthApplicationMgtListener;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryOAuth2RevocationProcessor;
@@ -116,61 +113,5 @@ public class TokenPersistenceServiceComponent {
     protected void unsetIdentityCoreInitializedEventService(IdentityCoreInitializedEvent identityCoreInitializedEvent) {
     /* reference IdentityCoreInitializedEvent service to guarantee that this component will wait until identity core
          is started */
-    }
-
-    @Reference(
-            name = "registry.service",
-            service = org.wso2.carbon.registry.core.service.RegistryService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRegistryService")
-    protected void setRegistryService(RegistryService registryService) {
-
-        ServiceReferenceHolder.getInstance().setRegistryService(registryService);
-        if (log.isDebugEnabled()) {
-            log.debug("Registry Service is set in the API KeyMgt bundle.");
-        }
-    }
-
-    protected void unsetRegistryService(RegistryService registryService) {
-
-        ServiceReferenceHolder.getInstance().setRegistryService(null);
-        if (log.isDebugEnabled()) {
-            log.debug("Registry Service is unset in the API KeyMgt bundle.");
-        }
-    }
-
-    @Reference(
-            name = "tenant.registry.loader",
-            service = org.wso2.carbon.registry.core.service.TenantRegistryLoader.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetTenantRegistryLoader")
-    protected void setTenantRegistryLoader(TenantRegistryLoader tenantRegistryLoader) {
-        ServiceReferenceHolder.getInstance().setTenantRegistryLoader(tenantRegistryLoader);
-        if (log.isDebugEnabled()) {
-            log.debug("Tenant Registry Loader is set in the API KeyMgt bundle.");
-        }
-    }
-
-    protected void unsetTenantRegistryLoader(TenantRegistryLoader tenantRegistryLoader) {
-        ServiceReferenceHolder.getInstance().setTenantRegistryLoader(null);
-        if (log.isDebugEnabled()) {
-            log.debug("Tenant Registry Loader is unset in the API KeyMgt bundle.");
-        }
-    }
-
-    @Reference(
-            name = "config.context.service",
-            service = org.wso2.carbon.utils.ConfigurationContextService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetConfigurationContextService")
-    protected void setConfigurationContextService(ConfigurationContextService contextService) {
-        ServiceReferenceHolder.getInstance().setContextService(contextService);
-    }
-
-    protected void unsetConfigurationContextService(ConfigurationContextService contextService) {
-        ServiceReferenceHolder.getInstance().setContextService(null);
     }
 }
