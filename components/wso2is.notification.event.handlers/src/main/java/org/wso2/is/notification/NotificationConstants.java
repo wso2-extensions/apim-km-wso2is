@@ -40,6 +40,11 @@ public class NotificationConstants {
     public static final String ADMIN_PASSWORD_SYSTEM_PROPERTY = "admin.password";
     public static final String CARBON_HOME_SYSTEM_PROPERTY = "carbon.home";
     public static final String DOT = ".";
+    public static final String ENTITY_TYPE = "entityType";
+    public static final String ENTITY_ID = "entityId";
+    public static final String TENANT_ID = "tenantId";
+    public static final String REVOCATION_TIME = "revocationTime";
+    public static final String ORGANIZATION = "organization";
 
     /**
      * Audit Log Constants

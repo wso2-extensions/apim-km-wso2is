@@ -74,23 +74,25 @@ public interface InvalidTokenPersistenceService {
     /**
      * Revoke access tokens based on a user event.
      *
-     * @param subjectId      The subject identifier for the user.
-     * @param subjectIdType  The type of subject identifier.
-     * @param revocationTime The time of the revocation event.
-     * @param organization   The organization associated with the revocation.
+     * @param subjectId           The subject identifier for the user.
+     * @param subjectIdType       The type of subject identifier.
+     * @param revocationTime      The time of the revocation event.
+     * @param organization        The organization associated with the revocation.
+     * @param retryAttemptCounter The retry attempt counter.
      * @throws IdentityOAuth2Exception If an error occurs during access token revocation.
      */
-    void revokeTokensByUserEvent(String subjectId, String subjectIdType,
-                                 long revocationTime, String organization) throws IdentityOAuth2Exception;
+    void revokeTokensByUserEvent(String subjectId, String subjectIdType, long revocationTime, String organization,
+                                 int retryAttemptCounter) throws IdentityOAuth2Exception;
 
     /**
      * Revoke access tokens based on a consumer key event.
      *
-     * @param consumerKey    The consumer key for which access tokens should be revoked.
-     * @param revocationTime The time of the revocation event.
-     * @param organization   The organization associated with the revocation.
+     * @param consumerKey         The consumer key for which access tokens should be revoked.
+     * @param revocationTime      The time of the revocation event.
+     * @param organization        The organization associated with the revocation.
+     * @param retryAttemptCounter The retry attempt counter.
      * @throws IdentityOAuth2Exception If an error occurs during access token revocation.
      */
-    void revokeTokensByConsumerKeyEvent(String consumerKey, long revocationTime, String organization)
-            throws IdentityOAuth2Exception;
+    void revokeTokensByConsumerKeyEvent(String consumerKey, long revocationTime, String organization,
+                                        int retryAttemptCounter) throws IdentityOAuth2Exception;
 }

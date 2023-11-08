@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
@@ -74,6 +75,10 @@ public class InMemoryTokenProvider implements TokenProvider {
         TokenMgtUtil.isJWTToken(token);
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(token);
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
+        if (claimsSet.getClaim(OAuth2Constants.ENTITY_ID) == null) {
+            // If token is migrated (entity_id : null), validate and get the token from the database in the old way.
+            return OAuth2Util.findAccessToken(token, includeExpired);
+        }
         // get JTI of the token.
         String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
         // check if token_type is refresh_token, if yes, throw no active token error.
@@ -144,8 +149,8 @@ public class InMemoryTokenProvider implements TokenProvider {
                 } else {
                     validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
                 }
-                if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled() &&
-                        claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED) != null) {
+                if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
+                    // claim can only be null for migrated tokens, which are already handled above.Hence, no null check.
                     validationDataDO.setIsConsentedToken(
                             (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
                 }

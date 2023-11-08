@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.oauth.IdentityOAuthAdminException;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.notification.event.InternalTokenRevocationConsumerKeyEvent;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
@@ -32,13 +33,12 @@ import java.util.Calendar;
 import java.util.Properties;
 
 /**
- * This class listens to OAuth application management events.
- * It is used to revoke tokens when a consumer key is updated.
+ * This class listens to OAuth application management events. It is used to revoke tokens when an app of a given
+ * consumer key is updated.
  */
 public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListener {
 
     private static final Log log = LogFactory.getLog(APIMOAuthApplicationMgtListener.class);
-
 
     @Override
     public boolean isEnabled() {
@@ -51,18 +51,17 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
     }
 
     @Override
-    public void doPreUpdateConsumerApplication(OAuthConsumerAppDTO oAuthConsumerAppDTO)
-            throws IdentityOAuthAdminException {
+    public void doPreUpdateConsumerApplication(OAuthConsumerAppDTO oAuthConsumerAppDTO) {
 
     }
 
     @Override
-    public void doPreUpdateConsumerApplicationState(String s, String s1) throws IdentityOAuthAdminException {
+    public void doPreUpdateConsumerApplicationState(String s, String s1) {
 
     }
 
     @Override
-    public void doPreRemoveOAuthApplicationData(String s) throws IdentityOAuthAdminException {
+    public void doPreRemoveOAuthApplicationData(String s) {
 
     }
 
@@ -71,13 +70,12 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
             throws IdentityOAuthAdminException {
         long revocationTime = Calendar.getInstance().getTimeInMillis();
         String organization = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-        properties.put("revocationTime", revocationTime);
-        properties.put("organization", organization);
-
+        properties.put(PersistenceConstants.REVOCATION_TIME, revocationTime);
+        properties.put(PersistenceConstants.ORGANIZATION, organization);
         try {
             org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder.getInstance()
                     .getInvalidTokenPersistenceService()
-                    .revokeTokensByConsumerKeyEvent(consumerKey, revocationTime, organization);
+                    .revokeTokensByConsumerKeyEvent(consumerKey, revocationTime, organization, 0);
         } catch (IdentityOAuth2Exception e) {
             log.error("Error while persisting revoking access tokens by consumer key event.", e);
             throw new IdentityOAuthAdminException(e.getMessage(), e);
@@ -86,5 +84,4 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
                 = new InternalTokenRevocationConsumerKeyEvent(consumerKey, properties);
         ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationConsumerKeyEvent);
     }
-
 }

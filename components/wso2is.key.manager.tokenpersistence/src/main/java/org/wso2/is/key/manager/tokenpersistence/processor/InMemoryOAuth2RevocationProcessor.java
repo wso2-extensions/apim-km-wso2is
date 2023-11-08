@@ -41,6 +41,7 @@ import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
@@ -128,17 +129,16 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         String organization = IdentityTenantUtil.getTenantDomain(tenantId);
         long revocationTime = Calendar.getInstance().getTimeInMillis();
         Map<String, Object> params = new HashMap<>();
-        params.put("subjectId", userUUID);
-        params.put("subjectIdType", "USER_ID");
-        params.put("revocationTime", revocationTime);
-        params.put("organization", organization);
-        params.put("tenantId", tenantId);
-        params.put("tenantDomain", organization);
-        params.put("username", username);
+        params.put(PersistenceConstants.ENTITY_ID, userUUID);
+        params.put(PersistenceConstants.ENTITY_TYPE, PersistenceConstants.ENTITY_ID_TYPE_USER_ID);
+        params.put(PersistenceConstants.REVOCATION_TIME, revocationTime);
+        params.put(PersistenceConstants.ORGANIZATION, organization);
+        params.put(PersistenceConstants.TENANT_ID, tenantId);
+        params.put(PersistenceConstants.USERNAME, username);
         OAuthUtil.invokePreRevocationBySystemListeners(userUUID, params);
         try {
-            ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                    .revokeTokensByUserEvent(userUUID, "USER_ID", revocationTime, organization);
+            ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().revokeTokensByUserEvent(userUUID,
+                    PersistenceConstants.ENTITY_ID_TYPE_USER_ID, revocationTime, organization, 0);
             revokeAppTokensOfUser(params);
         } catch (IdentityOAuth2Exception e) {
             log.error("Error while persisting revoke rules for tokens by user event.", e);
@@ -160,15 +160,17 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         OAuthAppDAO oAuthAppDAO = new OAuthAppDAO();
         try {
             OAuthAppDO[] oAuthAppDOs = oAuthAppDAO
-                    .getOAuthConsumerAppsOfUser((String) params.get("username"), (int) params.get("tenantId"));
+                    .getOAuthConsumerAppsOfUser((String) params.get(PersistenceConstants.USERNAME),
+                            (int) params.get(PersistenceConstants.TENANT_ID));
             for (OAuthAppDO oAuthAppDO : oAuthAppDOs) {
                 String consumerKey = oAuthAppDO.getOauthConsumerKey();
-                String subjectIdType = "CLIENT_ID";
                 ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                        .revokeTokensByUserEvent(consumerKey, subjectIdType,
-                                (long) params.get("revocationTime"), params.get("organization").toString());
+                        .revokeTokensByUserEvent(consumerKey, PersistenceConstants.ENTITY_ID_TYPE_CLIENT_ID,
+                                (long) params.get(PersistenceConstants.REVOCATION_TIME),
+                                params.get(PersistenceConstants.ORGANIZATION).toString(), 0);
                 InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
-                        new InternalTokenRevocationUserEvent(consumerKey, subjectIdType, params);
+                        new InternalTokenRevocationUserEvent(consumerKey, PersistenceConstants.ENTITY_ID_TYPE_CLIENT_ID,
+                                params);
                 org.wso2.is.notification.internal.ServiceReferenceHolder.getInstance()
                         .getEventSender().publishEvent(internalTokenRevocationUserEvent);
             }

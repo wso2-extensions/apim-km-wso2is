@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientExcepti
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
@@ -45,6 +46,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 
 /**
@@ -181,7 +183,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         } else {
             refreshTokenLifeTimeInMillis = getRefreshTokenLifeTimeInMillis(oAuthAppDO, authAuthzReqMessageContext);
         }
-        long curTimeInMillis = Calendar.getInstance().getTimeInMillis();
+        long curTimeInMillis = Calendar.getInstance(TimeZone.getTimeZone(PersistenceConstants.UTC)).getTimeInMillis();
         Date issuedTime = new Date(curTimeInMillis);
         jwtClaimsSetBuilder.issueTime(getRefreshTokenIssuedTime(tokenReqMessageContext, oAuthAppDO, issuedTime));
         jwtClaimsSetBuilder.expirationTime(
@@ -215,6 +217,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
                         authAuthzReqMessageContext.isConsentedToken());
             }
         }
+        jwtClaimsSetBuilder.claim(OAuth2Constants.IS_FEDERATED, authenticatedUser.isFederatedUser());
         return jwtClaimsSetBuilder.build();
     }
 

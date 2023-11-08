@@ -38,5 +38,13 @@ public class PersistenceConstants {
     }
     public static final int SECONDS_TO_MILLISECONDS_FACTOR = 1000;
     public static final String PREV_ACCESS_TOKEN = "previousAccessToken";
-
+    public static final String UTC = "UTC";
+    public static final String ENTITY_ID_TYPE_CLIENT_ID = "CLIENT_ID";
+    public static final String ENTITY_ID_TYPE_USER_ID = "USER_ID";
+    public static final String ENTITY_ID = "entityId";
+    public static final String ENTITY_TYPE = "entityType";
+    public static final String TENANT_ID = "tenantId";
+    public static final String USERNAME = "username";
+    public static final String REVOCATION_TIME = "revocationTime";
+    public static final String ORGANIZATION = "organization";
 }

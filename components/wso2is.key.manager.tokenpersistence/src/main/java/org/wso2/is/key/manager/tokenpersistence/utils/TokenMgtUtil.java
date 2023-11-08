@@ -30,11 +30,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.application.common.model.ServiceProvider;
-import org.wso2.carbon.identity.application.common.model.ServiceProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
@@ -52,7 +49,6 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
-import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -60,9 +56,7 @@ import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
@@ -226,28 +220,16 @@ public class TokenMgtUtil {
     public static AuthenticatedUser getAuthenticatedUser(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
         AuthenticatedUser authenticatedUser;
-        if (claimsSet.getClaim(OAuth2Constants.ENTITY_ID) != null) {
-            authenticatedUser = resolveAuthenticatedUserFromEntityId((String)
-                    claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
-        } else {
-            String username = getUserNameFromSubject(claimsSet);
-            if (username == null) {
-                authenticatedUser = new AuthenticatedUser();
-                authenticatedUser.setUserName(claimsSet.getSubject());
-            } else {
-                String tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
-                authenticatedUser = OAuth2Util.createAuthenticatedUser(
-                        UserCoreUtil.removeDomainFromName(tenantAwareUsername),
-                        IdentityUtil.extractDomainFromName(tenantAwareUsername).toUpperCase(),
-                        MultitenantUtils.getTenantDomain(username),
-                        getIDPForTokenIssuer(claimsSet).getIdentityProviderName());
-            }
-        }
+        authenticatedUser = resolveAuthenticatedUserFromEntityId((String)
+                claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
         if (authenticatedUser != null) {
             authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
             if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null) {
                 authenticatedUser.setFederatedUser(true);
             }
+        } else {
+            throw new IdentityOAuth2Exception(String.format("Error while getting the authenticated user. User does not "
+                    + "exist for the given entity ID: %s", claimsSet.getClaim(OAuth2Constants.ENTITY_ID)));
         }
         return authenticatedUser;
     }
@@ -277,50 +259,13 @@ public class TokenMgtUtil {
                 String userName = userStoreManager.getUserNameFromUserID(entityId);
                 if (StringUtils.isNotBlank(userName)) {
                     authenticatedUser = OAuth2Util.getUserFromUserName(userName);
+                    authenticatedUser.setUserId(entityId);
                 }
             } catch (UserStoreException e) {
                 throw new IdentityOAuth2Exception("Error while getting username from JWT.", e);
             }
         }
         return authenticatedUser;
-    }
-
-    /**
-     * Get username from the JWT claims.
-     *
-     * @param claimsSet JWT claims set
-     * @return Username
-     * @throws IdentityOAuth2Exception If an error occurs while getting the username from the JWT claims.
-     */
-    private static String getUserNameFromSubject(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
-
-        String userName = claimsSet.getSubject();
-        RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
-        try {
-            int tenantId = realmService.getTenantManager().getTenantId(TokenMgtUtil.getTenantDomain());
-            AbstractUserStoreManager userStoreManager
-                    = (AbstractUserStoreManager) realmService.getTenantUserRealm(tenantId).getUserStoreManager();
-            // if useUserIdForDefaultSubject is enabled, consider the user id as the subject identifier.
-            // else consider the username as the subject identifier.
-            ServiceProviderProperty[] spProperties = TokenMgtUtil.getServiceProvider(
-                    (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY),
-                    TokenMgtUtil.getTenantDomain()).getSpProperties();
-            boolean useUserIdForDefaultSubject = false;
-            if (spProperties != null) {
-                for (ServiceProviderProperty prop : spProperties) {
-                    if (IdentityApplicationConstants.USE_USER_ID_FOR_DEFAULT_SUBJECT.equals(prop.getName())) {
-                        useUserIdForDefaultSubject = Boolean.parseBoolean(prop.getValue());
-                        break;
-                    }
-                }
-            }
-            if (useUserIdForDefaultSubject) {
-                userName = userStoreManager.getUserNameFromUserID(claimsSet.getSubject());
-            }
-        } catch (UserStoreException e) {
-            throw new IdentityOAuth2Exception("Error while getting username from JWT.", e);
-        }
-        return userName;
     }
 
     /**
@@ -663,40 +608,6 @@ public class TokenMgtUtil {
         // Token is not expired
         log.debug("Expiration Time(exp) of Token was validated successfully.");
         return true;
-    }
-
-    /**
-     * Get the service provider for the given client id.
-     *
-     * @param clientId     Client Id
-     * @param tenantDomain Tenant Domain
-     * @return Service Provider
-     * @throws IdentityOAuth2Exception If an error occurred while retrieving the service provider.
-     */
-    public static ServiceProvider getServiceProvider(String clientId, String tenantDomain)
-            throws IdentityOAuth2Exception {
-
-        ServiceProvider serviceProvider;
-        try {
-            serviceProvider = OAuth2ServiceComponentHolder.getApplicationMgtService().getServiceProviderByClientId(
-                    clientId, OAuthConstants.Scope.OAUTH2, tenantDomain);
-        } catch (IdentityApplicationManagementException e) {
-            throw new IdentityOAuth2Exception("Error occurred while retrieving OAuth2 application data for client id "
-                    + clientId, e);
-        }
-        if (serviceProvider == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Could not find an application for client id: " + clientId
-                        + ", scope: " + OAuthConstants.Scope.OAUTH2 + ", tenant: " + tenantDomain);
-            }
-            throw new IdentityOAuth2Exception("Service Provider not found");
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieved service provider: " + serviceProvider.getApplicationName() + " for client: " +
-                    clientId + ", scope: " + OAuthConstants.Scope.OAUTH2 + ", tenant: " +
-                    tenantDomain);
-        }
-        return serviceProvider;
     }
 
     /**

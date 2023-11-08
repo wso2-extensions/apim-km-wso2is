@@ -32,19 +32,17 @@ public class InternalTokenRevocationUserEvent extends Event {
     private String subjectId;
     private String subjectIdType;
     private long revocationTime;
-    private String organization;
 
     public InternalTokenRevocationUserEvent(String subjectId, String subjectIdType, Map<String, Object> params) {
 
         this.eventId = UUID.randomUUID().toString();
         this.timeStamp = System.currentTimeMillis();
         this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_USER_EVENT;
-        this.tenantId = (int) params.get("tenantId");
-        this.tenantDomain = params.get("tenantDomain").toString();
+        this.tenantId = (int) params.get(NotificationConstants.TENANT_ID);
         this.subjectId = subjectId;
         this.subjectIdType = subjectIdType;
-        this.revocationTime = (long) params.get("revocationTime");
-        this.organization = params.get("organization").toString();
+        this.revocationTime = (long) params.get(NotificationConstants.REVOCATION_TIME);
+        this.tenantDomain = params.get(NotificationConstants.ORGANIZATION).toString();
     }
 
     public String getSubjectId() {
@@ -71,13 +69,6 @@ public class InternalTokenRevocationUserEvent extends Event {
         this.revocationTime = revocationTime;
     }
 
-    public String getOrganization() {
-        return organization;
-    }
-
-    public void setOrganization(String organization) {
-        this.organization = organization;
-    }
 
     @Override
     public String toString() {
@@ -91,7 +82,6 @@ public class InternalTokenRevocationUserEvent extends Event {
                 ", subjectId='" + subjectId + '\'' +
                 ", subjectIdType='" + subjectIdType + '\'' +
                 ", revocationTime=" + revocationTime + '\'' +
-                ", organization=" + organization + '\'' +
                 '}';
     }
 }
