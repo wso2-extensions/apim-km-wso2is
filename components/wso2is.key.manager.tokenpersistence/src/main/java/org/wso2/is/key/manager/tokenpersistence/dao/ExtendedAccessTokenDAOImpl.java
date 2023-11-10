@@ -212,8 +212,8 @@ public class ExtendedAccessTokenDAOImpl extends AccessTokenDAOImpl {
     }
 
     /**
-     * Checks if the provided access token is invalid. An access token is considered invalid if its token state is one
-     * of 'INACTIVE', 'REVOKED', or 'EXPIRED'.
+     * Checks if the provided token is invalid as an access token or refresh token. An access token is considered
+     * invalid if its token state is one of 'INACTIVE', 'REVOKED', or 'EXPIRED'.
      *
      * @param accessTokenIdentifier The unique identifier of the access token.
      * @return {@code true} if the access token is invalid, {@code false} otherwise.

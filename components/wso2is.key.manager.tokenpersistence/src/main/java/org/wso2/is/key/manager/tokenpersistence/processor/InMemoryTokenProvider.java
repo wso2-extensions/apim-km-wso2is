@@ -75,12 +75,31 @@ public class InMemoryTokenProvider implements TokenProvider {
         TokenMgtUtil.isJWTToken(token);
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(token);
         JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
-        if (claimsSet.getClaim(OAuth2Constants.ENTITY_ID) == null) {
-            // If token is migrated (entity_id : null), validate and get the token from the database in the old way.
-            return OAuth2Util.findAccessToken(token, includeExpired);
-        }
         // get JTI of the token.
         String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
+        /*
+         * No need to validate the consumer key in the token with the consumer key in the verification request, as
+         * it is done by the calling functions. eg: OAuth2Service.revokeTokenByOAuthClient().
+         */
+        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
+        if (claimsSet.getClaim(OAuth2Constants.ENTITY_ID) == null) {
+            // If token is migrated (entity_id : null), validate and get the token from the database in the old way.
+            validationDataDO = OAuth2Util.findAccessToken(token, includeExpired);
+            /*
+             * check whether the token is already revoked through direct revocations and through following indirect
+             * revocation events.
+             * 1. check if consumer app was changed.
+             * 2. check if user was changed.
+             */
+            if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, consumerKey)
+                    || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)
+                    || OpaqueTokenUtil.isMigratedTokenRevokedDirectly(accessTokenIdentifier)) {
+                if (!includeExpired) {
+                    handleInvalidAccessTokenError(accessTokenIdentifier);
+                }
+                return null; // even if the token is invalid/revoked, we return null if includeExpired is true.
+            }
+        }
         // check if token_type is refresh_token, if yes, throw no active token error.
         if (!TokenMgtUtil.isRefreshTokenType(claimsSet)) {
             if (log.isDebugEnabled()) {
@@ -93,11 +112,6 @@ public class InMemoryTokenProvider implements TokenProvider {
             }
             // validate JWT token signature.
             TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
-            /*
-             * No need to validate the consumer key in the token with the consumer key in the verification request, as
-             * it is done by the calling functions. eg: OAuth2Service.revokeTokenByOAuthClient().
-             */
-            String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
             // expiry time verification.
             boolean isTokenActive = true;
             if (!TokenMgtUtil.isActive(claimsSet.getExpirationTime())) {
@@ -287,8 +301,9 @@ public class InMemoryTokenProvider implements TokenProvider {
              * 1. check if consumer app was changed.
              * 2. check if user was changed.
              */
-            if (TokenMgtUtil.isTokenRevokedDirectly(refreshTokenIdentifier, consumerKey) ||
-                    TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)) {
+            if (TokenMgtUtil.isTokenRevokedDirectly(refreshTokenIdentifier, consumerKey)
+                    || TokenMgtUtil.isTokenRevokedIndirectly(claimsSet)
+                    || OpaqueTokenUtil.isMigratedTokenRevokedDirectly(refreshTokenIdentifier)) {
                 validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
             } else {
                 validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_ACTIVE);

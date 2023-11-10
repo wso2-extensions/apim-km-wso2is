@@ -47,8 +47,6 @@ import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
-import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
-import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -58,7 +56,6 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
-import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 
 import java.security.PublicKey;
@@ -426,23 +423,21 @@ public class TokenMgtUtil {
             String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE));
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
             // if revoked, remove the token information from oauth cache.
-            if (authenticatedUser != null) {
-                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                        OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
-                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                        OAuth2Util.buildScopeString(scopes));
-                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
-                OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
-                String tenantDomain = authenticatedUser.getTenantDomain();
-                OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
-            }
+            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                    OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
+            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                    OAuth2Util.buildScopeString(scopes));
+            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
+            OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
+            String tenantDomain = authenticatedUser.getTenantDomain();
+            OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
         }
         return isRevoked;
     }
 
     /**
-     * Check if token is directly revoked by calling revoked token endpoint. This seamlessly validates both current
-     * tokens and migrated tokens.
+     * Check if token is directly revoked by calling revoked token endpoint. This seamlessly validates current
+     * tokens and not migrated tokens.
      *
      * @param tokenIdentifier Token Identifier
      * @param consumerKey     Consumer Key
@@ -456,22 +451,8 @@ public class TokenMgtUtil {
          * Clearing of cache is already handled when direct revocation happens through oauth2 revocation service.
          * Hence, no need of clearing cache.
          */
-        boolean isInvalid = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+        return ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                 .isInvalidToken(tokenIdentifier, consumerKey);
-        if (!isInvalid) {
-            /*
-             * Token can be a migrated one from a previous product version. Hence, validating it against old token
-             * table.
-             */
-            AccessTokenDAO accessTokenDAO = OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO();
-            if (accessTokenDAO instanceof ExtendedAccessTokenDAOImpl) {
-                isInvalid = ((ExtendedAccessTokenDAOImpl) accessTokenDAO).isInvalidToken(tokenIdentifier);
-            } else {
-                throw new IdentityOAuth2Exception("Failed to check if the token is directly revoked. Unsupported DAO "
-                        + "Implementation.");
-            }
-        }
-        return isInvalid;
     }
 
     /**

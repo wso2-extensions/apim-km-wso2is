@@ -21,9 +21,12 @@ package org.wso2.is.key.manager.tokenpersistence.processor;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -34,6 +37,8 @@ import org.wso2.carbon.identity.oauth.dao.OAuthAppDAO;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
+import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dto.OAuthRevocationRequestDTO;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
@@ -41,14 +46,22 @@ import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
+import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
+import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static org.wso2.carbon.identity.oauth.common.OAuthConstants.TokenBindings.NONE;
 
 /**
  * This class provides the implementation for revoking access tokens and refresh tokens in the context of InMemory
@@ -121,9 +134,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     @Override
     public boolean revokeTokens(String username, UserStoreManager userStoreManager) throws UserStoreException {
 
-        // Calling OAuthUtil.revokeTokens to handle migrations.
         // Old tokens in the db will be revoked in the old way, since new tokens wouldn't have the mandatory claim.
-        OAuthUtil.revokeTokens(username, userStoreManager);
+        revokeMigratedTokenOfUser(username, userStoreManager);
         String userUUID = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(username);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
         String organization = IdentityTenantUtil.getTenantDomain(tenantId);
@@ -176,6 +188,115 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
             }
         } catch (IdentityOAuthAdminException | IdentityOAuth2Exception e) {
             log.error("Error while persisting revoke rules for app tokens by user event.", e);
+        }
+    }
+
+    /**
+     * Revokes the migrated tokens of the user.
+     *
+     * @param username         username of the user
+     * @param userStoreManager user store manager
+     * @throws UserStoreException if an error occurs while revoking the tokens
+     */
+    private void revokeMigratedTokenOfUser(String username, UserStoreManager userStoreManager)
+            throws UserStoreException {
+
+        String userStoreDomain = UserCoreUtil.getDomainName(userStoreManager.getRealmConfiguration());
+        String tenantDomain = IdentityTenantUtil.getTenantDomain(userStoreManager.getTenantId());
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
+        authenticatedUser.setUserStoreDomain(userStoreDomain);
+        authenticatedUser.setTenantDomain(tenantDomain);
+        authenticatedUser.setUserName(username);
+
+        /* This userStoreDomain variable is used for access token table partitioning. So it is set to null when access
+        token table partitioning is not enabled.*/
+        userStoreDomain = null;
+        if (OAuth2Util.checkAccessTokenPartitioningEnabled() && OAuth2Util.checkUserNameAssertionEnabled()) {
+            try {
+                userStoreDomain = OAuth2Util.getUserStoreForFederatedUser(authenticatedUser);
+            } catch (IdentityOAuth2Exception e) {
+                log.error("Error occurred while getting user store domain for User ID : " + authenticatedUser, e);
+                throw new UserStoreException(e);
+            }
+        }
+        Set<String> clientIds;
+        try {
+            // get all the distinct client Ids authorized by this user
+            clientIds = OAuthTokenPersistenceFactory.getInstance()
+                    .getTokenManagementDAO().getAllTimeAuthorizedClientIds(authenticatedUser);
+        } catch (IdentityOAuth2Exception e) {
+            log.error("Error occurred while retrieving apps authorized by User ID : " + authenticatedUser, e);
+            throw new UserStoreException(e);
+        }
+        boolean isErrorOnRevokingTokens = false;
+        for (String clientId : clientIds) {
+            try {
+                Set<AccessTokenDO> accessTokenDOs;
+                try {
+                    /*
+                     * Token can be a migrated one from a previous product version. Hence, validating it against old
+                     * token table.
+                     */
+                    AccessTokenDAO accessTokenDAO = OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO();
+                    if (accessTokenDAO instanceof ExtendedAccessTokenDAOImpl) {
+                        // retrieve all ACTIVE or EXPIRED access tokens for particular client authorized by this user
+                        accessTokenDOs = ((ExtendedAccessTokenDAOImpl) accessTokenDAO).getAccessTokens(clientId,
+                                authenticatedUser, userStoreDomain, true);
+                    } else {
+                        throw new IdentityOAuth2Exception("Failed to get migrated tokens for user: " + username
+                                + " Unsupported DAO Implementation.");
+                    }
+                } catch (IdentityOAuth2Exception e) {
+                    String errorMsg = "Error occurred while retrieving access tokens issued for " +
+                            "Client ID : " + clientId + ", User ID : " + authenticatedUser;
+                    log.error(errorMsg, e);
+                    throw new UserStoreException(e);
+                }
+
+                if (log.isDebugEnabled() && CollectionUtils.isNotEmpty(accessTokenDOs)) {
+                    log.debug("ACTIVE or EXPIRED access tokens found for the client: " + clientId + " for the user: "
+                            + username);
+                }
+                // isTokenPreservingAtPasswordUpdateEnabled will be always set to false with this feature.
+                List<AccessTokenDO> accessTokens = new ArrayList<>();
+                for (AccessTokenDO accessTokenDO : accessTokenDOs) {
+                    // Only checking the token binding reference for cache clearing and not further, as it is not
+                    // supported by the feature anyway.
+                    String tokenBindingReference = NONE;
+                    if (accessTokenDO.getTokenBinding() != null && StringUtils
+                            .isNotBlank(accessTokenDO.getTokenBinding().getBindingReference())) {
+                        tokenBindingReference = accessTokenDO.getTokenBinding().getBindingReference();
+                        // Cannot skip current token from being revoked.
+                    }
+                    // Clear cache.
+                    OAuthUtil.clearOAuthCache(accessTokenDO.getConsumerKey(), accessTokenDO.getAuthzUser(),
+                            OAuth2Util.buildScopeString(accessTokenDO.getScope()), tokenBindingReference);
+                    OAuthUtil.clearOAuthCache(accessTokenDO.getConsumerKey(), accessTokenDO.getAuthzUser(),
+                            OAuth2Util.buildScopeString(accessTokenDO.getScope()), tokenBindingReference);
+                    OAuthUtil.clearOAuthCache(accessTokenDO.getConsumerKey(), accessTokenDO.getAuthzUser(),
+                            OAuth2Util.buildScopeString(accessTokenDO.getScope()));
+                    OAuthUtil.clearOAuthCache(accessTokenDO.getConsumerKey(), accessTokenDO.getAuthzUser());
+                    OAuthUtil.clearOAuthCache(accessTokenDO);
+                    // Get unique scopes list
+                    accessTokens.add(accessTokenDO);
+                }
+                // Always revoke all the tokens regardless of the token binding and token hashing enabled or not.
+                try {
+                    OpaqueTokenUtil.revokeTokens(accessTokens);
+                } catch (IdentityOAuth2Exception e) {
+                    String errorMsg = "Error occurred while revoking Access Token";
+                    log.error(errorMsg, e);
+                    throw new UserStoreException(e);
+                }
+            } catch (UserStoreException e) {
+                // Set a flag to throw an exception after revoking all the possible access tokens.
+                // The error details are logged at the same place they are throwing.
+                isErrorOnRevokingTokens = true;
+            }
+        }
+        // Throw exception if there was any error found in revoking tokens.
+        if (isErrorOnRevokingTokens) {
+            throw new UserStoreException("Error occurred while revoking Access Tokens of the user " + username);
         }
     }
 }

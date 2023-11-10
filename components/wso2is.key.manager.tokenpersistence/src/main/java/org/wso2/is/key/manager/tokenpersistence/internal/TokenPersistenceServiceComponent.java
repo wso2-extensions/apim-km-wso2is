@@ -55,20 +55,16 @@ public class TokenPersistenceServiceComponent {
     protected void activate(ComponentContext cxt) {
 
         log.info("Activating TokenPersistenceServiceComponent...");
-        try {
-            if (!OAuth2Util.isTokenPersistenceEnabled()) {
-                log.info("Token persistence is not enabled. Registering related services..");
-                cxt.getBundleContext().registerService(AccessTokenDAO.class, new ExtendedAccessTokenDAOImpl(), null);
-                cxt.getBundleContext().registerService(OAuth2RevocationProcessor.class,
-                        new InMemoryOAuth2RevocationProcessor(), null);
-                cxt.getBundleContext().registerService(RefreshTokenGrantProcessor.class,
-                        new InMemoryRefreshTokenGrantProcessor(), null);
-                cxt.getBundleContext().registerService(TokenProvider.class, new InMemoryTokenProvider(), null);
-                cxt.getBundleContext().registerService(OAuthApplicationMgtListener.class,
-                        new APIMOAuthApplicationMgtListener(), null);
-            }
-        } catch (Throwable e) {
-            log.error(e.getMessage(), e);
+        if (!OAuth2Util.isTokenPersistenceEnabled()) {
+            log.info("Token persistence is not enabled. Registering related services..");
+            cxt.getBundleContext().registerService(AccessTokenDAO.class, new ExtendedAccessTokenDAOImpl(), null);
+            cxt.getBundleContext().registerService(OAuth2RevocationProcessor.class,
+                    new InMemoryOAuth2RevocationProcessor(), null);
+            cxt.getBundleContext().registerService(RefreshTokenGrantProcessor.class,
+                    new InMemoryRefreshTokenGrantProcessor(), null);
+            cxt.getBundleContext().registerService(TokenProvider.class, new InMemoryTokenProvider(), null);
+            cxt.getBundleContext().registerService(OAuthApplicationMgtListener.class,
+                    new APIMOAuthApplicationMgtListener(), null);
         }
     }
 
