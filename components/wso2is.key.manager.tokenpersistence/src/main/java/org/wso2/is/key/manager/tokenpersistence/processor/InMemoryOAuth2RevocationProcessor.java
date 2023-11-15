@@ -48,7 +48,6 @@ import org.wso2.carbon.user.core.UserStoreManager;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
-import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
@@ -237,22 +236,15 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                      * Token can be a migrated one from a previous product version. Hence, validating it against old
                      * token table.
                      */
-                    AccessTokenDAO accessTokenDAO = OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO();
-                    if (accessTokenDAO instanceof ExtendedAccessTokenDAOImpl) {
-                        // retrieve all ACTIVE or EXPIRED access tokens for particular client authorized by this user
-                        accessTokenDOs = ((ExtendedAccessTokenDAOImpl) accessTokenDAO).getAccessTokens(clientId,
-                                authenticatedUser, userStoreDomain, true);
-                    } else {
-                        throw new IdentityOAuth2Exception("Failed to get migrated tokens for user: " + username
-                                + " Unsupported DAO Implementation.");
-                    }
+                    AccessTokenDAO accessTokenDAO = ServiceReferenceHolder.getInstance().getMigratedAccessTokenDAO();
+                    // retrieve all ACTIVE or EXPIRED access tokens for particular client authorized by this user
+                    accessTokenDOs = accessTokenDAO.getAccessTokens(clientId, authenticatedUser, userStoreDomain, true);
                 } catch (IdentityOAuth2Exception e) {
                     String errorMsg = "Error occurred while retrieving access tokens issued for " +
                             "Client ID : " + clientId + ", User ID : " + authenticatedUser;
                     log.error(errorMsg, e);
                     throw new UserStoreException(e);
                 }
-
                 if (log.isDebugEnabled() && CollectionUtils.isNotEmpty(accessTokenDOs)) {
                     log.debug("ACTIVE or EXPIRED access tokens found for the client: " + clientId + " for the user: "
                             + username);
@@ -282,6 +274,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 }
                 // Always revoke all the tokens regardless of the token binding and token hashing enabled or not.
                 try {
+                    // Old tokens will be revoked in the old token table. They will not be added to the new
+                    // invalid token table.
                     OpaqueTokenUtil.revokeTokens(accessTokens);
                 } catch (IdentityOAuth2Exception e) {
                     String errorMsg = "Error occurred while revoking Access Token";

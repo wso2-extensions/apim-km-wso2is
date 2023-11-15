@@ -18,6 +18,8 @@
 
 package org.wso2.is.key.manager.tokenpersistence.internal;
 
+import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
+import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAOImpl;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
@@ -28,11 +30,9 @@ import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceSer
 public class ServiceReferenceHolder {
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
-//    private RegistryService registryService;
-//    private TenantRegistryLoader tenantRegistryLoader;
-//    private ConfigurationContextService contextService;
     private InvalidTokenPersistenceService tokenPersistenceService;
-    
+    private AccessTokenDAO migratedAccessTokenDAO;
+
     private ServiceReferenceHolder() {
 
     }
@@ -64,5 +64,18 @@ public class ServiceReferenceHolder {
             InvalidTokenPersistenceService invalidTokenPersistenceService) {
 
         tokenPersistenceService = invalidTokenPersistenceService;
+    }
+
+    public AccessTokenDAO getMigratedAccessTokenDAO() {
+
+        if (migratedAccessTokenDAO == null) {
+            migratedAccessTokenDAO = new AccessTokenDAOImpl();
+        }
+        return migratedAccessTokenDAO;
+    }
+
+    public void setMigratedAccessTokenDAO(AccessTokenDAO migratedAccessTokenDAO) {
+
+        this.migratedAccessTokenDAO = migratedAccessTokenDAO;
     }
 }

@@ -26,14 +26,12 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.openidconnect.OIDCClaimUtil;
-import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 
 import java.util.Collections;
 import java.util.List;
@@ -126,31 +124,6 @@ public class OpaqueTokenUtil {
                 validationBean.setConsented(accessTokenDOFromTokenIdentifier.isConsentedToken());
             }
         }
-    }
-
-    /**
-     * Check if token is directly revoked by calling revoked token endpoint. This validates migrated JWT tokens.
-     * Validating it against old token table.
-     *
-     * @param tokenIdentifier Token Identifier
-     * @return True if token is directly revoked
-     * @throws IdentityOAuth2Exception If failed to check is token is directly revoked
-     */
-    public static boolean isMigratedTokenRevokedDirectly(String tokenIdentifier) throws IdentityOAuth2Exception {
-
-        boolean isInvalid;
-        AccessTokenDAO accessTokenDAO = OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO();
-        if (accessTokenDAO instanceof ExtendedAccessTokenDAOImpl) {
-            isInvalid = ((ExtendedAccessTokenDAOImpl) accessTokenDAO).isInvalidToken(tokenIdentifier);
-        } else {
-            throw new IdentityOAuth2Exception("Failed to check if the token is directly revoked. Unsupported DAO "
-                    + "Implementation.");
-        }
-        /*
-         * Clearing of cache is already handled when direct revocation happens through oauth2 revocation service.
-         * Hence, no need of clearing cache.
-         */
-        return isInvalid;
     }
 
     public static void revokeTokens(List<AccessTokenDO> accessTokens) throws IdentityOAuth2Exception {

@@ -19,23 +19,16 @@
 package org.wso2.is.key.manager.tokenpersistence.utils;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSVerifier;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
-import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
 import org.wso2.carbon.identity.oauth.cache.CacheEntry;
@@ -43,14 +36,14 @@ import org.wso2.carbon.identity.oauth.cache.OAuthCache;
 import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
-import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
+import org.wso2.carbon.identity.oauth2.util.JWTUtils;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
-import org.wso2.carbon.idp.mgt.IdentityProviderManager;
+import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -58,14 +51,9 @@ import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 
-import java.security.PublicKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -74,9 +62,6 @@ import java.util.Optional;
 public class TokenMgtUtil {
 
     private static final Log log = LogFactory.getLog(TokenMgtUtil.class);
-    private static final String OIDC_IDP_ENTITY_ID = "IdPEntityId";
-    private static final String ALGO_PREFIX = "RS";
-    private static final String ALGO_PREFIX_PS = "PS";
 
     /**
      * Get token identifier (JTI) for JWT.
@@ -105,7 +90,7 @@ public class TokenMgtUtil {
     public static SignedJWT parseJWT(String accessToken) throws IdentityOAuth2Exception {
 
         try {
-            return SignedJWT.parse(accessToken);
+            return JWTUtils.parseJWT(accessToken);
         } catch (ParseException e) {
             if (log.isDebugEnabled()) {
                 if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
@@ -125,20 +110,14 @@ public class TokenMgtUtil {
      * @return JWT Claim sets
      * @throws IdentityOAuth2Exception If an error occurs while getting the JWT claim sets
      */
-
     public static JWTClaimsSet getTokenJWTClaims(SignedJWT signedJWT) throws IdentityOAuth2Exception {
 
-        try {
-            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-            if (claimsSet == null) {
-                throw new IdentityOAuth2Exception("Claim values are empty in the given Token.");
-            }
-            return claimsSet;
-        } catch (ParseException e) {
-            throw new IdentityOAuth2Exception("Error while retrieving claim set from Token.", e);
+        Optional<JWTClaimsSet> claimsSet = JWTUtils.getJWTClaimSet(signedJWT);
+        if (!claimsSet.isPresent()) {
+            throw new IdentityOAuth2Exception("Claim values are empty in the given Token.");
         }
+        return claimsSet.get();
     }
-
 
     /**
      * Validate the JWT signature.
@@ -150,47 +129,29 @@ public class TokenMgtUtil {
             throws IdentityOAuth2Exception {
 
         try {
-            if (!TokenMgtUtil.isValidSignature(signedJWT, getIDPForTokenIssuer(claimsSet))) {
+            X509Certificate x509Certificate;
+            JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
+            String tenantDomain = JWTUtils.getSigningTenantDomain(claimsSet, null);
+            IdentityProvider idp = JWTUtils.getResidentIDPForIssuer(claimsSet, tenantDomain);
+            // Get certificate from tenant if available in claims.
+            Optional<X509Certificate> certificate = JWTUtils.getCertificateFromClaims(jwtClaimsSet);
+            if (certificate.isPresent()) {
+                x509Certificate = certificate.get();
+            } else {
+                x509Certificate = JWTUtils.resolveSignerCertificate(idp);
+            }
+            if (x509Certificate == null) {
+                throw new IdentityOAuth2Exception("Unable to locate certificate for Identity Provider: "
+                        + idp.getDisplayName());
+            }
+            String algorithm = JWTUtils.verifyAlgorithm(signedJWT);
+            if (!JWTUtils.verifySignature(signedJWT, x509Certificate, algorithm)) {
                 throw new IdentityOAuth2Exception(("Invalid signature."));
             }
+        } catch (OrganizationManagementException e) {
+            throw new IdentityOAuth2Exception("Error while retrieving the organization hierarchy.", e);
         } catch (JOSEException | ParseException e) {
-            throw new IdentityOAuth2Exception("Error while validating signature.", e);
-        }
-    }
-
-    /**
-     * Get Identity provider for the given issuer.
-     *
-     * @param claimsSet JWT claim set
-     * @return Identity provider
-     * @throws IdentityOAuth2Exception If an error occurs while getting the identity provider
-     */
-    public static IdentityProvider getIDPForTokenIssuer(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
-
-        return TokenMgtUtil.getResidentIDPForIssuer(claimsSet.getIssuer());
-    }
-
-    /**
-     * Validate not before time of the JWT token.
-     *
-     * @param notBeforeTime Not before time
-     * @throws IdentityOAuth2Exception If the token is used before the not before time.
-     */
-    public static void checkNotBeforeTime(Date notBeforeTime) throws IdentityOAuth2Exception {
-
-        if (notBeforeTime != null) {
-            long timeStampSkewMillis = OAuthServerConfiguration.getInstance().getTimeStampSkewInSeconds() * 1000;
-            long notBeforeTimeMillis = notBeforeTime.getTime();
-            long currentTimeInMillis = System.currentTimeMillis();
-            if (currentTimeInMillis + timeStampSkewMillis < notBeforeTimeMillis) {
-                if (log.isDebugEnabled()) {
-                    log.debug(String.format("Token is used before Not_Before_Time. Not Before Time(ms) : %s, TimeStamp "
-                                    + "Skew : %s, Current Time : %s. Token Rejected and validation terminated.",
-                            notBeforeTimeMillis, timeStampSkewMillis, currentTimeInMillis));
-                }
-                throw new IdentityOAuth2Exception("Token is used before Not_Before_Time.");
-            }
-            log.debug("Not Before Time(nbf) of Token was validated successfully.");
+            throw new IdentityOAuth2Exception("Error while validating Token.", e);
         }
     }
 
@@ -221,12 +182,13 @@ public class TokenMgtUtil {
                 claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
         if (authenticatedUser != null) {
             authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
-            if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null) {
+            if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null
+                    && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED)) {
                 authenticatedUser.setFederatedUser(true);
             }
         } else {
-            throw new IdentityOAuth2Exception(String.format("Error while getting the authenticated user. User does not "
-                    + "exist for the given entity ID: %s", claimsSet.getClaim(OAuth2Constants.ENTITY_ID)));
+            log.warn(String.format("Authenticated user does not exist for the given entity ID: %s",
+                    claimsSet.getClaim(OAuth2Constants.ENTITY_ID)));
         }
         return authenticatedUser;
     }
@@ -266,39 +228,6 @@ public class TokenMgtUtil {
     }
 
     /**
-     * Get Resident Identity Provider for the given issuer in JWT.
-     *
-     * @param jwtIssuer JWT Issuer
-     * @return IdentityProvider
-     * @throws IdentityOAuth2Exception If an error occurs while getting the Resident Identity Provider.
-     */
-    public static IdentityProvider getResidentIDPForIssuer(String jwtIssuer) throws IdentityOAuth2Exception {
-
-        String tenantDomain = getTenantDomain();
-        String issuer = StringUtils.EMPTY;
-        IdentityProvider residentIdentityProvider;
-        try {
-            residentIdentityProvider = IdentityProviderManager.getInstance().getResidentIdP(tenantDomain);
-        } catch (IdentityProviderManagementException e) {
-            String errorMsg =
-                    String.format("Error while getting Resident Identity Provider of '%s' tenant.", tenantDomain);
-            throw new IdentityOAuth2Exception(errorMsg, e);
-        }
-        FederatedAuthenticatorConfig[] fedAuthnConfigs = residentIdentityProvider.getFederatedAuthenticatorConfigs();
-        FederatedAuthenticatorConfig oauthAuthenticatorConfig =
-                IdentityApplicationManagementUtil.getFederatedAuthenticator(fedAuthnConfigs,
-                        IdentityApplicationConstants.Authenticator.OIDC.NAME);
-        if (oauthAuthenticatorConfig != null) {
-            issuer = IdentityApplicationManagementUtil.getProperty(oauthAuthenticatorConfig.getProperties(),
-                    OIDC_IDP_ENTITY_ID).getValue();
-        }
-        if (!jwtIssuer.equals(issuer)) {
-            throw new IdentityOAuth2Exception("No Registered IDP found for the token with issuer name : " + jwtIssuer);
-        }
-        return residentIdentityProvider;
-    }
-
-    /**
      * Get tenant domain from thread local carbon context.
      *
      * @return Tenant domain
@@ -313,126 +242,90 @@ public class TokenMgtUtil {
     }
 
     /**
-     * Validate the signature of the JWT token.
-     *
-     * @param signedJWT Signed JWT token
-     * @param idp       Identity provider
-     * @return true if signature is valid.
-     * @throws JOSEException           If an error occurs while validating the signature.
-     * @throws IdentityOAuth2Exception If an error occurs while getting the tenant domain.
-     * @throws ParseException          If an error occurs while parsing the JWT token.
-     */
-    public static boolean isValidSignature(SignedJWT signedJWT, IdentityProvider idp) throws JOSEException,
-            IdentityOAuth2Exception, ParseException {
-
-        JWSVerifier verifier = null;
-        X509Certificate x509Certificate = null;
-        JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
-        Map realm = (HashMap) jwtClaimsSet.getClaim(OAuthConstants.OIDCClaims.REALM);
-        // Get certificate from tenant if available in claims.
-        if (MapUtils.isNotEmpty(realm)) {
-            String tenantDomain = null;
-            // Get signed key tenant from JWT token or ID token based on claim key.
-            if (realm.get(OAuthConstants.OIDCClaims.SIGNING_TENANT) != null) {
-                tenantDomain = (String) realm.get(OAuthConstants.OIDCClaims.SIGNING_TENANT);
-            } else if (realm.get(OAuthConstants.OIDCClaims.TENANT) != null) {
-                tenantDomain = (String) realm.get(OAuthConstants.OIDCClaims.TENANT);
-            }
-            if (tenantDomain != null) {
-                int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
-                x509Certificate = (X509Certificate) OAuth2Util.getCertificate(tenantDomain, tenantId);
-            }
-        } else {
-            x509Certificate = resolveSignerCertificate(idp);
-        }
-        if (x509Certificate == null) {
-            throw new IdentityOAuth2Exception("Unable to locate certificate for Identity Provider: "
-                    + idp.getDisplayName());
-        }
-        String alg = signedJWT.getHeader().getAlgorithm().getName();
-        if (StringUtils.isEmpty(alg)) {
-            throw new IdentityOAuth2Exception("Algorithm must not be null.");
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("Signature Algorithm found in the Token Header: " + alg);
-            }
-            if (alg.indexOf(ALGO_PREFIX) == 0 || alg.indexOf(ALGO_PREFIX_PS) == 0) {
-                // At this point 'x509Certificate' will never be null.
-                PublicKey publicKey = x509Certificate.getPublicKey();
-                if (publicKey instanceof RSAPublicKey) {
-                    verifier = new RSASSAVerifier((RSAPublicKey) publicKey);
-                } else {
-                    throw new IdentityOAuth2Exception("Public key is not an RSA public key.");
-                }
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Signature Algorithm not supported yet: " + alg);
-                }
-            }
-            if (verifier == null) {
-                throw new IdentityOAuth2Exception("Could not create a signature verifier for algorithm type: " + alg);
-            }
-        }
-        boolean isValid = signedJWT.verify(verifier);
-        if (log.isDebugEnabled()) {
-            log.debug("Signature verified: " + isValid);
-        }
-        return isValid;
-    }
-
-    /**
-     * Check if the token is a JWT token.
-     *
-     * @param token The token to be checked.
-     * @throws IdentityOAuth2Exception If the token is not a JWT token.
-     */
-    public static void isJWTToken(String token) throws IdentityOAuth2Exception {
-
-        if (!OAuth2Util.isJWT(token)) {
-            if (log.isDebugEnabled()) {
-                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
-                    log.debug(String.format("Token is not a JWT: %s", DigestUtils.sha256Hex(token)));
-                } else {
-                    log.debug("Token is not a JWT");
-                }
-            }
-            throw new IdentityOAuth2Exception("Invalid token type received");
-        }
-        log.debug("Token is a valid JWT.");
-    }
-
-    /**
      * Check if token is in-directly revoked through a user related or client application related change action.
      *
+     * @param claimsSet         JWTClaimsSet of the parsed token.
+     * @param authenticatedUser Authenticated User
      * @return True if token is in-directly revoked.
      * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked.
      */
-    public static boolean isTokenRevokedIndirectly(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
+    public static boolean isTokenRevokedIndirectly(JWTClaimsSet claimsSet, AuthenticatedUser authenticatedUser)
+            throws IdentityOAuth2Exception {
 
         Date tokenIssuedTime = claimsSet.getIssueTime();
         String entityId = (String) claimsSet.getClaim(OAuth2Constants.ENTITY_ID);
         String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
-        boolean isRevoked = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                .isTokenRevokedForConsumerKey(consumerKey, tokenIssuedTime);
+        boolean isRevoked = isTokenRevokedIndirectlyFromApp(consumerKey, tokenIssuedTime);
         if (!isRevoked) {
             isRevoked = ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                     .isTokenRevokedForSubjectEntity(entityId, tokenIssuedTime);
         }
         if (isRevoked) {
-            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
-            String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE));
+            String tenantDomain = null;
+            if (authenticatedUser != null) {
+                String[] scopes = TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE));
+                // if revoked, remove the token information from oauth cache.
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                        OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                        OAuth2Util.buildScopeString(scopes));
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
+                tenantDomain = authenticatedUser.getTenantDomain();
+            }
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
-            // if revoked, remove the token information from oauth cache.
-            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                    OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
-            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                    OAuth2Util.buildScopeString(scopes));
-            OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
             OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
-            String tenantDomain = authenticatedUser.getTenantDomain();
             OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
         }
         return isRevoked;
+    }
+
+    /**
+     * Check if token is in-directly revoked through a client application related change action. This is used to
+     * validate if a migrated access token is revoked through a client application related change action.
+     *
+     * @param accessTokenDO AccessTokenDO
+     * @return True if token is in-directly revoked.
+     * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked.
+     */
+    public static boolean isAccessTokenRevokedIndirectlyFromApp(AccessTokenDO accessTokenDO)
+            throws IdentityOAuth2Exception {
+
+        String consumerKey = accessTokenDO.getConsumerKey();
+        boolean isRevoked = isTokenRevokedIndirectlyFromApp(consumerKey, accessTokenDO.getIssuedTime());
+        if (isRevoked) {
+            String tenantDomain = null;
+            if (accessTokenDO.getAuthzUser() != null) {
+                String[] scopes = accessTokenDO.getScope();
+                AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
+                // if revoked, remove the token information from oauth cache.
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                        OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
+                        OAuth2Util.buildScopeString(scopes));
+                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
+                tenantDomain = authenticatedUser.getTenantDomain();
+            }
+            String accessTokenIdentifier = accessTokenDO.getAccessToken();
+            OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
+            OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
+        }
+        return isRevoked;
+    }
+
+    /**
+     * Check if a token is in-directly revoked through a client application related change action. This is used to
+     * validate if a token is revoked through a client application related change action based on its issued time
+     *
+     * @param consumerKey     Consumer Key
+     * @param tokenIssuedTime Token Issued Time
+     * @return True if token is in-directly revoked.
+     * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked.
+     */
+    public static boolean isTokenRevokedIndirectlyFromApp(String consumerKey, Date tokenIssuedTime)
+            throws IdentityOAuth2Exception {
+
+        return ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
+                .isTokenRevokedForConsumerKey(consumerKey, tokenIssuedTime);
     }
 
     /**
@@ -544,54 +437,6 @@ public class TokenMgtUtil {
     }
 
     /**
-     * The default implementation resolves one certificate to Identity Provider.
-     *
-     * @param idp The identity provider
-     * @return the resolved X509 Certificate, to be used to validate the JWT signature.
-     * @throws IdentityOAuth2Exception something goes wrong.
-     */
-    private static X509Certificate resolveSignerCertificate(IdentityProvider idp) throws IdentityOAuth2Exception {
-
-        X509Certificate x509Certificate;
-        String tenantDomain = getTenantDomain();
-        try {
-            x509Certificate = (X509Certificate) IdentityApplicationManagementUtil
-                    .decodeCertificate(idp.getCertificate());
-        } catch (CertificateException e) {
-            throw new IdentityOAuth2Exception("Error occurred while decoding public certificate of Identity Provider "
-                    + idp.getIdentityProviderName() + " for tenant domain " + tenantDomain, e);
-        }
-        return x509Certificate;
-    }
-
-    /**
-     * Checks if a token is active based on its expiration time and a timestamp skew.
-     *
-     * @param expirationTime The expiration time of the token to be checked.
-     * @return {@code true} if the token is active (not expired), {@code false} if the token is expired.
-     */
-    public static boolean isActive(Date expirationTime) {
-
-        // Calculate the timestamp skew in milliseconds.
-        long timeStampSkewMillis = OAuthServerConfiguration.getInstance().getTimeStampSkewInSeconds() * 1000;
-        // Convert the expiration time, current time, and calculate the threshold time.
-        long expirationTimeInMillis = expirationTime.getTime();
-        long currentTimeInMillis = System.currentTimeMillis();
-        // Check if the current time is greater than the threshold time.
-        if ((currentTimeInMillis + timeStampSkewMillis) > expirationTimeInMillis) {
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Token is expired. Expiration Time(ms) : %s, TimeStamp Skew : %s, "
-                                + "Current Time : %s. Token Rejected and validation terminated.",
-                        expirationTimeInMillis, timeStampSkewMillis, currentTimeInMillis));
-            }
-            return false; // Token is expired
-        }
-        // Token is not expired
-        log.debug("Expiration Time(exp) of Token was validated successfully.");
-        return true;
-    }
-
-    /**
      * Get the OAuthAppDO for the provided client id. Assumes that client id is unique across tenants.
      *
      * @param clientId Client Id
@@ -602,18 +447,44 @@ public class TokenMgtUtil {
 
         OAuthAppDO oAuthAppDO = null;
         try {
-            oAuthAppDO = OAuth2Util.getAppInformationByClientIdOnly(clientId);
+            oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId, TokenMgtUtil.getTenantDomain());
             if (log.isDebugEnabled()) {
                 log.debug("Retrieved OAuth application : " + clientId + ". Authorized user : "
                         + oAuthAppDO.getAppOwner().toString());
             }
         } catch (InvalidOAuthClientException e) {
-            if (!e.getMessage()
-                    .contains(OAuthConstants.OAuthError.AuthorizationResponsei18nKey.APPLICATION_NOT_FOUND)) {
-                throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: "
-                        + clientId, e);
+            if (log.isDebugEnabled()) {
+                log.debug("OAuth application : " + clientId + " not found");
             }
         }
         return Optional.ofNullable(oAuthAppDO);
+    }
+
+    /**
+     * Remove unnecessary details from the AccessTokenDO object which were added due to caching or from database
+     * for migrated tokens. This is to make the post token validation process consistent for all types of tokens.
+     *
+     * @param accessTokenDO AccessTokenDO object
+     */
+    public static void cleanupAccessTokenDO(AccessTokenDO accessTokenDO) {
+
+        accessTokenDO.setGrantType(null);
+        accessTokenDO.setTokenId(null);
+        accessTokenDO.setRefreshToken(null);
+        accessTokenDO.setAuthorizationCode(null);
+    }
+
+    /**
+     * Remove unnecessary details from the RefreshTokenValidationDataDO object which were added due to caching or from
+     * database for migrated tokens. This is to make the post token validation process consistent for all types of
+     * tokens.
+     *
+     * @param refreshTokenValidationDataDO RefreshTokenValidationDataDO object
+     */
+    public static void cleanupRefreshTokenDO(RefreshTokenValidationDataDO refreshTokenValidationDataDO) {
+
+        refreshTokenValidationDataDO.setGrantType(null);
+        refreshTokenValidationDataDO.setTokenId(null);
+        refreshTokenValidationDataDO.setAccessToken(null);
     }
 }
