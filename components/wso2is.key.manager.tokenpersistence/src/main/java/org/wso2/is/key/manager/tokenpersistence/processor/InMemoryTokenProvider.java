@@ -132,7 +132,6 @@ public class InMemoryTokenProvider implements TokenProvider {
             Optional<AccessTokenDO> accessTokenDO = TokenMgtUtil.getTokenDOFromCache(accessTokenIdentifier);
             if (accessTokenDO.isPresent()) {
                 validationDataDO = accessTokenDO.get();
-                TokenMgtUtil.cleanupAccessTokenDO(validationDataDO);
                 if (log.isDebugEnabled()) {
                     if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
                         log.debug(String.format("Retrieved access token(hashed): %s from OAuthCache to verify.",
@@ -200,13 +199,7 @@ public class InMemoryTokenProvider implements TokenProvider {
             log.debug("Refresh token is not a JWT. Hence, validating as an migrated opaque token from database.");
             // For backward compatibility, we check whether it is available in idn_oauth2_token table.
             validationDataDO = OpaqueTokenUtil.validateOpaqueRefreshToken(refreshToken, consumerKey);
-            // check whether the token is already revoked through direct revocations after migration.
-            if (TokenMgtUtil.isTokenRevokedDirectly(refreshToken, consumerKey)
-                    || TokenMgtUtil.isTokenRevokedIndirectlyFromApp(consumerKey, validationDataDO.getIssuedTime())) {
-                validationDataDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
-            }
             OpaqueTokenUtil.validateTokenConsent(validationDataDO);
-            TokenMgtUtil.cleanupRefreshTokenDO(validationDataDO);
             return validationDataDO;
         }
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(refreshToken);
@@ -239,17 +232,6 @@ public class InMemoryTokenProvider implements TokenProvider {
             log.debug("Refresh token is not a JWT. Hence, finding as an migrated opaque token from database.");
             // For backward compatibility, we check whether it is available in idn_oauth2_token table.
             accessTokenDO = OpaqueTokenUtil.findRefreshToken(refreshToken);
-            if (accessTokenDO == null) {
-                return null; // if no active refresh token found.
-            }
-            TokenMgtUtil.cleanupAccessTokenDO(accessTokenDO);
-            accessTokenDO.setAccessToken(null);
-            // check whether the token is already revoked through direct revocations after migration.
-            if (TokenMgtUtil.isTokenRevokedDirectly(refreshToken, accessTokenDO.getConsumerKey())
-                    || TokenMgtUtil.isTokenRevokedIndirectlyFromApp(accessTokenDO.getConsumerKey(),
-                    accessTokenDO.getRefreshTokenIssuedTime())) {
-                return null; // only return AccessTokenDO for active refresh tokens.
-            }
             return accessTokenDO;
         }
         SignedJWT signedJWT = TokenMgtUtil.parseJWT(refreshToken);
@@ -355,6 +337,7 @@ public class InMemoryTokenProvider implements TokenProvider {
                     (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
         }
         validationDataDO.setAuthorizedUser(authenticatedUser);
+        validationDataDO.setRefreshToken(refreshTokenIdentifier);
         return validationDataDO;
     }
 
@@ -362,7 +345,7 @@ public class InMemoryTokenProvider implements TokenProvider {
      * Retrieves and verifies a migrated access token based on the provided access token data object. A migrated access
      * token can be either an Opaque or a JWT with entity_id : null.
      *
-     * @param accessTokenIdentifier Access token identifier
+     * @param accessTokenIdentifier Access token identifier (JTI in JWT case, token in Opaque case)
      * @param includeExpired        A boolean flag indicating whether to include expired tokens in the verification.
      * @return AccessTokenDO if the token is valid (ACTIVE or, optionally, EXPIRED), or null if the token is not found
      * or revoked
@@ -371,21 +354,26 @@ public class InMemoryTokenProvider implements TokenProvider {
     private AccessTokenDO getMigratedAccessToken(String accessTokenIdentifier, boolean includeExpired)
             throws IdentityOAuth2Exception {
 
-        AccessTokenDO accessTokenDO;
-        // If token is migrated (entity_id : null), validate and get the token from the database in the old way.
-        accessTokenDO = OAuth2Util.findAccessToken(accessTokenIdentifier, includeExpired);
-        // If no access token found in active or expired state as requested.
-        if (accessTokenDO == null) {
-            return null;
-        }
-        TokenMgtUtil.cleanupAccessTokenDO(accessTokenDO);
-        // check whether the token is already revoked through direct revocations.
-        if (TokenMgtUtil.isTokenRevokedDirectly(accessTokenIdentifier, accessTokenDO.getConsumerKey())
-                || TokenMgtUtil.isAccessTokenRevokedIndirectlyFromApp(accessTokenDO)) {
-            if (!includeExpired) {
-                handleInvalidAccessTokenError(accessTokenIdentifier);
+        AccessTokenDO accessTokenDO = null;
+        try {
+            // If token is migrated (entity_id : null), validate and get the token from the database in the old way.
+            accessTokenDO = OAuth2Util.getAccessTokenDOFromTokenIdentifier(accessTokenIdentifier, includeExpired);
+            if (accessTokenDO != null) {
+                accessTokenDO.addProperty(PersistenceConstants.IS_PERSISTED, true);
             }
-            return null; // even if the token is invalid/revoked, we return null if includeExpired is true.
+            // check whether the token is already revoked through direct revocations.
+        } catch (IllegalArgumentException e) {
+            // If no access token found in active or expired state as requested.
+            if (log.isDebugEnabled()) {
+                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                    log.debug("Failed to get the token: " + accessTokenIdentifier + " from database.");
+                } else {
+                    log.debug("Failed to get the token from database.");
+                }
+            }
+        }
+        if (accessTokenDO == null && !includeExpired) {
+            handleInvalidAccessTokenError(accessTokenIdentifier);
         }
         return accessTokenDO;
     }

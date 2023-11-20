@@ -39,8 +39,8 @@ import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientExcepti
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
+import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
-import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.JWTUtils;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
@@ -53,7 +53,9 @@ import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -458,33 +460,5 @@ public class TokenMgtUtil {
             }
         }
         return Optional.ofNullable(oAuthAppDO);
-    }
-
-    /**
-     * Remove unnecessary details from the AccessTokenDO object which were added due to caching or from database
-     * for migrated tokens. This is to make the post token validation process consistent for all types of tokens.
-     *
-     * @param accessTokenDO AccessTokenDO object
-     */
-    public static void cleanupAccessTokenDO(AccessTokenDO accessTokenDO) {
-
-        accessTokenDO.setGrantType(null);
-        accessTokenDO.setTokenId(null);
-        accessTokenDO.setRefreshToken(null);
-        accessTokenDO.setAuthorizationCode(null);
-    }
-
-    /**
-     * Remove unnecessary details from the RefreshTokenValidationDataDO object which were added due to caching or from
-     * database for migrated tokens. This is to make the post token validation process consistent for all types of
-     * tokens.
-     *
-     * @param refreshTokenValidationDataDO RefreshTokenValidationDataDO object
-     */
-    public static void cleanupRefreshTokenDO(RefreshTokenValidationDataDO refreshTokenValidationDataDO) {
-
-        refreshTokenValidationDataDO.setGrantType(null);
-        refreshTokenValidationDataDO.setTokenId(null);
-        refreshTokenValidationDataDO.setAccessToken(null);
     }
 }

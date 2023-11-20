@@ -18,8 +18,6 @@
 
 package org.wso2.is.key.manager.tokenpersistence.processor;
 
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -89,26 +87,24 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 log.debug("Revoking access token.");
             }
         }
-        // By this time, token identifier is already set in AccessTokenDO from the access token verification step.
-        accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
-        ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
-                accessTokenDO.getAccessToken(), accessTokenDO.getConsumerKey(), accessTokenDO.getIssuedTime().getTime()
-                        + accessTokenDO.getValidityPeriodInMillis());
+
+        if ((boolean) accessTokenDO.getProperty(PersistenceConstants.IS_PERSISTED)) {
+            OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
+                    .revokeAccessTokens(new String[]{accessTokenDO.getAccessToken()});
+        } else {
+            // By this time, token identifier is already set in AccessTokenDO from the access token verification step.
+            accessTokenDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
+            ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
+                    accessTokenDO.getAccessToken(), accessTokenDO.getConsumerKey(),
+                    accessTokenDO.getIssuedTime().getTime() + accessTokenDO.getValidityPeriodInMillis());
+        }
     }
 
     @Override
     public void revokeRefreshToken(OAuthRevocationRequestDTO revokeRequestDTO,
                                    RefreshTokenValidationDataDO refreshTokenDO) throws IdentityOAuth2Exception {
 
-        String refreshTokenIdentifier;
-        if (OAuth2Util.isJWT(revokeRequestDTO.getToken())) {
-            SignedJWT signedJWT = TokenMgtUtil.parseJWT(revokeRequestDTO.getToken());
-            JWTClaimsSet claimsSet = TokenMgtUtil.getTokenJWTClaims(signedJWT);
-            refreshTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
-        } else {
-            // handling migrated opaque refresh tokens.
-            refreshTokenIdentifier = revokeRequestDTO.getToken();
-        }
+        String refreshTokenIdentifier = refreshTokenDO.getRefreshToken();
         if (log.isDebugEnabled()) {
             if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
                 log.debug(String.format("Revoking refresh token(hashed): %s",
@@ -117,10 +113,15 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 log.debug("Revoking refresh token.");
             }
         }
-        refreshTokenDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
-        ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
-                refreshTokenIdentifier, revokeRequestDTO.getConsumerKey(), refreshTokenDO.getIssuedTime().getTime()
-                        + refreshTokenDO.getValidityPeriodInMillis());
+        if ((boolean) refreshTokenDO.getProperty(PersistenceConstants.IS_PERSISTED)) {
+            OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
+                    .revokeAccessTokens(new String[]{refreshTokenDO.getAccessToken()});
+        } else {
+            refreshTokenDO.setRefreshTokenState(OAuthConstants.TokenStates.TOKEN_STATE_REVOKED);
+            ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().addInvalidToken(
+                    refreshTokenIdentifier, revokeRequestDTO.getConsumerKey(), refreshTokenDO.getIssuedTime().getTime()
+                            + refreshTokenDO.getValidityPeriodInMillis());
+        }
     }
 
     /**
@@ -274,8 +275,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 }
                 // Always revoke all the tokens regardless of the token binding and token hashing enabled or not.
                 try {
-                    // Old tokens will be revoked in the old token table. They will not be added to the new
-                    // invalid token table.
+                    // Old tokens will be revoked in the old token table.
                     OpaqueTokenUtil.revokeTokens(accessTokens);
                 } catch (IdentityOAuth2Exception e) {
                     String errorMsg = "Error occurred while revoking Access Token";

@@ -18,8 +18,6 @@
 
 package org.wso2.is.key.manager.tokenpersistence.processor;
 
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -31,25 +29,25 @@ import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
-import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
 
 import java.sql.Timestamp;
-import java.text.ParseException;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Refresh token grant processor to handle jwt refresh tokens during in memory token persistence scenarios. Works with
- * both migrated Opaque refresh tokens and JWTs.
+ * both migrated Opaque refresh tokens and JWTs. When issuing new access token, this does not update the
+ * AuthorizationGrantCache, since old access token cannot be invalidated.
  */
 public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProcessor {
 
@@ -76,31 +74,31 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
     public void persistNewToken(OAuthTokenReqMessageContext tokenReqMessageContext, AccessTokenDO accessTokenBean,
                                 String userStoreDomain, String clientId) throws IdentityOAuth2Exception {
 
-        try {
-            String refreshTokenIdentifier;
-            long tokenExpirationTime;
-            OAuth2AccessTokenReqDTO tokenReq = tokenReqMessageContext.getOauth2AccessTokenReqDTO();
-            RefreshTokenValidationDataDO oldRefreshToken =
-                    (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
-                            PersistenceConstants.PREV_ACCESS_TOKEN);
-            if (!OAuth2Util.isJWT(tokenReq.getRefreshToken())) { // for backward compatibility.
-                refreshTokenIdentifier = tokenReq.getRefreshToken();
-                tokenExpirationTime = oldRefreshToken.getIssuedTime().getTime()
-                        + oldRefreshToken.getValidityPeriodInMillis();
+        OAuth2AccessTokenReqDTO tokenReq = tokenReqMessageContext.getOauth2AccessTokenReqDTO();
+        String refreshTokenIdentifier = tokenReq.getRefreshToken();
+        if (log.isDebugEnabled()) {
+            if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
+                log.debug(String.format("Invalidating previous refresh token (hashed): %s",
+                        DigestUtils.sha256Hex(refreshTokenIdentifier)));
             } else {
-                SignedJWT signedJWT = SignedJWT.parse(tokenReq.getRefreshToken());
-                JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-                refreshTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
-                tokenExpirationTime = claimsSet.getExpirationTime().getTime();
+                log.debug("Invalidating previous refresh token.");
             }
-            if (log.isDebugEnabled()) {
-                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
-                    log.debug(String.format("Invalidating previous refresh token (hashed): %s",
-                            DigestUtils.sha256Hex(refreshTokenIdentifier)));
-                } else {
-                    log.debug("Invalidating previous refresh token.");
-                }
-            }
+        }
+        RefreshTokenValidationDataDO oldRefreshToken =
+                (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
+                        PersistenceConstants.PREV_ACCESS_TOKEN);
+        if ((boolean) oldRefreshToken.getProperty(PersistenceConstants.IS_PERSISTED)) {
+            // Refresh token is persisted (migrated).
+            // Set the previous access token state to "INACTIVE" and store new access token in single db connection.
+            OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
+                    .invalidateAndCreateNewAccessToken(oldRefreshToken.getTokenId(),
+                            OAuthConstants.TokenStates.TOKEN_STATE_INACTIVE, clientId,
+                            UUID.randomUUID().toString(), accessTokenBean, userStoreDomain,
+                            oldRefreshToken.getGrantType());
+        } else {
+            long tokenExpirationTime = oldRefreshToken.getIssuedTime().getTime()
+                    + oldRefreshToken.getValidityPeriodInMillis();
+            // OAuthApp will be retrieved from cache internally.
             Optional<OAuthAppDO> oAuthAppDO = TokenMgtUtil.getOAuthApp(tokenReq.getClientId());
             if (oAuthAppDO.isPresent()) {
                 if (isRenewRefreshToken(oAuthAppDO.get().getRenewRefreshTokenEnabled())) {
@@ -114,8 +112,6 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 }
                 throw new IdentityOAuth2Exception("OAuth App not found for Client Id: " + tokenReq.getClientId());
             }
-        } catch (ParseException e) {
-            throw new IdentityOAuth2Exception("Error while parsing refresh token while persisting.", e);
         }
     }
 

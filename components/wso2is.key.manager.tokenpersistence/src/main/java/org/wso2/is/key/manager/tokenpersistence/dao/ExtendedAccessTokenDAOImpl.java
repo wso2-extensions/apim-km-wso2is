@@ -114,11 +114,6 @@ public class ExtendedAccessTokenDAOImpl extends AccessTokenDAOImpl {
     }
 
     @Override
-    public Set<AccessTokenDO> getActiveAcessTokenDataByConsumerKey(String consumerKey) {
-        return new HashSet<>();
-    }
-
-    @Override
     public Set<AccessTokenDO> getActiveTokenSetWithTokenIdByConsumerKeyForOpenidScope(String consumerKey) {
         return new HashSet<>();
     }

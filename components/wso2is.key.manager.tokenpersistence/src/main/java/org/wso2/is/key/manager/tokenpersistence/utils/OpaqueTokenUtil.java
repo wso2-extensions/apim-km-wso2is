@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.openidconnect.OIDCClaimUtil;
+import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 
 import java.util.Collections;
 import java.util.List;
@@ -53,7 +54,10 @@ public class OpaqueTokenUtil {
      */
     public static AccessTokenDO findRefreshToken(String refreshToken) throws IdentityOAuth2Exception {
 
-        return OAuthTokenPersistenceFactory.getInstance().getTokenManagementDAO().getRefreshToken(refreshToken);
+        AccessTokenDO accessTokenDO = OAuthTokenPersistenceFactory.getInstance().getTokenManagementDAO()
+                .getRefreshToken(refreshToken);
+        accessTokenDO.addProperty(PersistenceConstants.IS_PERSISTED, true);
+        return accessTokenDO;
     }
 
     /**
@@ -96,8 +100,10 @@ public class OpaqueTokenUtil {
                 log.debug("Validating refresh token for client: " + clientId);
             }
         }
-        return OAuthTokenPersistenceFactory.getInstance().getTokenManagementDAO()
-                .validateRefreshToken(clientId, refreshToken);
+        RefreshTokenValidationDataDO refreshTokenValidationDataDO = OAuthTokenPersistenceFactory.getInstance()
+                .getTokenManagementDAO().validateRefreshToken(clientId, refreshToken);
+        refreshTokenValidationDataDO.addProperty(PersistenceConstants.IS_PERSISTED, true);
+        return refreshTokenValidationDataDO;
     }
 
     /**
