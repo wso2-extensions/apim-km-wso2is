@@ -106,6 +106,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (request.getApprovedScope() != null && Arrays.asList((request.getApprovedScope())).contains(
                 PersistenceConstants.JWTClaim.AUDIENCE)) {
             jwtClaimsSetBuilder.audience(Arrays.asList(request.getApprovedScope()));
+            //TODO:// test oidc claims - profile , email
         }
         jwtClaimsSet = jwtClaimsSetBuilder.build();
         if (JWSAlgorithm.NONE.getName().equals(signatureAlgorithm.getName())) {

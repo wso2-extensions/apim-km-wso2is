@@ -354,26 +354,13 @@ public class InMemoryTokenProvider implements TokenProvider {
     private AccessTokenDO getMigratedAccessToken(String accessTokenIdentifier, boolean includeExpired)
             throws IdentityOAuth2Exception {
 
-        AccessTokenDO accessTokenDO = null;
-        try {
-            // If token is migrated (entity_id : null), validate and get the token from the database in the old way.
-            accessTokenDO = OAuth2Util.getAccessTokenDOFromTokenIdentifier(accessTokenIdentifier, includeExpired);
-            if (accessTokenDO != null) {
-                accessTokenDO.addProperty(PersistenceConstants.IS_PERSISTED, true);
-            }
-            // check whether the token is already revoked through direct revocations.
-        } catch (IllegalArgumentException e) {
-            // If no access token found in active or expired state as requested.
-            if (log.isDebugEnabled()) {
-                if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
-                    log.debug("Failed to get the token: " + accessTokenIdentifier + " from database.");
-                } else {
-                    log.debug("Failed to get the token from database.");
-                }
-            }
-        }
-        if (accessTokenDO == null && !includeExpired) {
-            handleInvalidAccessTokenError(accessTokenIdentifier);
+        AccessTokenDO accessTokenDO;
+        // If token is migrated (entity_id : null) JWT or opaque, validate and get the token from the database in the
+        // old way.
+        accessTokenDO = OAuth2Util.findAccessToken(accessTokenIdentifier, includeExpired);
+        //TODO:// signed JWT token caching improvement
+        if (accessTokenDO != null) {
+            accessTokenDO.addProperty(PersistenceConstants.IS_PERSISTED, true);
         }
         return accessTokenDO;
     }

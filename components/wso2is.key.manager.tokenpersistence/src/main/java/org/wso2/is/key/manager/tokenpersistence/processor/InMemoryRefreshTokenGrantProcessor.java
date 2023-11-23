@@ -105,6 +105,8 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                     // Make the old refresh token inactive and persist it.
                     ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                             .addInvalidToken(refreshTokenIdentifier, clientId, tokenExpirationTime);
+                    //TODO:// sessionId = token ID, federated user claims getting removed after server restart.
+                    //TODO:// Need to add token id as a claim. If not enable jit provisioning.
                 }
             } else {
                 if (log.isDebugEnabled()) {
