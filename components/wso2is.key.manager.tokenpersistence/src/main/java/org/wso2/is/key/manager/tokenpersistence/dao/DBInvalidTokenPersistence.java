@@ -23,11 +23,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityConstants;
+import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
-import org.wso2.is.key.manager.tokenpersistence.utils.PersistenceDatabaseUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -71,7 +71,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                 log.debug("Validating the token from the database.");
             }
         }
-        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQLQueries.IS_INVALID_TOKEN)) {
                 preparedStatement.setString(1, token);
                 preparedStatement.setString(2, consumerKey);
@@ -97,18 +97,17 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                         expiryTime));
             }
         }
-        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SQLQueries.INSERT_INVALID_TOKEN)) {
-                connection.setAutoCommit(false);
                 preparedStatement.setString(1, UUID.randomUUID().toString());
                 preparedStatement.setString(2, token);
                 preparedStatement.setString(3, consumerKey);
                 preparedStatement.setTimestamp(4, new Timestamp(expiryTime),
                         Calendar.getInstance(TimeZone.getTimeZone(PersistenceConstants.UTC)));
                 preparedStatement.executeUpdate();
-                connection.commit();
+                IdentityDatabaseUtil.commitTransaction(connection);
             } catch (SQLException e) {
-                connection.rollback();
+                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw new IdentityOAuth2Exception(String.format("Failed to add invalid token for consumer key: %s with "
                         + "expiry time: %s", consumerKey, expiryTime), e);
             }
@@ -121,16 +120,15 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
 
     public void removeExpiredJWTs() throws IdentityOAuth2Exception {
 
-        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps =
                          connection.prepareStatement(SQLQueries.DELETE_INVALID_TOKEN)) {
-                connection.setAutoCommit(false);
                 ps.setTimestamp(1, new Timestamp(System.currentTimeMillis()), Calendar.getInstance(
                         TimeZone.getTimeZone(PersistenceConstants.UTC)));
                 ps.executeUpdate();
-                connection.commit();
+                IdentityDatabaseUtil.commitTransaction(connection);
             } catch (SQLException e) {
-                connection.rollback();
+                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
             }
         } catch (SQLException e) {
@@ -150,7 +148,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             log.debug(String.format("Checking whether any internally revoked event is present for the consumer key: %s "
                     + "after issuing the token at: %s", consumerKey, tokenIssuedTime));
         }
-        try (Connection connection = PersistenceDatabaseUtil.getConnection();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
              PreparedStatement ps = connection.prepareStatement(SQLQueries.IS_APP_REVOKED_EVENT)) {
             ps.setString(1, consumerKey);
             ps.setTimestamp(2, new Timestamp(tokenIssuedTime.getTime()),
@@ -176,7 +174,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             log.debug(String.format("Check whether any internally revoked event is present for the subject entity "
                     + "id: %s after issuing the token at: %s", entityId, tokenIssuedTime));
         }
-        try (Connection connection = PersistenceDatabaseUtil.getConnection();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
              PreparedStatement ps = connection.prepareStatement(SQLQueries.IS_SUBJECT_ENTITY_REVOKED_EVENT)) {
             ps.setString(1, entityId);
             ps.setTimestamp(2, new Timestamp(tokenIssuedTime.getTime()),
@@ -195,8 +193,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                         long revocationTime, String organization, int retryAttemptCounter)
             throws IdentityOAuth2Exception {
 
-        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
-            connection.setAutoCommit(false);
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             String updateQuery = SQLQueries.UPDATE_SUBJECT_ENTITY_REVOKED_EVENT;
             try (PreparedStatement ps = connection.prepareStatement(updateQuery)) {
                 ps.setTimestamp(1, new Timestamp(revocationTime),
@@ -207,7 +204,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected == 0) {
                     log.debug("User event token revocation rule not found. Inserting new rule.");
-                    connection.rollback();
+                    IdentityDatabaseUtil.rollbackTransaction(connection);
                     String insertQuery = SQLQueries.INSERT_SUBJECT_ENTITY_REVOKED_EVENT;
                     String errorMessage = String.format("User event token revocation rule for subject id : %s, "
                                     + "type : %s and organization : %s already exists", subjectId,
@@ -220,14 +217,14 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                 Calendar.getInstance(TimeZone.getTimeZone(PersistenceConstants.UTC)));
                         ps1.setString(5, organization);
                         ps1.execute();
-                        connection.commit();
+                        IdentityDatabaseUtil.commitTransaction(connection);
                         if (retryAttemptCounter > 0) {
                             log.info("Successfully recovered CON_SUB_EVT_KEY constraint violation with the attempt : "
                                     + retryAttemptCounter);
                         }
                     } catch (SQLIntegrityConstraintViolationException e) {
                         log.warn("User event token revocation rule already persisted.");
-                        connection.rollback();
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
                         if (retryAttemptCounter >= getTokenPersistRetryCount()) {
                             log.error("CON_SUB_EVT_KEY constraint violation retry count exceeds above the maximum "
                                     + "count - " + getTokenPersistRetryCount());
@@ -237,7 +234,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                 retryAttemptCounter + 1);
                     } catch (SQLException e) {
                         log.warn("User event token revocation rule already persisted.");
-                        connection.rollback();
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
                         // Handle constrain violation issue in JDBC drivers which does not throw
                         // SQLIntegrityConstraintViolationException
                         if (StringUtils.containsIgnoreCase(e.getMessage(), "CON_SUB_EVT_KEY")) {
@@ -254,7 +251,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                         }
                     } catch (Exception e) {
                         log.warn("User event token revocation rule already persisted.");
-                        connection.rollback();
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
                         // Handle constrain violation issue in JDBC drivers which does not throw
                         // SQLIntegrityConstraintViolationException or SQLException.
                         if (StringUtils.containsIgnoreCase(e.getMessage(), "CON_SUB_EVT_KEY") || (e.getCause() != null
@@ -276,10 +273,10 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                     }
                 } else {
                     log.debug("User event token revocation rule updated.");
-                    connection.commit();
+                    IdentityDatabaseUtil.commitTransaction(connection);
                 }
             } catch (SQLException e) {
-                connection.rollback();
+                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw new IdentityOAuth2Exception("Error while inserting user event revocation rule to db."
                         + e.getMessage(), e);
             }
@@ -294,8 +291,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                                int retryAttemptCounter)
             throws IdentityOAuth2Exception {
 
-        try (Connection connection = PersistenceDatabaseUtil.getConnection()) {
-            connection.setAutoCommit(false);
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             String updateQuery = SQLQueries.UPDATE_APP_REVOKED_EVENT;
             try (PreparedStatement ps = connection.prepareStatement(updateQuery)) {
                 ps.setTimestamp(1, new Timestamp(revocationTime),
@@ -305,7 +301,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                 int rowsAffected = ps.executeUpdate();
                 if (rowsAffected == 0) {
                     log.debug("Consumer key event token revocation rule not found. Inserting new rule.");
-                    connection.rollback();
+                    IdentityDatabaseUtil.rollbackTransaction(connection);
                     String insertQuery = SQLQueries.INSERT_APP_REVOKED_EVENT;
                     String errorMessage = String.format("Consumer app event token revocation rule for consumer key : %s"
                             + "and organization : %s already exists", consumerKey, organization);
@@ -316,14 +312,14 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                 Calendar.getInstance(TimeZone.getTimeZone(PersistenceConstants.UTC)));
                         ps1.setString(4, organization);
                         ps1.execute();
-                        connection.commit();
+                        IdentityDatabaseUtil.commitTransaction(connection);
                         if (retryAttemptCounter > 0) {
                             log.info("Successfully recovered CON_APP_EVT_KEY constraint violation with the attempt : "
                                     + retryAttemptCounter);
                         }
                     } catch (SQLIntegrityConstraintViolationException e) {
                         log.warn("Consumer key event token revocation rule already persisted.");
-                        connection.rollback();
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
                         if (retryAttemptCounter >= getTokenPersistRetryCount()) {
                             log.error("CON_APP_EVT_KEY constraint violation retry count exceeds above the maximum "
                                     + "count - " + getTokenPersistRetryCount());
@@ -333,7 +329,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                                 retryAttemptCounter + 1);
                     } catch (SQLException e) {
                         log.warn("Consumer key event token revocation rule already persisted.");
-                        connection.rollback();
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
                         // Handle constrain violation issue in JDBC drivers which does not throw
                         // SQLIntegrityConstraintViolationException
                         if (StringUtils.containsIgnoreCase(e.getMessage(), "CON_APP_EVT_KEY")) {
@@ -350,7 +346,7 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                         }
                     } catch (Exception e) {
                         log.warn("Consumer key event token revocation rule already persisted.");
-                        connection.rollback();
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
                         // Handle constrain violation issue in JDBC drivers which does not throw
                         // SQLIntegrityConstraintViolationException or SQLException.
                         if (StringUtils.containsIgnoreCase(e.getMessage(), "CON_APP_EVT_KEY") || (e.getCause() != null
@@ -372,10 +368,10 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
                     }
                 } else {
                     log.debug("Consumer key event token revocation rule updated.");
-                    connection.commit();
+                    IdentityDatabaseUtil.commitTransaction(connection);
                 }
             } catch (SQLException e) {
-                connection.rollback();
+                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw new IdentityOAuth2Exception("Error while inserting consumer key event revocation rule to db."
                         + e.getMessage(), e);
             }
