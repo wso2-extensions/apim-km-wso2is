@@ -39,7 +39,6 @@ import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientExcepti
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
-import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.JWTUtils;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
@@ -53,9 +52,7 @@ import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -275,39 +272,6 @@ public class TokenMgtUtil {
                 tenantDomain = authenticatedUser.getTenantDomain();
             }
             String accessTokenIdentifier = TokenMgtUtil.getTokenIdentifier(claimsSet);
-            OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
-            OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
-        }
-        return isRevoked;
-    }
-
-    /**
-     * Check if token is in-directly revoked through a client application related change action. This is used to
-     * validate if a migrated access token is revoked through a client application related change action.
-     *
-     * @param accessTokenDO AccessTokenDO
-     * @return True if token is in-directly revoked.
-     * @throws IdentityOAuth2Exception If failed to check is token is in-directly revoked.
-     */
-    public static boolean isAccessTokenRevokedIndirectlyFromApp(AccessTokenDO accessTokenDO)
-            throws IdentityOAuth2Exception {
-
-        String consumerKey = accessTokenDO.getConsumerKey();
-        boolean isRevoked = isTokenRevokedIndirectlyFromApp(consumerKey, accessTokenDO.getIssuedTime());
-        if (isRevoked) {
-            String tenantDomain = null;
-            if (accessTokenDO.getAuthzUser() != null) {
-                String[] scopes = accessTokenDO.getScope();
-                AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
-                // if revoked, remove the token information from oauth cache.
-                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                        OAuth2Util.buildScopeString(scopes), OAuthConstants.TokenBindings.NONE);
-                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser,
-                        OAuth2Util.buildScopeString(scopes));
-                OAuthUtil.clearOAuthCache(consumerKey, authenticatedUser);
-                tenantDomain = authenticatedUser.getTenantDomain();
-            }
-            String accessTokenIdentifier = accessTokenDO.getAccessToken();
             OAuthCacheKey cacheKey = new OAuthCacheKey(accessTokenIdentifier);
             OAuthCache.getInstance().clearCacheEntry(cacheKey, tenantDomain);
         }
