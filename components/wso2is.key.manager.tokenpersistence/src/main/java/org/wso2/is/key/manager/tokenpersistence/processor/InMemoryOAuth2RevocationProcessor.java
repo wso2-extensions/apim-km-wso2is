@@ -87,7 +87,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
             }
         }
 
-        if ((boolean) accessTokenDO.getProperty(PersistenceConstants.IS_PERSISTED)) {
+        if (accessTokenDO.getProperty(PersistenceConstants.IS_PERSISTED) != null
+                && (boolean) accessTokenDO.getProperty(PersistenceConstants.IS_PERSISTED)) {
             OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
                     .revokeAccessTokens(new String[]{accessTokenDO.getAccessToken()});
         } else {
@@ -112,7 +113,8 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 log.debug("Revoking refresh token.");
             }
         }
-        if ((boolean) refreshTokenDO.getProperty(PersistenceConstants.IS_PERSISTED)) {
+        if (refreshTokenDO.getProperty(PersistenceConstants.IS_PERSISTED) != null
+                && (boolean) refreshTokenDO.getProperty(PersistenceConstants.IS_PERSISTED)) {
             OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
                     .revokeAccessTokens(new String[]{refreshTokenDO.getAccessToken()});
         } else {

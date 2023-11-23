@@ -87,7 +87,8 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
         RefreshTokenValidationDataDO oldRefreshToken =
                 (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
                         PersistenceConstants.PREV_ACCESS_TOKEN);
-        if ((boolean) oldRefreshToken.getProperty(PersistenceConstants.IS_PERSISTED)) {
+        if (oldRefreshToken.getProperty(PersistenceConstants.IS_PERSISTED) != null &&
+                (boolean) oldRefreshToken.getProperty(PersistenceConstants.IS_PERSISTED)) {
             // Refresh token is persisted (migrated).
             // Set the previous access token state to "INACTIVE" and store new access token in single db connection.
             OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
