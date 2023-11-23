@@ -75,18 +75,17 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                                 String userStoreDomain, String clientId) throws IdentityOAuth2Exception {
 
         OAuth2AccessTokenReqDTO tokenReq = tokenReqMessageContext.getOauth2AccessTokenReqDTO();
-        String refreshTokenIdentifier = tokenReq.getRefreshToken();
+        RefreshTokenValidationDataDO oldRefreshToken =
+                (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
+                        PersistenceConstants.PREV_ACCESS_TOKEN);
         if (log.isDebugEnabled()) {
             if (IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.REFRESH_TOKEN)) {
                 log.debug(String.format("Invalidating previous refresh token (hashed): %s",
-                        DigestUtils.sha256Hex(refreshTokenIdentifier)));
+                        DigestUtils.sha256Hex(oldRefreshToken.getRefreshToken())));
             } else {
                 log.debug("Invalidating previous refresh token.");
             }
         }
-        RefreshTokenValidationDataDO oldRefreshToken =
-                (RefreshTokenValidationDataDO) tokenReqMessageContext.getProperty(
-                        PersistenceConstants.PREV_ACCESS_TOKEN);
         if (oldRefreshToken.getProperty(PersistenceConstants.IS_PERSISTED) != null &&
                 (boolean) oldRefreshToken.getProperty(PersistenceConstants.IS_PERSISTED)) {
             // Refresh token is persisted (migrated).
@@ -105,7 +104,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 if (isRenewRefreshToken(oAuthAppDO.get().getRenewRefreshTokenEnabled())) {
                     // Make the old refresh token inactive and persist it.
                     ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
-                            .addInvalidToken(refreshTokenIdentifier, clientId, tokenExpirationTime);
+                            .addInvalidToken(oldRefreshToken.getRefreshToken(), clientId, tokenExpirationTime);
                     //TODO:// sessionId = token ID, federated user claims getting removed after server restart.
                     //TODO:// Need to add token id as a claim. If not enable jit provisioning.
                 }

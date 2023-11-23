@@ -145,21 +145,6 @@ public class ExtendedAccessTokenDAOImpl extends AccessTokenDAOImpl {
     }
 
     @Override
-    public void invalidateAndCreateNewAccessToken(String oldAccessTokenId, String tokenState, String consumerKey,
-                                                  String tokenStateId, AccessTokenDO accessTokenDO,
-                                                  String userStoreDomain) {
-
-    }
-
-    @Override
-    public void invalidateAndCreateNewAccessToken(String oldAccessTokenId, String tokenState, String consumerKey,
-                                                  String tokenStateId, AccessTokenDO accessTokenDO,
-                                                  String userStoreDomain, String grantType)
-            throws IdentityOAuth2Exception {
-
-    }
-
-    @Override
     public void updateUserStoreDomain(int tenantId, String currentUserStoreDomain, String newUserStoreDomain) {
 
     }
