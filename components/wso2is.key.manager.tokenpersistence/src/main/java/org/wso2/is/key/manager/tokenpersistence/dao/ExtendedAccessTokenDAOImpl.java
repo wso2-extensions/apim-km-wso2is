@@ -21,7 +21,6 @@ package org.wso2.is.key.manager.tokenpersistence.dao;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
-import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAOImpl;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 
