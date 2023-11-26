@@ -169,6 +169,7 @@ public class InMemoryTokenProvider implements TokenProvider {
                     validationDataDO.setIsConsentedToken(
                             (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
                 }
+                validationDataDO.setTokenId(TokenMgtUtil.getTokenId(claimsSet));
                 // Add the token back to the cache in the case of a cache miss.
                 TokenMgtUtil.addTokenToCache(accessTokenIdentifier, validationDataDO);
             }
@@ -261,6 +262,7 @@ public class InMemoryTokenProvider implements TokenProvider {
                     throw new IdentityOAuth2Exception("Error while getting tenant ID from tenant domain:"
                             + validationDataDO.getAuthorizedUser().getTenantDomain(), e);
                 }
+                accessTokenDO.setTokenId(TokenMgtUtil.getTokenId(claimsSet));
             }
         }
         return accessTokenDO;
@@ -338,6 +340,7 @@ public class InMemoryTokenProvider implements TokenProvider {
         }
         validationDataDO.setAuthorizedUser(authenticatedUser);
         validationDataDO.setRefreshToken(refreshTokenIdentifier);
+        validationDataDO.setTokenId(TokenMgtUtil.getTokenId(claimsSet));
         return validationDataDO;
     }
 

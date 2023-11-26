@@ -23,11 +23,15 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
+import org.wso2.carbon.identity.application.authentication.framework.exception.UserSessionException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.application.authentication.framework.store.UserSessionStore;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
+import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
@@ -179,16 +183,16 @@ public class TokenMgtUtil {
         AuthenticatedUser authenticatedUser;
         authenticatedUser = resolveAuthenticatedUserFromEntityId((String)
                 claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
-        if (authenticatedUser != null) {
-            authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
-            if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null
-                    && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED)) {
+        if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null
+                && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED)) {
+            if (authenticatedUser == null) {
+                authenticatedUser =
+                        createFederatedAuthenticatedUser((String) claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
+            } else {
                 authenticatedUser.setFederatedUser(true);
             }
-        } else {
-            log.warn(String.format("Authenticated user does not exist for the given entity ID: %s",
-                    claimsSet.getClaim(OAuth2Constants.ENTITY_ID)));
         }
+        authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
         return authenticatedUser;
     }
 
@@ -424,5 +428,57 @@ public class TokenMgtUtil {
             }
         }
         return Optional.ofNullable(oAuthAppDO);
+    }
+
+    /**
+     * Create an authenticated user object for the given user ID from usersession store.
+     *
+     * @param userId User ID
+     * @return AuthenticatedUser
+     */
+    public static AuthenticatedUser createFederatedAuthenticatedUser(String userId) throws IdentityOAuth2Exception {
+
+        AuthenticatedUser authenticatedUser;
+        try {
+            authenticatedUser = new AuthenticatedUser();
+            Pair<User, String> authenticatedUserInfo = UserSessionStore.getInstance().getUser(userId);
+            if (authenticatedUserInfo == null || authenticatedUserInfo.getLeft() == null) {
+                throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
+                        + "federated user. No user found for the userId");
+            }
+            if (authenticatedUserInfo.getRight() == null) {
+                throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
+                        + "federated user. No IdP name found for the userId");
+            }
+            authenticatedUser.setUserId(userId);
+            authenticatedUser.setUserName(authenticatedUserInfo.getLeft().getUserName());
+            authenticatedUser.setTenantDomain(authenticatedUserInfo.getLeft().getTenantDomain());
+            authenticatedUser.setUserStoreDomain(authenticatedUserInfo.getLeft().getUserStoreDomain());
+            authenticatedUser.setFederatedUser(true);
+            authenticatedUser.setFederatedIdPName(authenticatedUserInfo.getRight());
+        } catch (UserSessionException e) {
+            // In here we better not log the user id.
+            throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
+                    + "federated user", e);
+        }
+        return authenticatedUser;
+    }
+
+    /**
+     * Get token id from the JWT token. This tokenId is the unique identifier of the logged-in session.
+     *
+     * @param claimsSet JWTClaimsSet of the parsed token.
+     * @return Token Id
+     * @throws IdentityOAuth2Exception If failed to get the token id.
+     */
+    public static String getTokenId(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
+
+        String tokenId = claimsSet.getClaim(OAuth2Constants.TOKEN_ID) != null ?
+                claimsSet.getClaim(OAuth2Constants.TOKEN_ID).toString() : null;
+        if (tokenId == null) {
+            throw new IdentityOAuth2Exception("TokenId could not be retrieved from the JWT token.");
+        } else {
+            return tokenId;
+        }
     }
 }

@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
@@ -123,7 +124,9 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                                                RefreshTokenValidationDataDO validationBean, String tokenType) {
 
         Timestamp timestamp = new Timestamp(new Date().getTime());
-        String tokenId = UUID.randomUUID().toString();
+        String tokenId = validationBean.getTokenId() == null ? UUID.randomUUID().toString()
+                : validationBean.getTokenId();
+        tokReqMsgCtx.addProperty(OAuth2Constants.TOKEN_ID, tokenId);
         AccessTokenDO accessTokenDO = new AccessTokenDO();
         accessTokenDO.setConsumerKey(tokenReq.getClientId());
         accessTokenDO.setAuthzUser(tokReqMsgCtx.getAuthorizedUser());
