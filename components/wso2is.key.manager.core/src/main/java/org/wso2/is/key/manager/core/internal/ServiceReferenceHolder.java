@@ -35,6 +35,7 @@ public class ServiceReferenceHolder {
     private TenantRegistryLoader tenantRegistryLoader;
     private static ConfigurationContextService contextService;
     private static boolean restrictUnassignedScopes;
+    private static boolean restrictApimRestApiScopes;
 
     private ServiceReferenceHolder() {
 
@@ -85,5 +86,13 @@ public class ServiceReferenceHolder {
 
     public static void setRestrictUnassignedScopes(boolean restrictUnassignedScopes) {
         ServiceReferenceHolder.restrictUnassignedScopes = restrictUnassignedScopes;
+    }
+
+    public static boolean isRestrictApimRestApiScopes() {
+        return restrictApimRestApiScopes;
+    }
+
+    public static void setRestrictApimRestApiScopes(boolean restrictProductRestApiScopes) {
+        ServiceReferenceHolder.restrictApimRestApiScopes = restrictProductRestApiScopes;
     }
 }
