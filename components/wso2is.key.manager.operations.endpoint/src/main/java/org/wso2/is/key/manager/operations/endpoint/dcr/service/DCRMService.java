@@ -930,8 +930,8 @@ public class DCRMService {
         String newApplicationName = "";
         if (!StringUtils.equals(previousOwner, applicationOwner)) {
             String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
-            String appName = StringUtils.substringBetween(appDTO.getApplicationName(), previousOwner.replace("/", "_"),
-                    keyType);
+            String appName = StringUtils.substringBetween(appDTO.getApplicationName(),
+                    previousOwner.replace("@", "-AT-").replace("/", "_"), keyType);
             newApplicationName = MultitenantUtils.getTenantAwareUsername(applicationOwner.replace("/", "_").
                     replaceAll("@", "-AT-")) + appName + keyType;
             sp.setApplicationName(newApplicationName);
