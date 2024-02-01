@@ -23,7 +23,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
@@ -31,7 +30,6 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.U
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.store.UserSessionStore;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthUtil;
@@ -46,7 +44,6 @@ import org.wso2.carbon.identity.oauth2.OAuth2Constants;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.JWTUtils;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.identity.organization.management.service.exception.OrganizationManagementException;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -151,8 +148,6 @@ public class TokenMgtUtil {
             if (!JWTUtils.verifySignature(signedJWT, x509Certificate, algorithm)) {
                 throw new IdentityOAuth2Exception(("Invalid signature."));
             }
-        } catch (OrganizationManagementException e) {
-            throw new IdentityOAuth2Exception("Error while retrieving the organization hierarchy.", e);
         } catch (JOSEException | ParseException e) {
             throw new IdentityOAuth2Exception("Error while validating Token.", e);
         }
@@ -191,6 +186,9 @@ public class TokenMgtUtil {
             } else {
                 authenticatedUser.setFederatedUser(true);
             }
+        }
+        if (authenticatedUser == null) {
+            throw new IdentityOAuth2Exception("Error while getting authenticated user. Authenticated user not found.");
         }
         authenticatedUser.setAuthenticatedSubjectIdentifier(claimsSet.getSubject());
         return authenticatedUser;
@@ -417,7 +415,7 @@ public class TokenMgtUtil {
 
         OAuthAppDO oAuthAppDO = null;
         try {
-            oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId, TokenMgtUtil.getTenantDomain());
+            oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId);
             if (log.isDebugEnabled()) {
                 log.debug("Retrieved OAuth application : " + clientId + ". Authorized user : "
                         + oAuthAppDO.getAppOwner().toString());
@@ -440,22 +438,17 @@ public class TokenMgtUtil {
 
         AuthenticatedUser authenticatedUser;
         try {
-            authenticatedUser = new AuthenticatedUser();
-            Pair<User, String> authenticatedUserInfo = UserSessionStore.getInstance().getUser(userId);
-            if (authenticatedUserInfo == null || authenticatedUserInfo.getLeft() == null) {
+            authenticatedUser = UserSessionStore.getInstance().getUser(userId);
+            if (authenticatedUser == null) {
                 throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
                         + "federated user. No user found for the userId");
             }
-            if (authenticatedUserInfo.getRight() == null) {
-                throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
-                        + "federated user. No IdP name found for the userId");
-            }
             authenticatedUser.setUserId(userId);
-            authenticatedUser.setUserName(authenticatedUserInfo.getLeft().getUserName());
-            authenticatedUser.setTenantDomain(authenticatedUserInfo.getLeft().getTenantDomain());
-            authenticatedUser.setUserStoreDomain(authenticatedUserInfo.getLeft().getUserStoreDomain());
+            authenticatedUser.setUserName(authenticatedUser.getUserName());
+            authenticatedUser.setTenantDomain(authenticatedUser.getTenantDomain());
+            authenticatedUser.setUserStoreDomain(authenticatedUser.getUserStoreDomain());
             authenticatedUser.setFederatedUser(true);
-            authenticatedUser.setFederatedIdPName(authenticatedUserInfo.getRight());
+            authenticatedUser.setFederatedIdPName(authenticatedUser.getFederatedIdPName());
         } catch (UserSessionException e) {
             // In here we better not log the user id.
             throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
@@ -473,8 +466,8 @@ public class TokenMgtUtil {
      */
     public static String getTokenId(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
-        String tokenId = claimsSet.getClaim(OAuth2Constants.TOKEN_ID) != null ?
-                claimsSet.getClaim(OAuth2Constants.TOKEN_ID).toString() : null;
+        String tokenId = claimsSet.getClaim(OAuth2Constants.USER_SESSION_ID) != null ?
+                claimsSet.getClaim(OAuth2Constants.USER_SESSION_ID).toString() : null;
         if (tokenId == null) {
             throw new IdentityOAuth2Exception("TokenId could not be retrieved from the JWT token.");
         } else {

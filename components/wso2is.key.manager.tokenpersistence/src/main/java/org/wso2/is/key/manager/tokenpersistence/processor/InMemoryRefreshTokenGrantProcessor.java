@@ -24,6 +24,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
@@ -106,8 +108,6 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                     // Make the old refresh token inactive and persist it.
                     ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                             .addInvalidToken(oldRefreshToken.getRefreshToken(), clientId, tokenExpirationTime);
-                    //TODO:// sessionId = token ID, federated user claims getting removed after server restart.
-                    //TODO:// Need to add token id as a claim. If not enable jit provisioning.
                 }
             } else {
                 if (log.isDebugEnabled()) {
@@ -124,9 +124,8 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                                                RefreshTokenValidationDataDO validationBean, String tokenType) {
 
         Timestamp timestamp = new Timestamp(new Date().getTime());
-        String tokenId = validationBean.getTokenId() == null ? UUID.randomUUID().toString()
-                : validationBean.getTokenId();
-        tokReqMsgCtx.addProperty(OAuth2Constants.TOKEN_ID, tokenId);
+        String tokenId = UUID.randomUUID().toString();
+        tokReqMsgCtx.addProperty(OAuth2Constants.USER_SESSION_ID, tokenId);
         AccessTokenDO accessTokenDO = new AccessTokenDO();
         accessTokenDO.setConsumerKey(tokenReq.getClientId());
         accessTokenDO.setAuthzUser(tokReqMsgCtx.getAuthorizedUser());
@@ -171,6 +170,23 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 log.debug("Reading the global renew refresh token value from the identity.xml");
             }
             return OAuthServerConfiguration.getInstance().isRefreshTokenRenewalEnabled();
+        }
+    }
+
+    @Override
+    public void addUserAttributesToCache(AccessTokenDO accessTokenBean, OAuthTokenReqMessageContext msgCtx) {
+
+        RefreshTokenValidationDataDO oldAccessToken =
+                (RefreshTokenValidationDataDO) msgCtx.getProperty(PersistenceConstants.PREV_ACCESS_TOKEN);
+        if (oldAccessToken.getAccessToken() == null) {
+            if (oldAccessToken.getTokenId() != null && accessTokenBean.getTokenId() != null) {
+                AuthorizationGrantCacheEntry existingGrantCacheEntry = AuthorizationGrantCache.getInstance()
+                        .getFromSessionStore(oldAccessToken.getTokenId());
+                if (existingGrantCacheEntry != null) {
+                    AuthorizationGrantCache.getInstance().storeToSessionStore(accessTokenBean.getTokenId(),
+                            existingGrantCacheEntry);
+                }
+            }
         }
     }
 }

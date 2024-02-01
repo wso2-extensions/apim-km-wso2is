@@ -164,7 +164,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
             } else {
                 spTenantDomain = tokenReqMessageContext.getOauth2AccessTokenReqDTO().getTenantDomain();
             }
-            oAuthAppDO = OAuth2Util.getAppInformationByClientId(consumerKey, spTenantDomain);
+            oAuthAppDO = OAuth2Util.getAppInformationByClientId(consumerKey);
         } catch (InvalidOAuthClientException e) {
             throw new IdentityOAuth2Exception("Error while retrieving app information for clientId: " + consumerKey, e);
         }
