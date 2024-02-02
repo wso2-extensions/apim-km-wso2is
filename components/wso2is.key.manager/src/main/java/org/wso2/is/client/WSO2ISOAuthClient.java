@@ -20,7 +20,12 @@ package org.wso2.is.client;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
+import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
+import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.impl.AMDefaultKeyManagerImpl;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 /**
  * This class provides the implementation to use "wso2is" for managing
@@ -29,9 +34,47 @@ import org.wso2.carbon.apimgt.impl.AMDefaultKeyManagerImpl;
 public class WSO2ISOAuthClient extends AMDefaultKeyManagerImpl {
 
     private static final Log log = LogFactory.getLog(WSO2ISOAuthClient.class);
+    private boolean kmAdminAsAppOwner = false;
 
     public String getType() {
 
         return WSO2ISConstants.WSO2IS_TYPE;
+    }
+
+    @Override
+    public void loadConfiguration(KeyManagerConfiguration configuration) throws APIManagementException {
+        Object kmAdminAsAppOwnerParameter = configuration.getParameter(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_NAME);
+        if (kmAdminAsAppOwnerParameter != null) {
+            kmAdminAsAppOwner = (boolean) kmAdminAsAppOwnerParameter;
+        }
+        super.loadConfiguration(configuration);
+    }
+
+    @Override
+    public OAuthApplicationInfo createApplication(OAuthAppRequest oauthAppRequest) throws APIManagementException {
+        if (kmAdminAsAppOwner) {
+            overrideKMAdminAsAppOwnerProperties(oauthAppRequest);
+        }
+        return super.createApplication(oauthAppRequest);
+    }
+
+    @Override
+    public OAuthApplicationInfo updateApplication(OAuthAppRequest appInfoDTO) throws APIManagementException {
+        if (kmAdminAsAppOwner) {
+            overrideKMAdminAsAppOwnerProperties(appInfoDTO);
+        }
+        return super.updateApplication(appInfoDTO);
+    }
+
+    /**
+     * Override the OAuth app username with the KM admin username and tenant domain
+     * with the KM admin user's tenant domain
+     */
+    private void overrideKMAdminAsAppOwnerProperties(OAuthAppRequest oauthAppRequest) {
+        String kmAdminUsername = this.getConfigurationParamValue(WSO2ISConstants.KEY_MANAGER_USERNAME);
+        OAuthApplicationInfo oAuthApplicationInfo = oauthAppRequest.getOAuthApplicationInfo();
+        oAuthApplicationInfo.addParameter(WSO2ISConstants.OAUTH_CLIENT_USERNAME, kmAdminUsername);
+        String kmAdminTenantDomain = MultitenantUtils.getTenantDomain(kmAdminUsername);
+        this.setTenantDomain(kmAdminTenantDomain);
     }
 }

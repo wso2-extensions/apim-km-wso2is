@@ -108,7 +108,7 @@ public class DCRMService {
         String overrideSpNameProp = System.getProperty(OVERRIDE_SP_NAME);
         boolean overrideSpName = StringUtils.isEmpty(overrideSpNameProp) || Boolean.parseBoolean(overrideSpNameProp);
 
-        String clientName = updateRequest.getClientName();
+        String clientName = overrideSpName ? updateRequest.getClientName() : appDTO.getApplicationName();
 
         // Update Service Provider
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
@@ -131,9 +131,7 @@ public class DCRMService {
             // Need to create a deep clone, since modifying the fields of the original object,
             // will modify the cached SP object.
             ServiceProvider clonedSP = ExtendedDCRMUtils.cloneServiceProvider(sp);
-            if (overrideSpName) {
-                clonedSP.setApplicationName(clientName);
-            }
+            clonedSP.setApplicationName(clientName);
             updateServiceProvider(clonedSP, tenantDomain, applicationOwner);
         }
 
@@ -925,17 +923,17 @@ public class DCRMService {
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
         sp.setOwner(User.getUserFromUserName(applicationOwner));
 
-        String previousOwner = MultitenantUtils.getTenantAwareUsername(appDTO.getUsername());
+        String previousOwner = MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()).replaceAll("@", "-AT-");
         updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()));
         appDTO.setUsername(applicationOwner);
 
         String newApplicationName = "";
         if (!StringUtils.equals(previousOwner, applicationOwner)) {
             String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
-            String appName = StringUtils.substringBetween(appDTO.getApplicationName(), previousOwner.replace("/", "_"),
-                    keyType);
-            newApplicationName = MultitenantUtils.getTenantAwareUsername(applicationOwner.replace("/", "_")) + appName
-                    + keyType;
+            String appName = StringUtils.substringBetween(appDTO.getApplicationName(),
+                    previousOwner.replace("@", "-AT-").replace("/", "_"), keyType);
+            newApplicationName = MultitenantUtils.getTenantAwareUsername(applicationOwner.replace("/", "_").
+                    replaceAll("@", "-AT-")) + appName + keyType;
             sp.setApplicationName(newApplicationName);
         }
         updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(applicationOwner));

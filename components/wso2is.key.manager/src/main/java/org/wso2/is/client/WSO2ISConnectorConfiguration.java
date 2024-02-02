@@ -59,6 +59,9 @@ public class WSO2ISConnectorConfiguration extends DefaultKeyManagerConnectorConf
         configurationDtoList
                 .add(new ConfigurationDto("Password", "Password", "input",
                         "Password of Admin user", "", true, true, Collections.emptyList(), false));
+        configurationDtoList.add(new ConfigurationDto(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_NAME,
+                WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_LABEL, "checkbox", WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_LABEL,
+                "", false, false, Collections.singletonList(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_VALUE), false));
         configurationDtoList.addAll(super.getConnectionConfigurations());
         return configurationDtoList;
     }
