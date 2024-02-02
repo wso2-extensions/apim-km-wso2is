@@ -55,7 +55,7 @@
                             org.wso2.is.key.manager.tokenpersistence.internal.*
                         </Private-Package>
                         <Import-Package>
-                            org.apache.commons.codec.*,
+                            org.apache.commons.codec.digest;version="${commons-codec.wso2.osgi.version.range}",
                             org.slf4j,
                             org.json.simple.*,
                             org.osgi.framework.*;version="${imp.package.version.osgi.framework}",
