@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
@@ -46,6 +47,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Refresh token grant processor to handle jwt refresh tokens during in memory token persistence scenarios. Works with
@@ -186,6 +188,35 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                     AuthorizationGrantCache.getInstance().storeToSessionStore(accessTokenBean.getTokenId(),
                             existingGrantCacheEntry);
                 }
+            }
+        } else {
+            AuthorizationGrantCacheKey oldAuthorizationGrantCacheKey = new AuthorizationGrantCacheKey(oldAccessToken
+                    .getAccessToken());
+            if (log.isDebugEnabled()) {
+                log.debug("Getting AuthorizationGrantCacheEntry using access token id: "
+                        + accessTokenBean.getTokenId());
+            }
+            AuthorizationGrantCacheEntry grantCacheEntry =
+                    AuthorizationGrantCache.getInstance().getValueFromCacheByTokenId(oldAuthorizationGrantCacheKey,
+                            oldAccessToken.getTokenId());
+            if (grantCacheEntry != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Getting user attributes cached against the previous access token with access token id: "
+                            + oldAccessToken.getTokenId());
+                }
+                AuthorizationGrantCacheKey authorizationGrantCacheKey = new AuthorizationGrantCacheKey(accessTokenBean
+                        .getAccessToken());
+                if (StringUtils.isNotBlank(accessTokenBean.getTokenId())) {
+                    grantCacheEntry.setTokenId(accessTokenBean.getTokenId());
+                } else {
+                    grantCacheEntry.setTokenId(null);
+                }
+                grantCacheEntry.setValidityPeriod(
+                        TimeUnit.MILLISECONDS.toNanos(accessTokenBean.getValidityPeriodInMillis()));
+                // This new method has introduced in order to resolve a regression occurred : wso2/product-is#4366.
+                AuthorizationGrantCache.getInstance().clearCacheEntryByTokenId(oldAuthorizationGrantCacheKey,
+                        oldAccessToken.getTokenId());
+                AuthorizationGrantCache.getInstance().addToCacheByToken(authorizationGrantCacheKey, grantCacheEntry);
             }
         }
     }
