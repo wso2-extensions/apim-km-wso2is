@@ -361,7 +361,6 @@ public class InMemoryTokenProvider implements TokenProvider {
         // If token is migrated (entity_id : null) JWT or opaque, validate and get the token from the database in the
         // old way.
         accessTokenDO = OAuth2Util.findAccessToken(accessTokenIdentifier, includeExpired);
-        //TODO:// signed JWT token caching improvement
         if (accessTokenDO != null) {
             accessTokenDO.addProperty(PersistenceConstants.IS_PERSISTED, true);
         }
