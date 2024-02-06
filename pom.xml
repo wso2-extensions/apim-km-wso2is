@@ -91,8 +91,7 @@
                         <threshold>Low</threshold>
                         <xmlOutput>true</xmlOutput>
                         <spotbugsXmlOutputDirectory>${project.build.directory}/spotbugs</spotbugsXmlOutputDirectory>
-                        <!--Exclude sources-->
-                        <!--<excludeFilterFile>${maven.spotbugsplugin.exclude.file}</excludeFilterFile>-->
+                        <excludeFilterFile>${maven.spotbugsplugin.exclude.file}</excludeFilterFile>
                     </configuration>
                     <executions>
                         <execution>
@@ -444,7 +443,7 @@
     <properties>
         <common.codec.version>1.15</common.codec.version>
         <carbon.apimgt.version>9.27.0</carbon.apimgt.version>
-        <carbon.identity.version>5.25.684</carbon.identity.version>
+        <carbon.identity.version>5.25.685-SNAPSHOT</carbon.identity.version>
         <carbon.identity-oauth2-grant-jwt.version>2.0.4</carbon.identity-oauth2-grant-jwt.version>
         <json.simple.version>1.1</json.simple.version>
         <json-simple.wso2.version>1.1.wso2v1</json-simple.wso2.version>
@@ -482,5 +481,6 @@
         <mockito.version>2.28.2</mockito.version>
         <powermock.version>2.0.2</powermock.version>
         <h2.orbit.version>2.1.210.wso2v1</h2.orbit.version>
+        <maven.spotbugsplugin.exclude.file>spotbugs-exclude.xml</maven.spotbugsplugin.exclude.file>
     </properties>
 </project>
