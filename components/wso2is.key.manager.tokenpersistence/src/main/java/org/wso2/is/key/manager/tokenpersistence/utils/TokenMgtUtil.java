@@ -219,6 +219,7 @@ public class TokenMgtUtil {
                 String userName = userStoreManager.getUserNameFromUserID(entityId);
                 if (StringUtils.isNotBlank(userName)) {
                     authenticatedUser = OAuth2Util.getUserFromUserName(userName);
+                    authenticatedUser.setTenantDomain(TokenMgtUtil.getTenantDomain());
                     authenticatedUser.setUserId(entityId);
                 }
             } catch (UserStoreException e) {
