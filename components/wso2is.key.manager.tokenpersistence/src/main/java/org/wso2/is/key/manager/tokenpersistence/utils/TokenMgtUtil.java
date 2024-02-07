@@ -184,8 +184,20 @@ public class TokenMgtUtil {
     public static AuthenticatedUser getAuthenticatedUser(JWTClaimsSet claimsSet) throws IdentityOAuth2Exception {
 
         AuthenticatedUser authenticatedUser;
+        String consumerKey = null;
+        String consumerAppTenantDomain = null;
+        try {
+            log.debug("Getting tenant domain from OAuth app.");
+            consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
+            if (consumerKey != null) {
+                consumerAppTenantDomain = OAuth2Util.getTenantDomainOfOauthApp(consumerKey);
+            }
+        } catch (InvalidOAuthClientException e) {
+            throw new IdentityOAuth2Exception("Error while getting tenant domain from OAuth app with consumer key: "
+                    + consumerKey);
+        }
         authenticatedUser = resolveAuthenticatedUserFromEntityId((String)
-                claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
+                claimsSet.getClaim(OAuth2Constants.ENTITY_ID), consumerAppTenantDomain);
         if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null
                 && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED)) {
             if (authenticatedUser == null) {
@@ -206,10 +218,12 @@ public class TokenMgtUtil {
      * Get authenticated user from the entity ID.
      *
      * @param entityId Entity ID JWT Claim value which uniquely identifies the subject principle of the JWT. Eg: user
+     * @param consumerAppTenantDomain  Tenant domain of the consumer app from the token
      * @return Username
      * @throws IdentityOAuth2Exception If an error occurs while getting the authenticated user
      */
-    private static AuthenticatedUser resolveAuthenticatedUserFromEntityId(String entityId)
+    private static AuthenticatedUser resolveAuthenticatedUserFromEntityId(String entityId,
+                                                                          String consumerAppTenantDomain)
             throws IdentityOAuth2Exception {
 
         AuthenticatedUser authenticatedUser = null;
@@ -218,13 +232,13 @@ public class TokenMgtUtil {
         if (consumerApp.isPresent()) {
             authenticatedUser = consumerApp.get().getAppOwner();
         } else {
-            // Assume entity ID is userId
-            RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
+            // Assume entity ID is userId.
             try {
-                int tenantId = realmService.getTenantManager().getTenantId(TokenMgtUtil.getTenantDomain());
-                AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager) realmService
-                        .getTenantUserRealm(tenantId).getUserStoreManager();
-                String userName = userStoreManager.getUserNameFromUserID(entityId);
+                String userName = getUserNameFromUserID(entityId, TokenMgtUtil.getTenantDomain());
+                if (StringUtils.isBlank(userName)) {
+                    // if service url is not a tenant aware url, we need to get the tenant domain from the token.
+                    userName = getUserNameFromUserID(entityId, consumerAppTenantDomain);
+                }
                 if (StringUtils.isNotBlank(userName)) {
                     authenticatedUser = OAuth2Util.getUserFromUserName(userName);
                     authenticatedUser.setTenantDomain(TokenMgtUtil.getTenantDomain());
@@ -235,6 +249,15 @@ public class TokenMgtUtil {
             }
         }
         return authenticatedUser;
+    }
+
+    private static String getUserNameFromUserID(String userId, String tenantDomain) throws UserStoreException {
+
+        RealmService realmService = ServiceReferenceHolder.getInstance().getRealmService();
+        int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+        AbstractUserStoreManager userStoreManager = (AbstractUserStoreManager) realmService
+                .getTenantUserRealm(tenantId).getUserStoreManager();
+        return userStoreManager.getUserNameFromUserID(userId);
     }
 
     /**
