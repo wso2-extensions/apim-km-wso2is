@@ -102,8 +102,9 @@ public class InMemoryTokenProvider implements TokenProvider {
                     log.debug(String.format("Validating JWT access token with expiry: %s", includeExpired));
                 }
             }
+            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
             // validate JWT token signature.
-            TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
+            TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet, authenticatedUser);
             // expiry time verification.
             boolean isTokenActive = true;
             if (!JWTUtils.checkExpirationTime(claimsSet.getExpirationTime())) {
@@ -115,7 +116,6 @@ public class InMemoryTokenProvider implements TokenProvider {
             }
             // not before time verification.
             JWTUtils.checkNotBeforeTime(claimsSet.getNotBeforeTime());
-            AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
             /*
              * check whether the token is already revoked through direct revocations and through following indirect
              * revocation events.
@@ -309,8 +309,8 @@ public class InMemoryTokenProvider implements TokenProvider {
                 log.debug("Validating JWT refresh token.");
             }
         }
-        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet);
         AuthenticatedUser authenticatedUser = TokenMgtUtil.getAuthenticatedUser(claimsSet);
+        TokenMgtUtil.validateJWTSignature(signedJWT, claimsSet, authenticatedUser);
         // set expiration state according to jwt claim in it. Not throwing error when token is expired.
         if (JWTUtils.checkExpirationTime(claimsSet.getExpirationTime())) {
             /*

@@ -22,6 +22,7 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,6 +39,7 @@ import org.wso2.carbon.identity.oauth.cache.OAuthCache;
 import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.common.exception.InvalidOAuthClientException;
+import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.OAuth2Constants;
@@ -54,6 +56,8 @@ import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -122,16 +126,20 @@ public class TokenMgtUtil {
     /**
      * Validate the JWT signature.
      *
+     * @param signedJWT         Signed JWT
+     * @param claimsSet         JWT claims set
+     * @param authenticatedUser Authenticated user
      * @throws IdentityOAuth2Exception If signature verification fails or if an error occurs while
      *                                 validating the JWT signature.
      */
-    public static void validateJWTSignature(SignedJWT signedJWT, JWTClaimsSet claimsSet)
+    public static void validateJWTSignature(SignedJWT signedJWT, JWTClaimsSet claimsSet,
+                                            AuthenticatedUser authenticatedUser)
             throws IdentityOAuth2Exception {
 
         try {
             X509Certificate x509Certificate;
             JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
-            String tenantDomain = JWTUtils.getSigningTenantDomain(claimsSet, null);
+            String tenantDomain = TokenMgtUtil.getSigningTenantDomain(claimsSet, authenticatedUser);
             IdentityProvider idp = JWTUtils.getResidentIDPForIssuer(claimsSet, tenantDomain);
             // Get certificate from tenant if available in claims.
             Optional<X509Certificate> certificate = JWTUtils.getCertificateFromClaims(jwtClaimsSet);
@@ -473,6 +481,57 @@ public class TokenMgtUtil {
             throw new IdentityOAuth2Exception("TokenId could not be retrieved from the JWT token.");
         } else {
             return tokenId;
+        }
+    }
+
+
+    /**
+     * Retrieves the signing tenant domain from the given JWT claims set and AccessTokenDO, considering various sources
+     * such as the 'realm' claim, the 'signing_tenant' claim, and the OAuth application associated with the AccessToken.
+     *
+     * @param claimsSet         The JWTClaimsSet containing the claims of the JWT, including the 'realm' claim.
+     * @param authenticatedUser Authenticated user.
+     * @return The signing tenant domain based on the provided claims and AccessTokenDO.
+     * @throws IdentityOAuth2Exception If an error occurs in OAuth2-related functionality.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static String getSigningTenantDomain(JWTClaimsSet claimsSet, AuthenticatedUser authenticatedUser)
+            throws IdentityOAuth2Exception {
+
+        Map<String, String> realm = (HashMap) claimsSet.getClaim(OAuthConstants.OIDCClaims.REALM);
+        if (MapUtils.isNotEmpty(realm)) {
+            if (realm.get(OAuthConstants.OIDCClaims.SIGNING_TENANT) != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Getting signing tenant domain from JWT's 'signing_tenant' claim.");
+                }
+                return realm.get(OAuthConstants.OIDCClaims.SIGNING_TENANT);
+            } else if (realm.get(OAuthConstants.OIDCClaims.TENANT) != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Getting signing tenant domain from JWT's 'tenant' claim.");
+                }
+                return realm.get(OAuthConstants.OIDCClaims.TENANT);
+            }
+        }
+        String consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
+        if (consumerKey == null) {
+            return getTenantDomain();
+        }
+        boolean isJWTSignedWithSPKey = OAuthServerConfiguration.getInstance().isJWTSignedWithSPKey();
+        if (isJWTSignedWithSPKey) {
+            try {
+                if (log.isDebugEnabled()) {
+                    log.debug("Getting signing tenant domain from OAuth app.");
+                }
+                return OAuth2Util.getTenantDomainOfOauthApp(consumerKey);
+            } catch (InvalidOAuthClientException e) {
+                throw new IdentityOAuth2Exception("Error while getting tenant domain from OAuth app with consumer key: "
+                        + consumerKey);
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Getting signing tenant domain from authenticated user.");
+            }
+            return authenticatedUser.getTenantDomain();
         }
     }
 }
