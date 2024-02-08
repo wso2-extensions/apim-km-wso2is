@@ -31,7 +31,6 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
 
     private String consumerKey;
     private long revocationTime;
-    private String organization;
 
     public InternalTokenRevocationConsumerKeyEvent(String consumerKey, Properties properties) {
 
@@ -40,8 +39,7 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
         this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENT;
         this.consumerKey = consumerKey;
         this.revocationTime = (long) properties.get("revocationTime");
-        this.organization = properties.get("organization").toString();
-
+        this.tenantDomain = properties.get(NotificationConstants.ORGANIZATION).toString();
     }
 
     public String getConsumerKey() {
@@ -61,14 +59,6 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
         this.revocationTime = revocationTime;
     }
 
-    public String getOrganization() {
-        return organization;
-    }
-
-    public void setOrganization(String organization) {
-        this.organization = organization;
-    }
-
     @Override
     public String toString() {
 
@@ -77,7 +67,6 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
                 ", type='" + type + '\'' +
                 ", consumerKey='" + consumerKey + '\'' +
                 ", revocationTime=" + revocationTime + '\'' +
-                ", organization=" + organization + '\'' +
                 ", tenantDomain='" + tenantDomain + '\'' +
                 '}';
     }
