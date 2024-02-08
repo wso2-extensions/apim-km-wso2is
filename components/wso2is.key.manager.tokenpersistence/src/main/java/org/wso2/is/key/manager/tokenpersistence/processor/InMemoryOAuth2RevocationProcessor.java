@@ -168,24 +168,29 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
      */
     private void revokeAppTokensOfUser(Map<String, Object> params) {
 
+        int tenantId = (int) params.get(PersistenceConstants.TENANT_ID);
+        String tenantDomain = params.get(PersistenceConstants.ORGANIZATION).toString();
+        long revocationTime = (long) params.get(PersistenceConstants.REVOCATION_TIME);
         // Get client ids for the apps owned by user since the 'sub' claim for these are the consumer key.
         // The app tokens for those consumer keys should also be revoked.
         OAuthAppDAO oAuthAppDAO = new OAuthAppDAO();
         try {
             OAuthAppDO[] oAuthAppDOs = oAuthAppDAO
-                    .getOAuthConsumerAppsOfUser((String) params.get(PersistenceConstants.USERNAME),
-                            (int) params.get(PersistenceConstants.TENANT_ID));
+                    .getOAuthConsumerAppsOfUser((String) params.get(PersistenceConstants.USERNAME), tenantId);
             for (OAuthAppDO oAuthAppDO : oAuthAppDOs) {
                 String consumerKey = oAuthAppDO.getOauthConsumerKey();
+                Map<String, Object> revokeAppTokenParams = new HashMap<>();
+                revokeAppTokenParams.put(PersistenceConstants.ENTITY_ID, consumerKey);
+                revokeAppTokenParams.put(PersistenceConstants.ENTITY_TYPE,
+                        PersistenceConstants.ENTITY_ID_TYPE_CLIENT_ID);
+                revokeAppTokenParams.put(PersistenceConstants.REVOCATION_TIME, revocationTime);
+                revokeAppTokenParams.put(PersistenceConstants.ORGANIZATION, tenantDomain);
+                revokeAppTokenParams.put(PersistenceConstants.TENANT_ID, tenantId);
+                OAuthUtil.invokePreRevocationBySystemListeners(consumerKey, revokeAppTokenParams);
                 ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
                         .revokeTokensByUserEvent(consumerKey, PersistenceConstants.ENTITY_ID_TYPE_CLIENT_ID,
-                                (long) params.get(PersistenceConstants.REVOCATION_TIME),
-                                params.get(PersistenceConstants.ORGANIZATION).toString(), 0);
-                InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
-                        new InternalTokenRevocationUserEvent(consumerKey, PersistenceConstants.ENTITY_ID_TYPE_CLIENT_ID,
-                                params);
-                org.wso2.is.notification.internal.ServiceReferenceHolder.getInstance()
-                        .getEventSender().publishEvent(internalTokenRevocationUserEvent);
+                                revocationTime, tenantDomain, 0);
+                OAuthUtil.invokePostRevocationBySystemListeners(consumerKey, revokeAppTokenParams);
             }
         } catch (IdentityOAuthAdminException | IdentityOAuth2Exception e) {
             log.error("Error while persisting revoke rules for app tokens by user event.", e);
