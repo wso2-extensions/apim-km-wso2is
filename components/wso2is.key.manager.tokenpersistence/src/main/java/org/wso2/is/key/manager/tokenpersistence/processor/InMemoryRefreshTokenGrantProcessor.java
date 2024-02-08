@@ -185,6 +185,10 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 AuthorizationGrantCacheEntry existingGrantCacheEntry = AuthorizationGrantCache.getInstance()
                         .getFromSessionStore(oldAccessToken.getTokenId());
                 if (existingGrantCacheEntry != null) {
+                    existingGrantCacheEntry.setValidityPeriod(
+                            TimeUnit.MILLISECONDS.toNanos(accessTokenBean.getValidityPeriodInMillis()));
+                    // This new method has introduced in order to resolve a regression occurred : wso2/product-is#4366.
+                    AuthorizationGrantCache.getInstance().clearFromSessionStore(oldAccessToken.getTokenId());
                     AuthorizationGrantCache.getInstance().storeToSessionStore(accessTokenBean.getTokenId(),
                             existingGrantCacheEntry);
                 }
