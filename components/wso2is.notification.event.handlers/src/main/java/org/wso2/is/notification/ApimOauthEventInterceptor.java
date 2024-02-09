@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.RefreshGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
 import org.wso2.is.notification.event.TokenRevocationEvent;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
@@ -56,7 +57,6 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     boolean enabled;
     String username;
     char[] password;
-    private EventSender eventSender;
     private static final String JWT = "JWT";
 
     public ApimOauthEventInterceptor() {
@@ -72,9 +72,10 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             if (StringUtils.isNotEmpty(usernameProperty) && StringUtils.isNotEmpty(passwordProperty)) {
                 username = NotificationUtil.replaceSystemProperty(usernameProperty);
                 password = NotificationUtil.replaceSystemProperty(passwordProperty).toCharArray();
-                eventSender = new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap);
+                ServiceReferenceHolder.getInstance().setEventSender(
+                        new EventSender(notificationEndpoint, username, String.valueOf(password), headerMap));
             } else {
-                eventSender = new EventSender(notificationEndpoint, headerMap);
+                ServiceReferenceHolder.getInstance().setEventSender(new EventSender(notificationEndpoint, headerMap));
             }
         }
     }
@@ -198,6 +199,21 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     }
 
     @Override
+    public void onPreTokenRevocationBySystem(String userUUID, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+    }
+
+    @Override
+    public void onPostTokenRevocationBySystem(String userUUID, Map<String, Object> params)
+            throws IdentityOAuth2Exception {
+
+        InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
+                new InternalTokenRevocationUserEvent(userUUID, params.get(NotificationConstants.ENTITY_TYPE).toString(),
+                        params);
+        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationUserEvent);
+    }
+
+    @Override
     public void onPostTokenRenewal(OAuth2AccessTokenReqDTO tokenReqDTO, OAuth2AccessTokenRespDTO tokenRespDTO,
                                    OAuthTokenReqMessageContext tokReqMsgCtx, Map<String, Object> params)
             throws IdentityOAuth2Exception {
@@ -206,23 +222,27 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                 tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY) != null) {
             RefreshTokenValidationDataDO previousAccessToken =
                     (RefreshTokenValidationDataDO) tokReqMsgCtx.getProperty(RefreshGrantHandler.PREV_ACCESS_TOKEN);
-            OAuthAppDO oAuthAppDO =
-                    (OAuthAppDO) tokReqMsgCtx.getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
-            String tokenToRevoke = getJWTid(previousAccessToken.getAccessToken(), oAuthAppDO);
-            TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke,
-                    previousAccessToken.getAccessTokenIssuedTime().getTime() + previousAccessToken
-                            .getAccessTokenValidityInMillis(), previousAccessToken.getAuthorizedUser().getUserName(),
-                    oAuthAppDO.getOauthConsumerKey(), oAuthAppDO.getTokenType());
-            String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
-            tokenRevocationEvent.setTenantDomain(tenantDomain);
-            try {
-                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
-                        .getTenantId(tenantDomain);
-                tokenRevocationEvent.setTenantId(tenantId);
-            } catch (UserStoreException e) {
-                log.error("Error while finding tenant id", e);
+            // no previous access token identified if no persistence
+            if (previousAccessToken.getAccessToken() != null) {
+                OAuthAppDO oAuthAppDO = (OAuthAppDO) tokReqMsgCtx
+                        .getProperty(AuthorizationHandlerManager.OAUTH_APP_PROPERTY);
+                String tokenToRevoke = getJWTid(previousAccessToken.getAccessToken(), oAuthAppDO);
+                TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(tokenToRevoke,
+                        previousAccessToken.getAccessTokenIssuedTime().getTime()
+                                + previousAccessToken.getAccessTokenValidityInMillis(),
+                        previousAccessToken.getAuthorizedUser().getUserName(), oAuthAppDO.getOauthConsumerKey(),
+                        oAuthAppDO.getTokenType());
+                String tenantDomain = previousAccessToken.getAuthorizedUser().getTenantDomain();
+                tokenRevocationEvent.setTenantDomain(tenantDomain);
+                try {
+                    int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                            .getTenantId(tenantDomain);
+                    tokenRevocationEvent.setTenantId(tenantId);
+                } catch (UserStoreException e) {
+                    log.error("Error while finding tenant id", e);
+                }
+                publishEvent(tokenRevocationEvent);
             }
-            publishEvent(tokenRevocationEvent);
         }
     }
 
@@ -230,7 +250,7 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
 
         if (isEnabled()) {
             if (StringUtils.isNotEmpty(notificationEndpoint)) {
-                eventSender.publishEvent(tokenRevocationEvent);
+                ServiceReferenceHolder.getInstance().getEventSender().publishEvent(tokenRevocationEvent);
             }
         }
     }
