@@ -48,7 +48,6 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.OpaqueTokenUtil;
-import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
 
 import java.util.ArrayList;
 import java.util.Calendar;
