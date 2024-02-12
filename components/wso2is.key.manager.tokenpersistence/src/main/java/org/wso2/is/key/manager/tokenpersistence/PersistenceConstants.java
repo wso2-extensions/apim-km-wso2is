@@ -46,6 +46,6 @@ public class PersistenceConstants {
     public static final String TENANT_ID = "tenantId";
     public static final String USERNAME = "username";
     public static final String REVOCATION_TIME = "revocationTime";
-    public static final String ORGANIZATION = "organization";
+    public static final String TENANT_DOMAIN = "tenantDomain";
     public static final String IS_PERSISTED = "IS_PERSISTED";
 }

@@ -20,26 +20,23 @@ package org.wso2.is.notification.event;
 
 import org.wso2.is.notification.NotificationConstants;
 
-import java.util.Properties;
 import java.util.UUID;
 
 /**
- * Internal Token Revocation Consumer Key Event Model
+ * Internal Consumer App Revocation Event Model.
  */
-public class InternalTokenRevocationConsumerKeyEvent extends Event {
+public class ConsumerAppRevocationEvent extends Event {
     private static final long serialVersionUID = 1L;
 
     private String consumerKey;
     private long revocationTime;
 
-    public InternalTokenRevocationConsumerKeyEvent(String consumerKey, Properties properties) {
+    public ConsumerAppRevocationEvent(String consumerKey) {
 
         this.eventId = UUID.randomUUID().toString();
         this.timeStamp = System.currentTimeMillis();
-        this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_CONSUMER_KEY_EVENT;
+        this.type = NotificationConstants.CONSUMER_APP_REVOCATION_EVENT;
         this.consumerKey = consumerKey;
-        this.revocationTime = (long) properties.get("revocationTime");
-        this.tenantDomain = properties.get(NotificationConstants.ORGANIZATION).toString();
     }
 
     public String getConsumerKey() {
@@ -62,7 +59,7 @@ public class InternalTokenRevocationConsumerKeyEvent extends Event {
     @Override
     public String toString() {
 
-        return "TokenRevocationEvent{" +
+        return "ConsumerAppRevocationEvent{" +
                 "eventId='" + eventId + '\'' +
                 ", type='" + type + '\'' +
                 ", consumerKey='" + consumerKey + '\'' +

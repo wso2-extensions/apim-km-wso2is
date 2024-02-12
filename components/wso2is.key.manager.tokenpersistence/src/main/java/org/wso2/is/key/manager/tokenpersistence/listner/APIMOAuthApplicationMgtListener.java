@@ -26,8 +26,8 @@ import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
-import org.wso2.is.notification.event.InternalTokenRevocationConsumerKeyEvent;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.is.notification.event.ConsumerAppRevocationEvent;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
 import java.util.Calendar;
@@ -72,20 +72,26 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
 
         if (!OAuth2Util.isTokenPersistenceEnabled()) {
             long revocationTime = Calendar.getInstance().getTimeInMillis();
-            String organization = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
-            properties.put(PersistenceConstants.REVOCATION_TIME, revocationTime);
-            properties.put(PersistenceConstants.ORGANIZATION, organization);
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
             try {
                 org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder.getInstance()
                         .getInvalidTokenPersistenceService()
-                        .revokeTokensByConsumerKeyEvent(consumerKey, revocationTime, organization, 0);
+                        .revokeTokensByConsumerKeyEvent(consumerKey, revocationTime, tenantDomain, 0);
             } catch (IdentityOAuth2Exception e) {
                 log.error("Error while persisting revoking access tokens by consumer key event.", e);
                 throw new IdentityOAuthAdminException(e.getMessage(), e);
             }
-            InternalTokenRevocationConsumerKeyEvent internalTokenRevocationConsumerKeyEvent
-                    = new InternalTokenRevocationConsumerKeyEvent(consumerKey, properties);
-            ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationConsumerKeyEvent);
+            ConsumerAppRevocationEvent consumerAppRevocationEvent = new ConsumerAppRevocationEvent(consumerKey);
+            try {
+                int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                        .getTenantId(tenantDomain);
+                consumerAppRevocationEvent.setTenantDomain(tenantDomain);
+                consumerAppRevocationEvent.setTenantId(tenantId);
+            } catch (UserStoreException e) {
+                log.error("Error while finding tenant id", e);
+            }
+            consumerAppRevocationEvent.setRevocationTime(revocationTime);
+            ServiceReferenceHolder.getInstance().getEventSender().publishEvent(consumerAppRevocationEvent);
         }
     }
 }
