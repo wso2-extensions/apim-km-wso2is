@@ -39,7 +39,7 @@ import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.RefreshGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.is.notification.event.InternalTokenRevocationUserEvent;
+import org.wso2.is.notification.event.SubjectEntityRevocationEvent;
 import org.wso2.is.notification.event.TokenRevocationEvent;
 import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
@@ -207,10 +207,15 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
     public void onPostTokenRevocationBySystem(String userUUID, Map<String, Object> params)
             throws IdentityOAuth2Exception {
 
-        InternalTokenRevocationUserEvent internalTokenRevocationUserEvent =
-                new InternalTokenRevocationUserEvent(userUUID, params.get(NotificationConstants.ENTITY_TYPE).toString(),
-                        params);
-        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(internalTokenRevocationUserEvent);
+        SubjectEntityRevocationEvent subjectEntityRevocationEvent =
+                new SubjectEntityRevocationEvent(userUUID, params.get(NotificationConstants.ENTITY_TYPE).toString());
+        long revocationTime = (long) params.get(NotificationConstants.REVOCATION_TIME);
+        String tenantDomain = (String) params.get(NotificationConstants.TENANT_DOMAIN);
+        int tenantId = (int) params.get(NotificationConstants.TENANT_ID);
+        subjectEntityRevocationEvent.setRevocationTime(revocationTime);
+        subjectEntityRevocationEvent.setTenantDomain(tenantDomain);
+        subjectEntityRevocationEvent.setTenantId(tenantId);
+        ServiceReferenceHolder.getInstance().getEventSender().publishEvent(subjectEntityRevocationEvent);
     }
 
     @Override

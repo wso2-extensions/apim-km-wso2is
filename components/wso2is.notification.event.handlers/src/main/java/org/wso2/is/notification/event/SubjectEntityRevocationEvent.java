@@ -20,45 +20,41 @@ package org.wso2.is.notification.event;
 
 import org.wso2.is.notification.NotificationConstants;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**
- * Internal Token Revocation User Event Model
+ * Subject Entity Revocation Event Model.
  */
-public class InternalTokenRevocationUserEvent extends Event {
+public class SubjectEntityRevocationEvent extends Event {
     private static final long serialVersionUID = 1L;
 
-    private String subjectId;
-    private String subjectIdType;
+    private String entityId;
+    private String entityType;
     private long revocationTime;
 
-    public InternalTokenRevocationUserEvent(String subjectId, String subjectIdType, Map<String, Object> params) {
+    public SubjectEntityRevocationEvent(String entityId, String entityType) {
 
         this.eventId = UUID.randomUUID().toString();
         this.timeStamp = System.currentTimeMillis();
-        this.type = NotificationConstants.INTERNAL_TOKEN_REVOCATION_USER_EVENT;
-        this.tenantId = (int) params.get(NotificationConstants.TENANT_ID);
-        this.subjectId = subjectId;
-        this.subjectIdType = subjectIdType;
-        this.revocationTime = (long) params.get(NotificationConstants.REVOCATION_TIME);
-        this.tenantDomain = params.get(NotificationConstants.ORGANIZATION).toString();
+        this.type = NotificationConstants.SUBJECT_ENTITY_REVOCATION_EVENT;
+        this.entityId = entityId;
+        this.entityType = entityType;
     }
 
-    public String getSubjectId() {
-        return subjectId;
+    public String getEntityId() {
+        return entityId;
     }
 
-    public void setSubjectId(String subjectId) {
-        this.subjectId = subjectId;
+    public void setEntityId(String entityId) {
+        this.entityId = entityId;
     }
 
-    public String getSubjectIdType() {
-        return subjectIdType;
+    public String getEntityType() {
+        return entityType;
     }
 
-    public void setSubjectIdType(String subjectIdType) {
-        this.subjectIdType = subjectIdType;
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
     }
 
     public long getRevocationTime() {
@@ -73,14 +69,14 @@ public class InternalTokenRevocationUserEvent extends Event {
     @Override
     public String toString() {
 
-        return "InternalTokenRevocationUserEvent{" +
+        return "SubjectEntityRevocationEvent{" +
                 ", eventId='" + eventId + '\'' +
                 ", tenantId=" + tenantId + '\'' +
                 ", timeStamp=" + timeStamp + '\'' +
                 ", tenantDomain='" + tenantDomain + '\'' +
                 ", type='" + type + '\'' +
-                ", subjectId='" + subjectId + '\'' +
-                ", subjectIdType='" + subjectIdType + '\'' +
+                ", entityId='" + entityId + '\'' +
+                ", entityType='" + entityType + '\'' +
                 ", revocationTime=" + revocationTime + '\'' +
                 '}';
     }

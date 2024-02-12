@@ -138,19 +138,19 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
         revokeMigratedTokenOfUser(username, userStoreManager);
         String userUUID = ((AbstractUserStoreManager) userStoreManager).getUserIDFromUserName(username);
         int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
-        String organization = IdentityTenantUtil.getTenantDomain(tenantId);
+        String tenantDomain = IdentityTenantUtil.getTenantDomain(tenantId);
         long revocationTime = Calendar.getInstance().getTimeInMillis();
         Map<String, Object> params = new HashMap<>();
         params.put(PersistenceConstants.ENTITY_ID, userUUID);
         params.put(PersistenceConstants.ENTITY_TYPE, PersistenceConstants.ENTITY_ID_TYPE_USER_ID);
         params.put(PersistenceConstants.REVOCATION_TIME, revocationTime);
-        params.put(PersistenceConstants.ORGANIZATION, organization);
+        params.put(PersistenceConstants.TENANT_DOMAIN, tenantDomain);
         params.put(PersistenceConstants.TENANT_ID, tenantId);
         params.put(PersistenceConstants.USERNAME, username);
         OAuthUtil.invokePreRevocationBySystemListeners(userUUID, params);
         try {
             ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService().revokeTokensByUserEvent(userUUID,
-                    PersistenceConstants.ENTITY_ID_TYPE_USER_ID, revocationTime, organization, 0);
+                    PersistenceConstants.ENTITY_ID_TYPE_USER_ID, revocationTime, tenantDomain, 0);
             revokeAppTokensOfUser(params);
         } catch (IdentityOAuth2Exception e) {
             log.error("Error while persisting revoke rules for tokens by user event.", e);
@@ -168,7 +168,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
     private void revokeAppTokensOfUser(Map<String, Object> params) {
 
         int tenantId = (int) params.get(PersistenceConstants.TENANT_ID);
-        String tenantDomain = params.get(PersistenceConstants.ORGANIZATION).toString();
+        String tenantDomain = params.get(PersistenceConstants.TENANT_DOMAIN).toString();
         long revocationTime = (long) params.get(PersistenceConstants.REVOCATION_TIME);
         // Get client ids for the apps owned by user since the 'sub' claim for these are the consumer key.
         // The app tokens for those consumer keys should also be revoked.
@@ -183,7 +183,7 @@ public class InMemoryOAuth2RevocationProcessor implements OAuth2RevocationProces
                 revokeAppTokenParams.put(PersistenceConstants.ENTITY_TYPE,
                         PersistenceConstants.ENTITY_ID_TYPE_CLIENT_ID);
                 revokeAppTokenParams.put(PersistenceConstants.REVOCATION_TIME, revocationTime);
-                revokeAppTokenParams.put(PersistenceConstants.ORGANIZATION, tenantDomain);
+                revokeAppTokenParams.put(PersistenceConstants.TENANT_DOMAIN, tenantDomain);
                 revokeAppTokenParams.put(PersistenceConstants.TENANT_ID, tenantId);
                 OAuthUtil.invokePreRevocationBySystemListeners(consumerKey, revokeAppTokenParams);
                 ServiceReferenceHolder.getInstance().getInvalidTokenPersistenceService()
