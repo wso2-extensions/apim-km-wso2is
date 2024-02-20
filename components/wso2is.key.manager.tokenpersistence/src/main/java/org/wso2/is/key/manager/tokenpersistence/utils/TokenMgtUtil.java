@@ -200,8 +200,7 @@ public class TokenMgtUtil {
                 && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED);
         authenticatedUser = resolveAuthenticatedUserFromEntityId((String) claimsSet.getClaim(OAuth2Constants.ENTITY_ID),
                 consumerAppTenantDomain, isFederated, claimsSet.getSubject());
-        if (claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null
-                && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED)) {
+        if (isFederated) {
             if (authenticatedUser == null) {
                 authenticatedUser =
                         createFederatedAuthenticatedUser((String) claimsSet.getClaim(OAuth2Constants.ENTITY_ID));
