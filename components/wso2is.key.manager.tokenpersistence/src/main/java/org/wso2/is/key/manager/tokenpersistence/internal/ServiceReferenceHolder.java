@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAOImpl;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence;
 import org.wso2.is.key.manager.tokenpersistence.model.InvalidTokenPersistenceService;
+import org.wso2.is.notification.NotificationEventSenderService;
 
 /**
  * Holder class to hold service references used in non-token persistence.
@@ -32,6 +33,7 @@ public class ServiceReferenceHolder {
     private RealmService realmService;
     private InvalidTokenPersistenceService tokenPersistenceService;
     private AccessTokenDAO migratedAccessTokenDAO;
+    private NotificationEventSenderService eventSenderService;
 
     private ServiceReferenceHolder() {
 
@@ -77,5 +79,15 @@ public class ServiceReferenceHolder {
     public void setMigratedAccessTokenDAO(AccessTokenDAO migratedAccessTokenDAO) {
 
         this.migratedAccessTokenDAO = migratedAccessTokenDAO;
+    }
+
+    public NotificationEventSenderService getEventSenderService() {
+
+        return eventSenderService;
+    }
+
+    public void setEventSenderService(NotificationEventSenderService eventSenderService) {
+
+        this.eventSenderService = eventSenderService;
     }
 }

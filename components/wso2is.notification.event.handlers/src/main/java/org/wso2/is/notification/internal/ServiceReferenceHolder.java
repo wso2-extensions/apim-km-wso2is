@@ -2,7 +2,7 @@ package org.wso2.is.notification.internal;
 
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import org.wso2.is.notification.EventSender;
+import org.wso2.is.notification.NotificationEventSenderService;
 
 /**
  * Holder class to hold service references used in notification.
@@ -12,7 +12,7 @@ public class ServiceReferenceHolder {
     private static final ServiceReferenceHolder instance = new ServiceReferenceHolder();
     private RealmService realmService;
     private ConfigurationContextService contextService;
-    private EventSender eventSender;
+    private NotificationEventSenderService eventSender;
 
     public static ServiceReferenceHolder getInstance() {
 
@@ -40,11 +40,11 @@ public class ServiceReferenceHolder {
         this.contextService = contextService;
     }
 
-    public EventSender getEventSender() {
+    public NotificationEventSenderService getEventSender() {
         return eventSender;
     }
 
-    public void setEventSender(EventSender eventSender) {
+    public void setEventSender(NotificationEventSenderService eventSender) {
         this.eventSender = eventSender;
     }
 }

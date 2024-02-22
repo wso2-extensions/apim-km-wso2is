@@ -27,8 +27,8 @@ import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.notification.event.ConsumerAppRevocationEvent;
-import org.wso2.is.notification.internal.ServiceReferenceHolder;
 
 import java.util.Calendar;
 import java.util.Properties;
@@ -91,7 +91,7 @@ public class APIMOAuthApplicationMgtListener implements OAuthApplicationMgtListe
                 log.error("Error while finding tenant id", e);
             }
             consumerAppRevocationEvent.setRevocationTime(revocationTime);
-            ServiceReferenceHolder.getInstance().getEventSender().publishEvent(consumerAppRevocationEvent);
+            ServiceReferenceHolder.getInstance().getEventSenderService().publishEvent(consumerAppRevocationEvent);
         }
     }
 }
