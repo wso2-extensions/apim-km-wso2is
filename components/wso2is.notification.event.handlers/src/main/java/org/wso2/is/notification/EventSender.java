@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Utility class to push events.
  */
-public class EventSender {
+public class EventSender implements NotificationEventSenderService {
 
     private static final Log log = LogFactory.getLog(EventSender.class);
     private String notificationEndpoint;
@@ -68,6 +68,7 @@ public class EventSender {
         this.headers = headers;
     }
 
+    @Override
     public void publishEvent(Event event) {
 
         EventRunner eventRunner =

@@ -39,6 +39,7 @@ import org.wso2.is.key.manager.tokenpersistence.listner.APIMOAuthApplicationMgtL
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryOAuth2RevocationProcessor;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryRefreshTokenGrantProcessor;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryTokenProvider;
+import org.wso2.is.notification.NotificationEventSenderService;
 
 /**
  * KeyManager persistence component to handle non-token persistence.
@@ -109,5 +110,24 @@ public class TokenPersistenceServiceComponent {
     protected void unsetIdentityCoreInitializedEventService(IdentityCoreInitializedEvent identityCoreInitializedEvent) {
     /* reference IdentityCoreInitializedEvent service to guarantee that this component will wait until identity core
          is started */
+    }
+
+    @Reference(
+            name = "wso2.is.notification.service",
+            service = org.wso2.is.notification.NotificationEventSenderService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetNotificationEventSenderService")
+    protected void setNotificationEventSenderService(NotificationEventSenderService eventSenderService) {
+
+        if (eventSenderService != null && log.isDebugEnabled()) {
+            log.debug("Notification Event Sender Service initialized");
+        }
+        ServiceReferenceHolder.getInstance().setEventSenderService(eventSenderService);
+    }
+
+    protected void unsetNotificationEventSenderService(NotificationEventSenderService eventSenderService) {
+
+        ServiceReferenceHolder.getInstance().setEventSenderService(null);
     }
 }
