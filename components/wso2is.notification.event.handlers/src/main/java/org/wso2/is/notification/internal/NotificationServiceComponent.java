@@ -17,6 +17,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
 import org.wso2.is.notification.APIMTokenExchangeAuditLogger;
 import org.wso2.is.notification.ApimOauthEventInterceptor;
+import org.wso2.is.notification.NotificationEventSenderService;
 
 /**
  * Activation class for notification
@@ -37,6 +38,10 @@ public class NotificationServiceComponent {
                 bundleContext.registerService(OAuthEventInterceptor.class, new ApimOauthEventInterceptor(), null);
         auditLoggerServiceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new APIMTokenExchangeAuditLogger(), null);
+        if (ServiceReferenceHolder.getInstance().getEventSender() != null) {
+            bundleContext.registerService(NotificationEventSenderService.class,
+                    ServiceReferenceHolder.getInstance().getEventSender(), null);
+        }
     }
 
     @Reference(
