@@ -56,6 +56,7 @@
                             org.apache.commons.codec.digest;version="${commons-codec.wso2.osgi.version.range}",
                             org.slf4j,
                             org.json.simple.*,
+                            org.wso2.orbit.com.nimbusds.*;version="${import.version.nimbus}",
                             org.osgi.framework.*;version="${imp.package.version.osgi.framework}",
                             org.osgi.service.*;version="${imp.package.version.osgi.service}",
                             org.apache.commons.logging.*; version="${import.package.version.commons.logging}",
@@ -118,6 +119,10 @@
                     <artifactId>log4j-over-slf4j</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.orbit.com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
