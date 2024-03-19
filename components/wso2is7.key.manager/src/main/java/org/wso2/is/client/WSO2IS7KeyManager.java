@@ -85,6 +85,8 @@ import java.util.Set;
 /**
  * This class provides the implementation to use WSO2 Identity Server 7 for managing OAuth clients and Tokens
  * needed by WSO2 API Manager.
+ * NOTE: Some of the methods (stated in comments above the respective method definitions) are copied from <a href="https://raw.githubusercontent.com/wso2/carbon-apimgt/v9.29.35/components/apimgt/org.wso2.carbon.apimgt.impl/src/main/java/org/wso2/carbon/apimgt/impl/AMDefaultKeyManagerImpl.java">AMDefaultKeyManagerImpl v9.29.35</a>
+ * to avoid being dependent on carbon-apimgt.
  */
 public class WSO2IS7KeyManager extends AbstractKeyManager {
 
