@@ -73,7 +73,7 @@ public class KeyManagerCoreServiceComponent {
             ServiceReferenceHolder.setRestrictUnassignedScopes(restrictUnassignedScopes);
             boolean restrictApimRestApiScopes = Boolean.parseBoolean(System.getProperty(
                     RESTRICT_APIM_REST_API_SCOPES));
-            ServiceReferenceHolder.setRestrictApimRestApiScopes(restrictProductRestApiScopes);
+            ServiceReferenceHolder.setRestrictApimRestApiScopes(restrictApimRestApiScopes);
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
