@@ -332,6 +332,11 @@
                 <artifactId>feign-slf4j</artifactId>
                 <version>${openfeign.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.charon</groupId>
+                <artifactId>org.wso2.charon3.core</artifactId>
+                <version>${charon3.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -462,5 +467,6 @@
         <powermock.version>1.7.4</powermock.version>
         <mockito.all.version>1.10.19</mockito.all.version>
         <openfeign.version>11.0</openfeign.version>
+        <charon3.version>4.0.18</charon3.version>
     </properties>
 </project>

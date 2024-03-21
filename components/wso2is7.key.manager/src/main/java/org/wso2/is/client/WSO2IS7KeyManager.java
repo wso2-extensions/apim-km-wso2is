@@ -67,8 +67,12 @@ import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+
 import org.wso2.is.client.model.WSO2IS7ClientInfo;
 import org.wso2.is.client.model.WSO2IS7DCRClient;
+import org.wso2.is.client.model.WSO2IS7SCIMMeClient;
+import org.wso2.is.client.utils.AttributeMapper;
+import org.wso2.is.client.utils.ClaimMappingReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,6 +83,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -92,11 +97,17 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
     private static final Log log = LogFactory.getLog(WSO2IS7KeyManager.class);
     private static final String GRANT_TYPE_VALUE = "client_credentials";
+    private static final String CLAIM_MAPPINGS_CONFIG_PARAMETER = "claim_mappings";
+    private static final String REMOTE_CLAIM = "remoteClaim";
+    private static final String LOCAL_CLAIM = "localClaim";
 
     private WSO2IS7DCRClient wso2IS7DCRClient;
     private IntrospectionClient introspectionClient;
     private ScopeClient scopeClient;
     private AuthClient authClient;
+    private WSO2IS7SCIMMeClient wso2IS7SCIMMeClient;
+    private Map<String, String> claimMappings;
+
 
     /* Copied from AMDefaultKeyManagerImpl. WSO2IS7ClientInfo is used instead of ClientInfo. */
     @Override
@@ -672,6 +683,15 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .concat(getTenantAwareContext().trim()).concat("/oauth2/introspect");
         }
 
+        String userInfoEndpoint;
+        if (configuration.getParameter(APIConstants.KeyManager.USERINFO_ENDPOINT) != null) {
+            userInfoEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.USERINFO_ENDPOINT);
+        } else {
+            userInfoEndpoint = keyManagerServiceUrl.split("/" + APIConstants.SERVICES_URL_RELATIVE_PATH)[0]
+                    .concat(getTenantAwareContext().trim()).concat
+                            (APIConstants.KeyManager.KEY_MANAGER_OPERATIONS_USERINFO_ENDPOINT);
+        }
+
         wso2IS7DCRClient = Feign.builder()
                 .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
                 .encoder(new GsonEncoder())
@@ -710,6 +730,16 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .errorDecoder(new KMClientErrorDecoder())
                 .encoder(new FormEncoder())
                 .target(AuthClient.class, tokenEndpoint);
+
+        wso2IS7SCIMMeClient = Feign.builder()
+                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
+                .encoder(new GsonEncoder())
+                .decoder(new GsonDecoder())
+                .logger(new Slf4jLogger())
+                .errorDecoder(new KMClientErrorDecoder())
+                .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
+
+        claimMappings = ClaimMappingReader.loadClaimMappings();
     }
 
     @Override
@@ -1111,6 +1141,58 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         } catch (MalformedURLException e) {
             log.error("Exception While resolving KeyManager Server URL or Port " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Map<String, String> getUserClaims(String username, Map<String, Object> properties)
+            throws APIManagementException {
+
+        Map<String, String> userClaims = new HashMap<>();
+        if (properties.containsKey(APIConstants.KeyManager.ACCESS_TOKEN)) {
+            String accessToken = properties.get(APIConstants.KeyManager.ACCESS_TOKEN).toString();
+            try {
+                JsonObject scimUserObjectString = wso2IS7SCIMMeClient.getMe(accessToken);
+                Map<String, String> claims = AttributeMapper.getUserClaims(scimUserObjectString.toString());
+                Map<String, String> claimMappings = getClaimMappings();
+                userClaims = getMappedAttributes(claims, claimMappings);
+            } catch (KeyManagerClientException e) {
+                handleException("Error while getting user info", e);
+            }
+        }
+        return userClaims;
+    }
+
+    private Map<String, String> getClaimMappings() {
+        Map<String, String> claimMappings = this.claimMappings;
+
+        // Add configured claim mappings (overwrite if present).
+        List<Map<String, String>> configuredClaimMappings =
+                (List<Map<String, String>>) this.configuration.getParameter(CLAIM_MAPPINGS_CONFIG_PARAMETER);
+        for (Map<String, String> claimMapping : configuredClaimMappings) {
+            String remoteClaim = claimMapping.get(REMOTE_CLAIM);
+            String localClaim = claimMapping.get(LOCAL_CLAIM);
+            claimMappings.put(remoteClaim, localClaim);
+        }
+
+        return claimMappings;
+    }
+
+    private Map<String, String> getMappedAttributes(Map<String, String> claims, Map<String, String> claimMappings) {
+        Map<String, String> mappedAttributes = new HashMap<>();
+        for (Map.Entry<String, String> claim : claims.entrySet()) {
+            String scim2Claim = claim.getKey();
+            String localClaim = claimMappings.get(scim2Claim);
+            if (localClaim != null) {
+                mappedAttributes.put(localClaim, claim.getValue());
+            }
+        }
+        return mappedAttributes;
+    }
+
+    @Override
+    public void revokeOneTimeToken(String token, String consumerKey) {
+
+        // Implementation is not applicable.
     }
 
     /* Copied from AMDefaultKeyManagerImpl. */
