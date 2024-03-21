@@ -32,6 +32,7 @@ public class WSO2IS7KeyManagerConstants {
     public static final String PKCE_MANDATORY = "ext_pkce_mandatory";
     public static final String PKCE_SUPPORT_PLAIN = "ext_pkce_support_plain";
     public static final String PUBLIC_CLIENT = "ext_public_client";
+    public static final String REFRESH_TOKEN_TYPE = "Refresh";
 
     private WSO2IS7KeyManagerConstants() {
         // Prevents instantiation.

@@ -503,7 +503,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             IntrospectInfo introspectInfo = introspectionClient.introspect(accessToken);
             tokenInfo.setAccessToken(accessToken);
             boolean isActive = introspectInfo.isActive();
-            if (!isActive) {
+            if (!isActive || WSO2IS7KeyManagerConstants.REFRESH_TOKEN_TYPE.equalsIgnoreCase(
+                    introspectInfo.getTokenType())) {
                 tokenInfo.setTokenValid(false);
                 tokenInfo.setErrorcode(APIConstants.KeyValidationStatus.API_AUTH_INVALID_CREDENTIALS);
                 return tokenInfo;
