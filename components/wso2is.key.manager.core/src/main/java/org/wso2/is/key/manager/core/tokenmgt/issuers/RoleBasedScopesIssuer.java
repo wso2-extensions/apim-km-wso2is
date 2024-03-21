@@ -298,12 +298,17 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         List<String> scopes = new ArrayList<>();
         if (oAuthAuthzReqMessageContext.getApprovedScope() != null) {
             requestedScopes = new ArrayList<>(Arrays.asList(oAuthAuthzReqMessageContext.getApprovedScope()));
-            for (String scope : requestedScopes) {
-                // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let them pass
-                // to the final scope list returned from RoleBasedScopeIssuer. This is because RoleBasedScopeIssuer is
-                // not responsible for validating Product REST API scopes. Those will be handled by SystemScopeIssuer.
-                if (checkForProductRestAPIScopes(scope)) {
-                    scopes.add(scope);
+            boolean isRestrictApimRestApiScopes = ServiceReferenceHolder.isRestrictApimRestApiScopes();
+            boolean isRestrictUnassignedScopes = ServiceReferenceHolder.isRestrictUnassignedScopes();
+            if (!(isRestrictUnassignedScopes && isRestrictApimRestApiScopes)) {
+                for (String scope : requestedScopes) {
+                    // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let
+                    // them pass to the final scope list returned from RoleBasedScopeIssuer. This is because
+                    // RoleBasedScopeIssuer is not responsible for validating Product REST API scopes. Those will be
+                    // handled by the SystemScopeIssuer.
+                    if (checkForProductRestAPIScopes(scope)) {
+                        scopes.add(scope);
+                    }
                 }
             }
             requestedScopes.removeAll(scopes);
@@ -366,12 +371,17 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         List<String> authorizedScopes;
         List<String> scopes = new ArrayList<>();
         List<String> requestedScopes = new ArrayList<>(Arrays.asList(tokReqMsgCtx.getScope()));
-        for (String scope : requestedScopes) {
-            // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let them pass to
-            // the final scope list returned from RoleBasedScopeIssuer. This is because RoleBasedScopeIssuer is not
-            // responsible for validating Product REST API scopes. Those will be handled by the SystemScopeIssuer.
-            if (checkForProductRestAPIScopes(scope)) {
-                scopes.add(scope);
+        boolean isRestrictApimRestApiScopes = ServiceReferenceHolder.isRestrictApimRestApiScopes();
+        boolean isRestrictUnassignedScopes = ServiceReferenceHolder.isRestrictUnassignedScopes();
+        if (!(isRestrictUnassignedScopes && isRestrictApimRestApiScopes)) {
+            for (String scope : requestedScopes) {
+                // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let
+                // them pass to the final scope list returned from RoleBasedScopeIssuer. This is because
+                // RoleBasedScopeIssuer is not responsible for validating Product REST API scopes. Those will be
+                // handled by SystemScopeIssuer.
+                if (checkForProductRestAPIScopes(scope)) {
+                    scopes.add(scope);
+                }
             }
         }
         requestedScopes.removeAll(scopes);

@@ -52,6 +52,7 @@ public class KeyManagerCoreServiceComponent {
 
     private static final Log log = LogFactory.getLog(KeyManagerCoreServiceComponent.class);
     private static final String RESTRICT_UNASSIGNED_SCOPES = "restrict.unassigned.scopes";
+    private static final String RESTRICT_APIM_REST_API_SCOPES = "restrict.apim.restapi.scopes";
 
     @Activate
     protected void activate(ComponentContext cxt) {
@@ -70,6 +71,9 @@ public class KeyManagerCoreServiceComponent {
 
             boolean restrictUnassignedScopes = Boolean.parseBoolean(System.getProperty(RESTRICT_UNASSIGNED_SCOPES));
             ServiceReferenceHolder.setRestrictUnassignedScopes(restrictUnassignedScopes);
+            boolean restrictApimRestApiScopes = Boolean.parseBoolean(System.getProperty(
+                    RESTRICT_APIM_REST_API_SCOPES));
+            ServiceReferenceHolder.setRestrictApimRestApiScopes(restrictProductRestApiScopes);
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
