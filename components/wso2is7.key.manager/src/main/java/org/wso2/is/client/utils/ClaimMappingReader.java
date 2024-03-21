@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2024, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
  *
- * WSO2 Inc. licenses this file to you under the Apache License,
+ * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
@@ -106,96 +106,5 @@ public class ClaimMappingReader {
         }
         return claimMappings;
     }
-
-
-    // TODO Implement AttributeSchema Mapping
-//    public static Map<String, List<AttributeSchema>> getSchemasAndAttributes() throws APIManagementException {
-//        Map<String, List<AttributeSchema>> schemasAndAttributes = new HashMap<>();
-//        try {
-//            InputStream inputStream = ClaimMappingReader.class.getClassLoader()
-//                    .getResourceAsStream(CLAIM_CONFIG_XML_FILE);
-//            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-//            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-//            Document document = documentBuilder.parse(inputStream);
-//            document.getDocumentElement().normalize();
-//
-//            // Traverse through <Dialect> nodes
-//            NodeList dialectNodes = document.getElementsByTagName(DIALECT_XML_TAG_NAME);
-//            for (int i = 0; i < dialectNodes.getLength(); i++) {
-//                Node dialectNode = dialectNodes.item(i);
-//                if (dialectNode.getNodeType() == Node.ELEMENT_NODE) {
-//                    Element dialectElement = (Element) dialectNode;
-//                    String dialectURI = dialectElement.getAttribute(DIALECT_URI_ATTRIBUTE_NAME);
-//                    if (dialectURI.equals(SCIM2_CORE_SCHEMA) || dialectURI.equals(SCIM2_USER_SCHEMA) ||
-//                            dialectURI.equals(SCIM2_ENTERPRISE_SCHEMA)) {
-//
-//                        List<AttributeSchema> attributeSchemas = new ArrayList<>();
-//
-//                        // Traverse through <Claim> nodes
-//                        NodeList claimNodes = dialectElement.getElementsByTagName(CLAIM_XML_TAG_NAME);
-//                        for (int j = 0; j < claimNodes.getLength(); j++) {
-//                            Node claimNode = claimNodes.item(j);
-//                            if (claimNode.getNodeType() == Node.ELEMENT_NODE) {
-//                                Element claimElement = (Element) claimNode;
-//                                String claimURI = null;
-//                                String mappedLocalClaim = null;
-//
-//                                if (claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME) != null &&
-//                                        claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME).item(0) != null) {
-//                                    claimURI = claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME).item(0)
-//                                            .getTextContent();
-//                                }
-//                                if (claimElement.getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME) != null &&
-//                                        claimElement.getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME)
-//                                                .item(0) != null) {
-//                                    mappedLocalClaim = claimElement
-//                                            .getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME)
-//                                            .item(0)
-//                                            .getTextContent();
-//                                }
-//
-//
-//                                String name = null;
-//                                if (claimElement.getElementsByTagName("AttributeID") != null &&
-//                                        claimElement.getElementsByTagName("AttributeID").item(0) != null) {
-//                                    name = claimElement.getElementsByTagName("AttributeID").item(0)
-//                                            .getTextContent();
-//                                }
-//                                SCIMDefinitions.DataType type = SCIMDefinitions.DataType.STRING;
-//                                boolean multiValued = false;
-//                                String description = null;
-//                                if (claimElement.getElementsByTagName("Description") != null &&
-//                                        claimElement.getElementsByTagName("Description").item(0) != null) {
-//                                    description = claimElement.getElementsByTagName("Description").item(0)
-//                                            .getTextContent();
-//                                }
-//                                boolean required = false;
-//                                boolean caseExact = false;
-//                                SCIMDefinitions.Mutability mutability = SCIMDefinitions.Mutability.READ_WRITE;
-//                                SCIMDefinitions.Returned returned = SCIMDefinitions.Returned.DEFAULT;
-//                                SCIMDefinitions.Uniqueness uniqueness = SCIMDefinitions.Uniqueness.NONE;
-//                                ArrayList<String> canonicalValues = new ArrayList<>();
-//                                ArrayList<SCIMDefinitions.ReferenceType> referenceTypes = new ArrayList<>();
-//                                ArrayList<AttributeSchema> subAttributes = new ArrayList<>();
-//
-//                                SCIMAttributeSchema scimAttributeSchema =
-//                                        SCIMAttributeSchema.createSCIMAttributeSchema(
-//                                                claimURI, name, type, multiValued, description, required, caseExact,
-//                                                mutability, returned, uniqueness, canonicalValues, referenceTypes,
-//                                                subAttributes);
-//
-//                                attributeSchemas.add(scimAttributeSchema);
-//                            }
-//                        }
-//
-//                        schemasAndAttributes.put(dialectURI, attributeSchemas);
-//                    }
-//                }
-//            }
-//        } catch (Exception e) {
-//            handleException("Error occurred while obtaining claim configs", e);
-//        }
-//        return schemasAndAttributes;
-//    }
 
 }
