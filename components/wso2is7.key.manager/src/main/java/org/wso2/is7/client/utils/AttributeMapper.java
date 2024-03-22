@@ -45,7 +45,8 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.handleException;
 
 /**
  * Contains methods rleated to SCIM attribute mapping.
- * Copied from <a href="https://raw.githubusercontent.com/wso2-extensions/identity-inbound-provisioning-scim2/master/components/org.wso2.carbon.identity.scim2.common/src/main/java/org/wso2/carbon/identity/scim2/common/utils/AttributeMapper.java">AttributeMapper</a>,
+ * Copied from
+ * https://raw.githubusercontent.com/wso2-extensions/identity-inbound-provisioning-scim2/master/components/org.wso2.carbon.identity.scim2.common/src/main/java/org/wso2/carbon/identity/scim2/common/utils/AttributeMapper.java
  * to avoid dependency on identity-inbound-provisioning-scim2 module.
  */
 public class AttributeMapper {
@@ -67,9 +68,9 @@ public class AttributeMapper {
         SCIMResourceTypeSchema schema = SCIMResourceSchemaManager.getInstance().getUserResourceSchema();
         Map<String, String> claims = new HashMap<>();
         try {
-            User user = (User) jsonDecoder.decode(scimUserObjectString, schema);
-            if (user != null) {
-                claims = getClaimsMap(user);
+            AbstractSCIMObject abstractSCIMObject = jsonDecoder.decode(scimUserObjectString, schema);
+            if (abstractSCIMObject instanceof User) {
+                claims = getClaimsMap(abstractSCIMObject);
             }
         } catch (CharonException | BadRequestException e) {
             handleException("Error while decoding the SCIM Object", e);

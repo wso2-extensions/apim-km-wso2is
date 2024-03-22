@@ -90,11 +90,11 @@ import java.util.Set;
 /**
  * This class provides the implementation to use WSO2 Identity Server 7 for managing OAuth clients and Tokens
  * needed by WSO2 API Manager.
- * NOTE: Some of the methods (stated in comments above the respective method definitions) are copied from <a href="https://raw.githubusercontent.com/wso2/carbon-apimgt/v9.29.35/components/apimgt/org.wso2.carbon.apimgt.impl/src/main/java/org/wso2/carbon/apimgt/impl/AMDefaultKeyManagerImpl.java">AMDefaultKeyManagerImpl v9.29.35</a>
+ * NOTE: Some of the methods (stated in comments above the respective method definitions) are copied from
+ * https://raw.githubusercontent.com/wso2/carbon-apimgt/v9.29.35/components/apimgt/org.wso2.carbon.apimgt.impl/src/main/java/org/wso2/carbon/apimgt/impl/AMDefaultKeyManagerImpl.java
  * to avoid being dependent on carbon-apimgt.
  */
 public class WSO2IS7KeyManager extends AbstractKeyManager {
-
     private static final Log log = LogFactory.getLog(WSO2IS7KeyManager.class);
     private static final String GRANT_TYPE_VALUE = "client_credentials";
     private static final String CLAIM_MAPPINGS_CONFIG_PARAMETER = "claim_mappings";
@@ -569,8 +569,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         //for the first time we set default time period.
         oAuthApplicationInfo.addParameter(ApplicationConstants.VALIDITY_PERIOD,
                 getConfigurationParamValue(APIConstants.IDENTITY_OAUTH2_FIELD_VALIDITY_PERIOD));
-
-        String userId = (String) oAuthApplicationInfo.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
 
         //check whether given consumer key and secret match or not. If it does not match throw an exception.
         WSO2IS7ClientInfo clientInfo;
