@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client.utils;
+package org.wso2.is7.client.utils;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;

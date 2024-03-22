@@ -24,13 +24,13 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>wso2is.key.manager.feature</artifactId>
+    <artifactId>wso2is7.key.manager.feature</artifactId>
     <name>WSO2IS Key Manager Feature</name>
     <packaging>pom</packaging>
     <dependencies>
         <dependency>
             <groupId>org.wso2.km.ext.wso2is</groupId>
-            <artifactId>wso2is.key.manager</artifactId>
+            <artifactId>wso2is7.key.manager</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -47,7 +47,7 @@
                             <goal>p2-feature-gen</goal>
                         </goals>
                         <configuration>
-                            <id>wso2is.key.manager</id>
+                            <id>wso2is7.key.manager</id>
                             <propertiesFile>../../etc/feature.properties</propertiesFile>
                             <adviceFile>
                                 <properties>
@@ -58,7 +58,7 @@
                                 </properties>
                             </adviceFile>
                             <bundles>
-                                <bundleDef>org.wso2.km.ext.wso2is:wso2is.key.manager:${project.version}</bundleDef>
+                                <bundleDef>org.wso2.km.ext.wso2is:wso2is7.key.manager:${project.version}</bundleDef>
                             </bundles>
                         </configuration>
                     </execution>

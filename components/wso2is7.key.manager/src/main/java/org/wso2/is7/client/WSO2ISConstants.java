@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.wso2.is.client;
+package org.wso2.is7.client;
 
 /**
  * This class will hold constants related to WSO2IS key manager implementation.

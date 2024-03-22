@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client;
+package org.wso2.is7.client;
 
 import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.apimgt.api.model.ConfigurationDto;

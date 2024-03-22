@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client;
+package org.wso2.is7.client;
 
 /**
  * Constants related to WSO2 Identity Server 7 key manager implementation.

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client;
+package org.wso2.is7.client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -68,11 +68,11 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import org.wso2.is.client.model.WSO2IS7ClientInfo;
-import org.wso2.is.client.model.WSO2IS7DCRClient;
-import org.wso2.is.client.model.WSO2IS7SCIMMeClient;
-import org.wso2.is.client.utils.AttributeMapper;
-import org.wso2.is.client.utils.ClaimMappingReader;
+import org.wso2.is7.client.model.WSO2IS7ClientInfo;
+import org.wso2.is7.client.model.WSO2IS7DCRClient;
+import org.wso2.is7.client.model.WSO2IS7SCIMMeClient;
+import org.wso2.is7.client.utils.AttributeMapper;
+import org.wso2.is7.client.utils.ClaimMappingReader;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client.internal;
+package org.wso2.is7.client.internal;
 
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -27,7 +27,7 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.keymgt.KeyManagerEventHandler;
 import org.wso2.carbon.apimgt.notification.NotificationEventService;
-import org.wso2.is.client.WSO2ISNotificationEventHandler;
+import org.wso2.is7.client.WSO2ISNotificationEventHandler;
 
 /**
  * Activation class for WSO2ISNotificationEventHandler

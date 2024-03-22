@@ -32,7 +32,7 @@
         <module>components/wso2is7.key.manager</module>
         <module>components/wso2is.key.manager.operations.endpoint</module>
         <module>components/wso2is.notification.event.handlers</module>
-        <module>features/wso2is.key.manager.feature</module>
+        <module>features/wso2is7.key.manager.feature</module>
         <module>features/wso2is.key.manager.operations.endpoint.feature</module>
         <module>features/wso2is.key.manager.notification.feature</module>
         <module>components/wso2is.key.manager.core</module>
@@ -143,23 +143,18 @@
                 <version>${carbon.apimgt.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>${gson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.wso2.carbon.apimgt</groupId>
                 <artifactId>org.wso2.carbon.apimgt.keymgt</artifactId>
                 <version>${carbon.apimgt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.km.ext.wso2is</groupId>
-                <artifactId>wso2is.key.manager</artifactId>
+                <artifactId>wso2is7.key.manager</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wso2.km.ext.wso2is</groupId>
-                <artifactId>wso2is.key.manager.feature</artifactId>
+                <artifactId>wso2is7.key.manager.feature</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -466,7 +461,7 @@
         <junit.version>4.12</junit.version>
         <powermock.version>1.7.4</powermock.version>
         <mockito.all.version>1.10.19</mockito.all.version>
-        <openfeign.version>11.0</openfeign.version>
+        <openfeign.version>13.2.1</openfeign.version>
         <charon3.version>4.0.18</charon3.version>
     </properties>
 </project>

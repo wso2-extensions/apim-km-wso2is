@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client.utils;
+package org.wso2.is7.client.utils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

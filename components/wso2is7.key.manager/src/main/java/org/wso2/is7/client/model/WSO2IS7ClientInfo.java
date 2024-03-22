@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client.model;
+package org.wso2.is7.client.model;
 
 import com.google.gson.annotations.SerializedName;
 

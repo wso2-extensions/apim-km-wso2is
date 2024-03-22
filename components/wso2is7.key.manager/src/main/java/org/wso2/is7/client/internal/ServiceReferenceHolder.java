@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is.client.internal;
+package org.wso2.is7.client.internal;
 
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.notification.NotificationEventService;

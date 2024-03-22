@@ -17,7 +17,7 @@
  * /
  */
 
-package org.wso2.is.client;
+package org.wso2.is7.client;
 
 import org.wso2.carbon.apimgt.notification.DefaultKeyManagerEventHandlerImpl;
 
