@@ -23,12 +23,15 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.handleException;
 
@@ -80,14 +83,12 @@ public class ClaimMappingReader {
                                 Element claimElement = (Element) claimNode;
                                 String claimURI = null;
                                 String mappedLocalClaim = null;
-                                if (claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME) != null &&
-                                        claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME).item(0) != null) {
+                                if (claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME).item(0) != null) {
                                     claimURI = claimElement.getElementsByTagName(CLAIM_URI_XML_TAG_NAME).item(0)
                                             .getTextContent();
                                 }
-                                if (claimElement.getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME) != null &&
-                                        claimElement.getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME)
-                                                .item(0) != null) {
+                                if (claimElement.getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME)
+                                        .item(0) != null) {
                                     mappedLocalClaim = claimElement
                                             .getElementsByTagName(MAPPED_LOCAL_CLAIM_XML_TAG_NAME)
                                             .item(0)
@@ -101,7 +102,7 @@ public class ClaimMappingReader {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (ParserConfigurationException | IOException | SAXException e) {
             handleException("Error occurred while obtaining claim configs", e);
         }
         return claimMappings;
