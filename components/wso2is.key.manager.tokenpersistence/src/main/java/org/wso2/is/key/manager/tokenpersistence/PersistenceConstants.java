@@ -35,6 +35,8 @@ public class PersistenceConstants {
         public static final String AUTHORIZATION_PARTY = "azp";
         public static final String IS_CONSENTED = "is_consented";
         public static final String TOKEN_TYPE_ELEM = "token_type";
+        public static final String APP_DOMAIN = "app_td";
+        public static final String USER_DOMAIN = "user_td";
     }
     public static final int SECONDS_TO_MILLISECONDS_FACTOR = 1000;
     public static final String PREV_ACCESS_TOKEN = "previousAccessToken";
