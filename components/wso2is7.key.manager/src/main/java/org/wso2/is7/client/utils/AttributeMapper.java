@@ -79,10 +79,11 @@ public class AttributeMapper {
     }
 
     /**
-     * Return claims as a map of <ClaimUri (which is mapped to SCIM attribute uri),ClaimValue>.
+     * Return claims as a map of ClaimUri (which is mapped to SCIM attribute uri),ClaimValue.
      *
      * @param scimObject SCIM object.
      * @return A map of claims.
+     * @throws APIManagementException If an error occurs while getting claims.
      */
     public static Map<String, String> getClaimsMap(AbstractSCIMObject scimObject) throws APIManagementException {
         Map<String, String> claimsMap = new HashMap<>();

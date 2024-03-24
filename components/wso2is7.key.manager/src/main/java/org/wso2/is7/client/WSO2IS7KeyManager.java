@@ -552,7 +552,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      *
      * @param appInfoRequest oAuth application properties will contain in this object
      * @return OAuthApplicationInfo with created oAuth application details.
-     * @throws org.wso2.carbon.apimgt.api.APIManagementException
+     * @throws org.wso2.carbon.apimgt.api.APIManagementException    Failure to obtain application information,
+     *                                                              or mismatching consumer key and secret.
      */
     @Override
     public OAuthApplicationInfo mapOAuthApplication(OAuthAppRequest appInfoRequest)
