@@ -27,6 +27,7 @@ import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.ClaimManager;
@@ -120,8 +121,8 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
 
         if (!StringUtils.isEmpty(accessToken)) {
             try {
-                AccessTokenDO accessTokenDO = OAuth2Util.findAccessToken(accessToken, false);
-
+                AccessTokenDO accessTokenDO = OAuth2ServiceComponentHolder.getInstance().getTokenProvider()
+                        .getVerifiedAccessToken(accessToken, false);
                 // If the authenticated user is a federated user and not needed to bind federated user claims,
                 // no requirement to retrieve claims from local user store.
                 if (accessTokenDO.getAuthzUser() != null && accessTokenDO.getAuthzUser().isFederatedUser() &&

@@ -185,12 +185,17 @@ public class TokenMgtUtil {
 
         AuthenticatedUser authenticatedUser;
         String consumerKey = null;
-        String consumerAppTenantDomain = null;
+        String appTenantDomain = null;
+        String userTenantDomain = null;
         try {
             log.debug("Getting tenant domain from OAuth app.");
-            consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
-            if (consumerKey != null) {
-                consumerAppTenantDomain = OAuth2Util.getTenantDomainOfOauthApp(consumerKey);
+            if (claimsSet.getClaim(PersistenceConstants.JWTClaim.APP_DOMAIN) != null) {
+                appTenantDomain = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.APP_DOMAIN);
+            } else {
+                consumerKey = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
+                if (consumerKey != null) {
+                    appTenantDomain = OAuth2Util.getTenantDomainOfOauthApp(consumerKey);
+                }
             }
         } catch (InvalidOAuthClientException e) {
             throw new IdentityOAuth2Exception("Error while getting tenant domain from OAuth app with consumer key: "
@@ -198,8 +203,13 @@ public class TokenMgtUtil {
         }
         boolean isFederated = claimsSet.getClaim(OAuth2Constants.IS_FEDERATED) != null
                 && (boolean) claimsSet.getClaim(OAuth2Constants.IS_FEDERATED);
+        if (claimsSet.getClaim(PersistenceConstants.JWTClaim.USER_DOMAIN) != null) {
+            userTenantDomain = (String) claimsSet.getClaim(PersistenceConstants.JWTClaim.USER_DOMAIN);
+        } else {
+            userTenantDomain = TokenMgtUtil.getTenantDomain();
+        }
         authenticatedUser = resolveAuthenticatedUserFromEntityId((String) claimsSet.getClaim(OAuth2Constants.ENTITY_ID),
-                consumerAppTenantDomain, isFederated, claimsSet.getSubject());
+                appTenantDomain, userTenantDomain, isFederated, claimsSet.getSubject());
         if (isFederated) {
             if (authenticatedUser == null) {
                 authenticatedUser =
@@ -220,6 +230,7 @@ public class TokenMgtUtil {
      *
      * @param entityId Entity ID JWT Claim value which uniquely identifies the subject principle of the JWT. Eg: user
      * @param consumerAppTenantDomain  Tenant domain of the consumer app from the token
+     * @param userTenantDomain  Tenant domain of the user from the token
      * @param isFederated Federated user token
      * @param sub Subject claim
      * @return Username
@@ -227,6 +238,7 @@ public class TokenMgtUtil {
      */
     private static AuthenticatedUser resolveAuthenticatedUserFromEntityId(String entityId,
                                                                           String consumerAppTenantDomain,
+                                                                          String userTenantDomain,
                                                                           boolean isFederated,
                                                                           String sub)
             throws IdentityOAuth2Exception {
@@ -239,7 +251,6 @@ public class TokenMgtUtil {
         } else {
             // Assume entity ID is userId.
             try {
-                String userTenantDomain = TokenMgtUtil.getTenantDomain();
                 String userName = getUserNameFromUserID(entityId, userTenantDomain);
                 if (StringUtils.isBlank(userName)) {
                     // if service url is not a tenant aware url, we need to get the tenant domain from the token.
