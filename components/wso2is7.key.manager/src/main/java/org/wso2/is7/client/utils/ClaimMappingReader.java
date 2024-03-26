@@ -65,10 +65,6 @@ public class ClaimMappingReader {
     public static Map<String, String> loadClaimMappings() throws APIManagementException {
         Map<String, String> claimMappings = new HashMap<>();
         try {
-            // TODO remove
-//            SCIMUserSchemaExtensionBuilder.getInstance().buildUserSchemaExtension("/Users/senthuran/Desktop/post-alpha-testing/repo/apim-km-wso2is/components/wso2is7.key.manager/src/main/resources/scim2-schema-extension.config");
-//            org.wso2.is7.client.utils.SCIMUserSchemaExtensionBuilder.getInstance().buildUserSchemaExtension("/Users/senthuran/Desktop/post-alpha-testing/repo/apim-km-wso2is/components/wso2is7.key.manager/src/main/resources/scim2-schema-extension.config");
-
             String tempFilePath = createAndGetSchemaExtensionConfigTempFilePath();
             if (tempFilePath != null) {
                 SCIMUserSchemaExtensionBuilder.getInstance().buildUserSchemaExtension(tempFilePath);

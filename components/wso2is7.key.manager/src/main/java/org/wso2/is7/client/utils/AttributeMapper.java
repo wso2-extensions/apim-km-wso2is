@@ -66,32 +66,6 @@ public class AttributeMapper {
         JSONDecoder jsonDecoder = new JSONDecoder();
 
         SCIMResourceTypeSchema schema = SCIMResourceSchemaManager.getInstance().getUserResourceSchema();
-
-        // todo remove
-//        AttributeSchema extensionSchema = org.wso2.is7.client.utils.SCIMUserSchemaExtensionBuilder.getInstance()
-//                .getExtensionSchema();
-//        schema.setSchemasList(extensionSchema.getURI());
-
-
-        // TODO UNWANTED PART REMOVE [BEGIN]
-//        SCIMResourceTypeSchema newSchema = SCIMSchemaDefinitions.SCIM_USER_SCHEMA;
-//        AttributeSchema extensionSchema = org.wso2.is7.client.utils.SCIMUserSchemaExtensionBuilder.getInstance().getExtensionSchema();
-//
-//        ArrayList<String> schemas = new ArrayList<>(Arrays.asList(SCIMConstants.USER_CORE_SCHEMA_URI, SCIMConstants.ENTERPRISE_USER_SCHEMA_URI));
-//        List<AttributeSchema> attributeSchemas = new ArrayList<>(newSchema.getAttributesList());
-////        attributeSchemas.add(extensionSchema);
-//
-//        SCIMResourceTypeSchema schema = SCIMResourceTypeSchema.createSCIMResourceSchema(schemas, attributeSchemas.toArray(new AttributeSchema[0]));
-
-        // TODO UNWANTED PART REMOVE [END]
-
-//        ArrayList<AttributeSchema> list = new ArrayList<>();
-//        list.addAll(schema.getAttributesList());
-//        list.add(extensionSchema);
-//        schema.setAttributeList(list);
-
-        // TODO Add stuff to `schema`
-
         Map<String, String> claims = new HashMap<>();
         try {
             AbstractSCIMObject abstractSCIMObject = jsonDecoder.decode(scimUserObjectString, schema);
