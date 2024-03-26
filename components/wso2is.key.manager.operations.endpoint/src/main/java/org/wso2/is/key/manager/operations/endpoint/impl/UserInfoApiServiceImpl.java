@@ -40,11 +40,11 @@ import org.wso2.is.key.manager.operations.endpoint.UserInfoApiService;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.userinfo.util.UserInfoUtil;
 
-import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import javax.ws.rs.core.Response;
 
 import static org.apache.commons.collections.MapUtils.isNotEmpty;
 
