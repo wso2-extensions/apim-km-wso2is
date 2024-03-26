@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
-import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.ClaimMapping;
 import org.wso2.carbon.user.api.UserRealmService;
@@ -41,11 +40,11 @@ import org.wso2.is.key.manager.operations.endpoint.UserInfoApiService;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClaimRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.userinfo.util.UserInfoUtil;
 
+import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import javax.ws.rs.core.Response;
 
 import static org.apache.commons.collections.MapUtils.isNotEmpty;
 
