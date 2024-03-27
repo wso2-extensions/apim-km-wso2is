@@ -65,17 +65,16 @@ public class ClaimMappingReader {
     public static Map<String, String> loadClaimMappings() throws APIManagementException {
         Map<String, String> claimMappings = new HashMap<>();
         try {
-            String tempFilePath = createAndGetSchemaExtensionConfigTempFilePath();
-            if (tempFilePath != null) {
-                SCIMUserSchemaExtensionBuilder.getInstance().buildUserSchemaExtension(tempFilePath);
-                Files.delete(new File(tempFilePath).toPath());
-            }
 
-            InputStream inputStream = ClaimMappingReader.class.getClassLoader()
+            InputStream schemaExtensionConfigInputStream = ClaimMappingReader.class.getClassLoader()
+                    .getResourceAsStream(SCIM2_SCHEMA_EXTENSION_CONFIG_FILE);
+            SCIMUserSchemaExtensionBuilder.getInstance().buildUserSchemaExtension(schemaExtensionConfigInputStream);
+
+            InputStream claimConfigInputStream = ClaimMappingReader.class.getClassLoader()
                     .getResourceAsStream(CLAIM_CONFIG_XML_FILE);
             DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-            Document document = documentBuilder.parse(inputStream);
+            Document document = documentBuilder.parse(claimConfigInputStream);
             document.getDocumentElement().normalize();
 
             // Traverse through <Dialect> nodes
@@ -120,30 +119,6 @@ public class ClaimMappingReader {
             handleException("Error occurred while building user schema extension", e);
         }
         return claimMappings;
-    }
-
-    /**
-     * Creates a temporary file with the SCIM2 schema extension configuration, which is taken from the
-     * SCIM2_SCHEMA_EXTENSION_CONFIG_FILE resource file, and returns the path of the created temporary file.
-     * The temporary file will be created at 'WSO2_AM_HOME/tmp/scim2-schema-extension.config ... .tmp'.
-     * This has been done because, the {@link SCIMUserSchemaExtensionBuilder#buildUserSchemaExtension(String)} method
-     * relies on a file path to read the configuration, but we have the configuration as a resource.
-     * The created temporary file will be deleted after the configuration is read.
-     * @return  Path of the created temporary file.
-     */
-    private static String createAndGetSchemaExtensionConfigTempFilePath() {
-        String tempFilePath = null;
-        try (InputStream inputStream = ClaimMappingReader.class.getClassLoader()
-                .getResourceAsStream(SCIM2_SCHEMA_EXTENSION_CONFIG_FILE)) {
-            if (inputStream != null) {
-                File tempFile = File.createTempFile(SCIM2_SCHEMA_EXTENSION_CONFIG_FILE, ".tmp");
-                Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                tempFilePath = tempFile.getAbsolutePath();
-            }
-        } catch (IOException e) {
-            // Absorb
-        }
-        return tempFilePath;
     }
 
 }
