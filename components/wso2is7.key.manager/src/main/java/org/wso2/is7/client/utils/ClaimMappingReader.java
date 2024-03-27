@@ -23,6 +23,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.charon3.core.config.SCIMUserSchemaExtensionBuilder;
+import org.wso2.charon3.core.exceptions.CharonException;
+import org.wso2.charon3.core.exceptions.InternalErrorException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -41,6 +44,7 @@ import static org.wso2.carbon.apimgt.impl.utils.APIUtil.handleException;
 public class ClaimMappingReader {
 
     private static final String CLAIM_CONFIG_XML_FILE = "claim-config.xml";
+    private static final String SCIM2_SCHEMA_EXTENSION_CONFIG_FILE = "scim2-schema-extension.config";
     private static final String DIALECT_XML_TAG_NAME = "Dialect";
     private static final String DIALECT_URI_ATTRIBUTE_NAME = "dialectURI";
     private static final String CLAIM_XML_TAG_NAME = "Claim";
@@ -50,7 +54,6 @@ public class ClaimMappingReader {
     private static final String SCIM2_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User";
     private static final String SCIM2_ENTERPRISE_SCHEMA = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
 
-
     /**
      * Loads claim mappings from the claim-config.xml file.
      * @return                          A map of claim URI to mapped local claim.
@@ -59,12 +62,21 @@ public class ClaimMappingReader {
     public static Map<String, String> loadClaimMappings() throws APIManagementException {
         Map<String, String> claimMappings = new HashMap<>();
         try {
-            InputStream inputStream = ClaimMappingReader.class.getClassLoader()
-                    .getResourceAsStream(CLAIM_CONFIG_XML_FILE);
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-            Document document = documentBuilder.parse(inputStream);
-            document.getDocumentElement().normalize();
+
+            try (InputStream schemaExtensionConfigInputStream = ClaimMappingReader.class.getClassLoader()
+                    .getResourceAsStream(SCIM2_SCHEMA_EXTENSION_CONFIG_FILE)) {
+                SCIMUserSchemaExtensionBuilder.getInstance()
+                        .buildUserSchemaExtension(schemaExtensionConfigInputStream);
+            }
+
+            Document document;
+            try (InputStream claimConfigInputStream = ClaimMappingReader.class.getClassLoader()
+                    .getResourceAsStream(CLAIM_CONFIG_XML_FILE)) {
+                DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                document = documentBuilder.parse(claimConfigInputStream);
+                document.getDocumentElement().normalize();
+            }
 
             // Traverse through <Dialect> nodes
             NodeList dialectNodes = document.getElementsByTagName(DIALECT_XML_TAG_NAME);
@@ -104,6 +116,8 @@ public class ClaimMappingReader {
             }
         } catch (ParserConfigurationException | IOException | SAXException e) {
             handleException("Error occurred while obtaining claim configs", e);
+        } catch (CharonException | InternalErrorException e) {
+            handleException("Error occurred while building user schema extension", e);
         }
         return claimMappings;
     }

@@ -64,7 +64,7 @@ public class AttributeMapper {
      */
     public static Map<String, String> getUserClaims(String scimUserObjectString) throws APIManagementException {
         JSONDecoder jsonDecoder = new JSONDecoder();
-        // TODO: Currently only user resource schema is supported. Need to support other resource schemas as well.
+
         SCIMResourceTypeSchema schema = SCIMResourceSchemaManager.getInstance().getUserResourceSchema();
         Map<String, String> claims = new HashMap<>();
         try {
