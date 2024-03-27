@@ -28,11 +28,8 @@ import org.wso2.charon3.core.exceptions.CharonException;
 import org.wso2.charon3.core.exceptions.InternalErrorException;
 import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
@@ -66,16 +63,20 @@ public class ClaimMappingReader {
         Map<String, String> claimMappings = new HashMap<>();
         try {
 
-            InputStream schemaExtensionConfigInputStream = ClaimMappingReader.class.getClassLoader()
-                    .getResourceAsStream(SCIM2_SCHEMA_EXTENSION_CONFIG_FILE);
-            SCIMUserSchemaExtensionBuilder.getInstance().buildUserSchemaExtension(schemaExtensionConfigInputStream);
+            try (InputStream schemaExtensionConfigInputStream = ClaimMappingReader.class.getClassLoader()
+                    .getResourceAsStream(SCIM2_SCHEMA_EXTENSION_CONFIG_FILE)) {
+                SCIMUserSchemaExtensionBuilder.getInstance()
+                        .buildUserSchemaExtension(schemaExtensionConfigInputStream);
+            }
 
-            InputStream claimConfigInputStream = ClaimMappingReader.class.getClassLoader()
-                    .getResourceAsStream(CLAIM_CONFIG_XML_FILE);
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-            Document document = documentBuilder.parse(claimConfigInputStream);
-            document.getDocumentElement().normalize();
+            Document document;
+            try (InputStream claimConfigInputStream = ClaimMappingReader.class.getClassLoader()
+                    .getResourceAsStream(CLAIM_CONFIG_XML_FILE)) {
+                DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+                document = documentBuilder.parse(claimConfigInputStream);
+                document.getDocumentElement().normalize();
+            }
 
             // Traverse through <Dialect> nodes
             NodeList dialectNodes = document.getElementsByTagName(DIALECT_XML_TAG_NAME);
