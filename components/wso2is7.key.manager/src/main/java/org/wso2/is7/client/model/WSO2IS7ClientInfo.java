@@ -86,9 +86,6 @@ public class WSO2IS7ClientInfo {
     @SerializedName("token_type_extension")
     private String tokenTypeExtension;
 
-    @SerializedName("ext_application_owner")
-    private String applicationOwner;
-
     @SerializedName("ext_application_token_lifetime")
     private Long applicationTokenLifetime;
 
@@ -305,14 +302,6 @@ public class WSO2IS7ClientInfo {
 
     public void setTokenTypeExtension(String tokenTypeExtension) {
         this.tokenTypeExtension = tokenTypeExtension;
-    }
-
-    public String getApplicationOwner() {
-        return applicationOwner;
-    }
-
-    public void setApplicationOwner(String applicationOwner) {
-        this.applicationOwner = applicationOwner;
     }
 
     public Long getApplicationTokenLifetime() {
