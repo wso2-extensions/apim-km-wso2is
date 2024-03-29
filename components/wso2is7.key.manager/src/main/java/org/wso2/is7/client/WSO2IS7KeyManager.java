@@ -183,7 +183,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         WSO2IS7ClientInfo clientInfo = new WSO2IS7ClientInfo();
         JSONObject infoJson = new JSONObject(info.getJsonString());
-        String applicationOwner = (String) info.getParameter(ApplicationConstants.OAUTH_CLIENT_USERNAME);
         if (infoJson.has(ApplicationConstants.OAUTH_CLIENT_GRANT)) {
             // this is done as there are instances where the grant string begins with a comma character.
             String grantString = infoJson.getString(ApplicationConstants.OAUTH_CLIENT_GRANT);
@@ -207,14 +206,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             clientInfo.setTokenTypeExtension(APIConstants.TOKEN_TYPE_DEFAULT);
         }
 
-        // Use a generated user as the app owner for cross tenant subscription scenarios, to avoid the tenant admin
-        // being exposed in the JWT token.
-        if (APIUtil.isCrossTenantSubscriptionsEnabled()
-                && !tenantDomain.equals(MultitenantUtils.getTenantDomain(applicationOwner))) {
-            clientInfo.setApplicationOwner(APIUtil.retrieveDefaultReservedUsername());
-        } else {
-            clientInfo.setApplicationOwner(MultitenantUtils.getTenantAwareUsername(applicationOwner));
-        }
         if (StringUtils.isNotEmpty(info.getClientId())) {
             if (isUpdate) {
                 clientInfo.setClientId(info.getClientId());
