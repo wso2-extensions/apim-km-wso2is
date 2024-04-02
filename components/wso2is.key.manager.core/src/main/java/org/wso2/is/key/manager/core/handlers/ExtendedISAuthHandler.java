@@ -19,9 +19,11 @@
 
 package org.wso2.is.key.manager.core.handlers;
 
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.core.multitenancy.utils.TenantAxisUtils;
 import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.auth.service.AuthenticationContext;
 import org.wso2.carbon.identity.auth.service.AuthenticationRequest;
@@ -112,6 +114,10 @@ public class ExtendedISAuthHandler extends BasicAuthenticationHandler {
                                             authenticationResult.setAuthenticationStatus(AuthenticationStatus.FAILED);
                                             return authenticationResult;
                                         } else {
+                                            if (tenantId != MultitenantConstants.SUPER_TENANT_ID) {
+                                                String tenantDomain = tenant.getDomain();
+                                                loadTenantConfigBlockingMode(tenantDomain);
+                                            }
                                             user.setTenantDomain(tenant.getDomain());
                                             user.setUserName(tenant.getAdminName());
                                         }
@@ -136,6 +142,16 @@ public class ExtendedISAuthHandler extends BasicAuthenticationHandler {
             }
         }
         return authenticationResult;
+    }
+
+    private static void loadTenantConfigBlockingMode(String tenantDomain) {
+
+        try {
+            ConfigurationContext ctx = ServiceReferenceHolder.getContextService().getServerConfigContext();
+            TenantAxisUtils.getTenantAxisConfiguration(tenantDomain, ctx);
+        } catch (Exception e) {
+            log.error("Error while creating axis configuration for tenant " + tenantDomain, e);
+        }
     }
 
     private String getHeader(MessageContext messageContext, String header) {
