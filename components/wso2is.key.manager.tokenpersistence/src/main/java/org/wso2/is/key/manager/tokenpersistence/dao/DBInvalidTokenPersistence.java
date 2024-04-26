@@ -115,25 +115,6 @@ public class DBInvalidTokenPersistence implements InvalidTokenPersistenceService
             throw new IdentityOAuth2Exception(String.format("Failed to add invalid token for consumer key: %s with "
                     + "expiry time: %s", consumerKey, expiryTime), e);
         }
-        removeExpiredJWTs();
-    }
-
-    public void removeExpiredJWTs() throws IdentityOAuth2Exception {
-
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps =
-                         connection.prepareStatement(SQLQueries.DELETE_INVALID_TOKEN)) {
-                ps.setTimestamp(1, new Timestamp(System.currentTimeMillis()), Calendar.getInstance(
-                        TimeZone.getTimeZone(PersistenceConstants.UTC)));
-                ps.executeUpdate();
-                IdentityDatabaseUtil.commitTransaction(connection);
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
-            }
-        } catch (SQLException e) {
-            throw new IdentityOAuth2Exception("Error while deleting expired invalid token entries", e);
-        }
     }
 
     @Override

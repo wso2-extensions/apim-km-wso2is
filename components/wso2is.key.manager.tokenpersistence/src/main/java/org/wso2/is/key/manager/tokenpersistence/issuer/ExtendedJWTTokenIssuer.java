@@ -82,7 +82,15 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
                     + tokReqMsgCtx.getAuthorizedUser().getLoggableUserId());
         }
         try {
-            return this.buildJWTTokenForRefreshTokens(tokReqMsgCtx);
+            String grantType = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getGrantType();
+            // Instead of ignoring refresh token generation for some grant types (eg: client_credentials), the following
+            // configuration is used to determine whether to issue a refresh token or not. This preserves the backward
+            // compatibility.
+            if (OAuthServerConfiguration.getInstance().getValueForIsRefreshTokenAllowed(grantType)) {
+                return this.buildJWTTokenForRefreshTokens(tokReqMsgCtx);
+            } else {
+                return null;
+            }
         } catch (IdentityOAuth2Exception e) {
             throw new OAuthSystemException(e);
         }
