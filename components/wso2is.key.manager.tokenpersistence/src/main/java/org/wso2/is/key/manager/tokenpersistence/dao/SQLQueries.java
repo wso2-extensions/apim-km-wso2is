@@ -27,7 +27,6 @@ public class SQLQueries {
             + "CONSUMER_KEY = ? ";
     public static final String INSERT_INVALID_TOKEN = "INSERT INTO IDN_INVALID_TOKENS (UUID, TOKEN_IDENTIFIER, "
             + "CONSUMER_KEY, EXPIRY_TIMESTAMP) VALUES (?,?,?,?)";
-    public static final String DELETE_INVALID_TOKEN = "DELETE FROM IDN_INVALID_TOKENS WHERE EXPIRY_TIMESTAMP < ?";
     public static final String IS_APP_REVOKED_EVENT = "SELECT 1 "
             + "FROM IDN_APP_REVOKED_EVENT WHERE CONSUMER_KEY = ? AND TIME_REVOKED >= ?";
     public static final String INSERT_APP_REVOKED_EVENT = "INSERT INTO IDN_APP_REVOKED_EVENT "
