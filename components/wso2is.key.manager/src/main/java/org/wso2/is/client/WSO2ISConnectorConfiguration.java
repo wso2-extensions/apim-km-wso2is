@@ -22,6 +22,7 @@ import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
 import org.wso2.carbon.apimgt.impl.DefaultKeyManagerConnectorConfiguration;
+import org.wso2.carbon.apimgt.impl.jwt.TypeEnforcedJWTValidatorImpl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +47,7 @@ public class WSO2ISConnectorConfiguration extends DefaultKeyManagerConnectorConf
     @Override
     public String getJWTValidator() {
 
-        return null;
+        return TypeEnforcedJWTValidatorImpl.class.getName();
     }
 
     @Override
