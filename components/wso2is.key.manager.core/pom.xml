@@ -67,6 +67,13 @@
                             org.wso2.is.key.manager.core.*;
                         </Export-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.carbon.user.core.service.RealmService,
+                            osgi.service;objectClass=org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent,
+                            osgi.service;objectClass=org.wso2.carbon.registry.core.service.RegistryService,
+                            osgi.service;objectClass=org.wso2.carbon.registry.core.service.TenantRegistryLoader,
+                            osgi.service;objectClass=org.wso2.carbon.utils.ConfigurationContextService
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
