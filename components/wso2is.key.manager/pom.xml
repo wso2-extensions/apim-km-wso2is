@@ -52,6 +52,10 @@
                             org.osgi.service.*;version="${imp.package.version.osgi.service}",
                             *;resolution:=optional
                         </Import-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.carbon.apimgt.notification.NotificationEventService,
+                            osgi.service;objectClass=org.wso2.carbon.apimgt.impl.APIManagerConfigurationService
+                        </Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
