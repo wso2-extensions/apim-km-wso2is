@@ -458,7 +458,7 @@
         <carbon.identity-oauth2-grant-jwt.version>2.2.4</carbon.identity-oauth2-grant-jwt.version>
         <json.simple.version>1.1</json.simple.version>
         <json-simple.wso2.version>1.1.wso2v1</json-simple.wso2.version>
-        <cxf.version>3.3.6</cxf.version>
+        <cxf.version>3.5.9</cxf.version>
         <spring-web.version>5.1.13.RELEASE</spring-web.version>
         <json.orbit.version>3.0.0.wso2v1</json.orbit.version>
         <swagger-jaxrs.version>1.6.1</swagger-jaxrs.version>
