@@ -464,6 +464,7 @@ public class DCRMService {
         application.setPkceMandatory(createdApp.getPkceMandatory());
         application.setPkceSupportPlain(createdApp.getPkceSupportPlain());
         application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
+        application.setTokenType(createdApp.getTokenType());
         return application;
     }
 
