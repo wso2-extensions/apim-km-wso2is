@@ -18,10 +18,7 @@
 
 package org.wso2.is7.client;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import feign.Feign;
 import feign.Response;
 import feign.auth.BasicAuthRequestInterceptor;
@@ -68,9 +65,7 @@ import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
-import org.wso2.is7.client.model.WSO2IS7ClientInfo;
-import org.wso2.is7.client.model.WSO2IS7DCRClient;
-import org.wso2.is7.client.model.WSO2IS7SCIMMeClient;
+import org.wso2.is7.client.model.*;
 import org.wso2.is7.client.utils.AttributeMapper;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 
@@ -79,13 +74,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This class provides the implementation to use WSO2 Identity Server 7 for managing OAuth clients and Tokens
@@ -96,7 +85,13 @@ import java.util.Set;
  */
 public class WSO2IS7KeyManager extends AbstractKeyManager {
     private static final Log log = LogFactory.getLog(WSO2IS7KeyManager.class);
+
+    private static final String API_RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
+    private static final String IS7_ROLES_ENDPOINT = "is7_roles_endpoint";
     private static final String GRANT_TYPE_VALUE = "client_credentials";
+    private static final String DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER = "User-defined-oauth2-resource";
+    private static final String DEFAULT_OAUTH_2_RESOURCE_NAME = "User-defined OAuth2 Resource";
+    private static final String DEFAULT_OAUTH_2_RESOURCE_DESCRIPTION = "This is Default OAuth2 Resource Representation";
     private static final String CLAIM_MAPPINGS_CONFIG_PARAMETER = "claim_mappings";
     private static final String REMOTE_CLAIM = "remoteClaim";
     private static final String LOCAL_CLAIM = "localClaim";
@@ -105,6 +100,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private IntrospectionClient introspectionClient;
     private ScopeClient scopeClient;
     private AuthClient authClient;
+    private WSO2IS7APIResourceManagementClient wso2IS7APIResourceManagementClient;
+    private WSO2IS7SCIMRolesClient wso2IS7SCIMRolesClient;
     private WSO2IS7SCIMMeClient wso2IS7SCIMMeClient;
     private Map<String, String> claimMappings;
 
@@ -683,6 +680,22 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                             (APIConstants.KeyManager.KEY_MANAGER_OPERATIONS_USERINFO_ENDPOINT);
         }
 
+        String apiResourceManagementEndpoint;
+        if (configuration.getParameter(API_RESOURCE_MANAGEMENT_ENDPOINT) != null) {
+            apiResourceManagementEndpoint = (String) configuration.getParameter(API_RESOURCE_MANAGEMENT_ENDPOINT);
+        } else {
+            apiResourceManagementEndpoint = keyManagerServiceUrl.split("/" + APIConstants.SERVICES_URL_RELATIVE_PATH)[0]
+                    .concat(getTenantAwareContext().trim()).concat("/api/server/v1/api-resources");
+        }
+
+        String rolesEndpoint;
+        if (configuration.getParameter(IS7_ROLES_ENDPOINT) != null) {
+            rolesEndpoint = (String) configuration.getParameter(IS7_ROLES_ENDPOINT);
+        } else {
+            rolesEndpoint = keyManagerServiceUrl.split("/" + APIConstants.SERVICES_URL_RELATIVE_PATH)[0]
+                    .concat(getTenantAwareContext().trim()).concat("/scim2/v2/Roles");
+        }
+
         wso2IS7DCRClient = Feign.builder()
                 .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
                 .encoder(new GsonEncoder())
@@ -729,6 +742,26 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .logger(new Slf4jLogger())
                 .errorDecoder(new KMClientErrorDecoder())
                 .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
+
+//        String apiResourceManagementEndpoint = "https://localhost:9444/api/server/v1/api-resources"; // TODO remove
+        wso2IS7APIResourceManagementClient = Feign.builder()
+                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(apiResourceManagementEndpoint)))
+                .encoder(new GsonEncoder())
+                .decoder(new GsonDecoder())
+                .logger(new Slf4jLogger())
+                .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                .errorDecoder(new KMClientErrorDecoder())
+                .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
+
+//        String rolesEndpoint = "https://localhost:9444/scim2/v2/Roles"; // TODO remove
+        wso2IS7SCIMRolesClient = Feign.builder()
+                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(rolesEndpoint)))
+                .encoder(new GsonEncoder())
+                .decoder(new GsonDecoder())
+                .logger(new Slf4jLogger())
+                .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                .errorDecoder(new KMClientErrorDecoder())
+                .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
     }
@@ -789,14 +822,16 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      */
     @Override
     public void registerScope(Scope scope) throws APIManagementException {
+        // TODO since IS7 stuff are there in `updateResourceScopes` method, seems we don't need IS7 stuff here. CONFIRM. CHECK GLOBAL SCOPES
 
-        String scopeKey = scope.getKey();
+        String scopeKey = scope.getKey(); // TODO Getting called twice (when creating scope, when deploying API)
         ScopeDTO scopeDTO = new ScopeDTO();
         scopeDTO.setName(scopeKey);
         scopeDTO.setDisplayName(scope.getName());
         scopeDTO.setDescription(scope.getDescription());
-        if (StringUtils.isNotBlank(scope.getRoles()) && scope.getRoles().trim().split(",").length > 0) {
-            scopeDTO.setBindings(Arrays.asList(scope.getRoles().trim().split(",")));
+        List<String> roles = getRoles(scope);
+        if (!roles.isEmpty()) {
+            scopeDTO.setBindings(roles);
         }
         try (Response response = scopeClient.registerScope(scopeDTO)) {
             if (response.status() != HttpStatus.SC_CREATED) {
@@ -807,6 +842,25 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         } catch (KeyManagerClientException e) {
             handleException("Cannot register scope : " + scopeKey, e);
         }
+        // TODO Senthuran: Should we need this in addition to `updateResourceScopes`? CHECK GLOBAL SCOPES
+        /*
+        try {
+            createWSO2IS7Scope(scopeKey, scope.getName(), scope.getDescription());
+            if (!roles.isEmpty()) {
+                Map<String, String> permissions = new HashMap<>();
+                permissions.put("value", scopeKey);
+                permissions.put("display", scope.getName());
+                for (String role : roles) {
+                    createWSO2IS7Role(role, Collections.singletonList(permissions));
+                }
+            }
+//        scope.getRoles(); // TODO should we do it here itself? or any other place?
+//        createWSO2IS7Role();
+        } catch (KeyManagerClientException e) {
+            handleException("Error occurred while registering scope: " + scopeKey, e);
+        }
+        */
+
     }
 
     /**
@@ -925,12 +979,52 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                                      Set<URITemplate> oldURITemplates, Set<URITemplate> newURITemplates)
             throws APIManagementException {
 
+        String wso2IS7APIResourceId = null;
+        try {
+            wso2IS7APIResourceId = getWSO2IS7APIResourceId();
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to get the ID of WSO2 IS7 API Resource: " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+        }
+
         detachResourceScopes(api, oldURITemplates);
-        // remove the old local scopes from the KM
+        // Remove the old local scopes from the KM
         for (String oldScope : oldLocalScopeKeys) {
+            if (wso2IS7APIResourceId != null) {
+                try {
+                    wso2IS7APIResourceManagementClient.deleteScopeFromAPIResource(wso2IS7APIResourceId, oldScope);
+                } catch (KeyManagerClientException e) {
+                    handleException("Failed to delete scope: " + oldScope + " from WSO2 IS7 API Resource: " +
+                            DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+                }
+            }
+            // TODO Remove these legacy ones
             deleteScope(oldScope);
         }
-        //Register scopes
+
+        // Register IS7 Scopes
+
+        List<WSO2IS7APIResourceScopeInfo> wso2IS7ScopesToAdd;
+        if (wso2IS7APIResourceId != null) {
+            try {
+                Set<String> existingScopeNames = getExistingScopeNamesFromWSO2IS7APIResource(wso2IS7APIResourceId);
+                wso2IS7ScopesToAdd = getWSO2IS7ScopesToAdd(newLocalScopes, existingScopeNames);
+                addScopesToWSO2IS7APIResource(wso2IS7APIResourceId, wso2IS7ScopesToAdd);
+            } catch (KeyManagerClientException e) {
+                handleException("Failed to add scopes to WSO2 IS7 API Resource: " +
+                        DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+            }
+        } else {
+            try {
+                wso2IS7ScopesToAdd = getWSO2IS7ScopesToAdd(newLocalScopes, Collections.emptySet());
+                createWSO2IS7APIResource(wso2IS7ScopesToAdd);
+            } catch (KeyManagerClientException e) {
+                handleException("Failed to create WSO2 IS7 API Resource: " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER +
+                        " with scopes", e);
+            }
+        }
+        createWSO2IS7RoleToScopeBindings(newLocalScopes);
+
+        // Register legacy scopes
         for (Scope scope : newLocalScopes) {
             String scopeKey = scope.getKey();
             // Check if key already registered in KM. Scope Key may be already registered for a different version.
@@ -992,8 +1086,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             ScopeDTO scopeDTO = new ScopeDTO();
             scopeDTO.setDisplayName(scope.getName());
             scopeDTO.setDescription(scope.getDescription());
-            if (StringUtils.isNotBlank(scope.getRoles()) && scope.getRoles().trim().split(",").length > 0) {
-                scopeDTO.setBindings(Arrays.asList(scope.getRoles().trim().split(",")));
+            List<String> roles = getRoles(scope);
+            if (!roles.isEmpty()) {
+                scopeDTO.setBindings(roles);
             }
             try (Response response = scopeClient.updateScope(scopeDTO, scope.getKey())) {
                 if (response.status() != HttpStatus.SC_OK) {
@@ -1020,7 +1115,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * @throws APIManagementException if an error occurs while checking the existence of the scope
      */
     @Override
-    public boolean isScopeExists(String scopeName) throws APIManagementException {
+    public boolean isScopeExists(String scopeName) throws APIManagementException { // TODO Not applicable for IS7 scopes. CONFIRM
 
         try (Response response = scopeClient.isScopeExist(scopeName)) {
             if (response.status() == HttpStatus.SC_OK) {
@@ -1233,6 +1328,145 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 }
             }
         }
+    }
+
+    private String getWSO2IS7APIResourceId() throws KeyManagerClientException {
+        String filter = "identifier eq " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER;
+        JsonObject apiResourcesResponse = wso2IS7APIResourceManagementClient
+                .getAPIResources(Collections.singletonMap("filter", filter));
+        JsonArray apiResources = apiResourcesResponse.getAsJsonArray("apiResources");
+        if (apiResources != null && !apiResources.isJsonNull() && apiResources.size() > 0) {
+            return apiResources.get(0).getAsJsonObject().get("id").getAsString();
+        }
+        return null;
+    }
+
+    private Set<String> getExistingScopeNamesFromWSO2IS7APIResource(String wso2IS7APIResourceId)
+            throws KeyManagerClientException {
+        JsonArray existingScopes = wso2IS7APIResourceManagementClient.getAPIResourceScopes(wso2IS7APIResourceId);
+        Set<String> existingScopeNames = new HashSet<>();
+        for (JsonElement scope : existingScopes) {
+            existingScopeNames.add(scope.getAsJsonObject().get("name").getAsString());
+        }
+        return existingScopeNames;
+    }
+
+    private List<WSO2IS7APIResourceScopeInfo> getWSO2IS7ScopesToAdd(Set<Scope> newLocalScopes,
+                                                                    Set<String> existingScopeNames) {
+        List<WSO2IS7APIResourceScopeInfo> wso2IS7ScopesToAdd = new ArrayList<>();
+        for (Scope scope : newLocalScopes) {
+            if (!existingScopeNames.contains(scope.getName())) {
+                wso2IS7ScopesToAdd.add(new WSO2IS7APIResourceScopeInfo(scope.getKey(), scope.getName(),
+                        scope.getDescription()));
+            }
+        }
+        return wso2IS7ScopesToAdd;
+    }
+
+    private void addScopesToWSO2IS7APIResource(String wso2IS7APIResourceId, List<WSO2IS7APIResourceScopeInfo> scopes)
+            throws KeyManagerClientException {
+
+        JsonArray addedScopes = new JsonArray();
+        for (WSO2IS7APIResourceScopeInfo scope : scopes) {
+            JsonObject addedScope = new JsonObject();
+            addedScope.addProperty("name", scope.getName());
+            addedScope.addProperty("displayName", scope.getDisplayName());
+            addedScope.addProperty("description", scope.getDescription());
+            addedScopes.add(addedScope);
+        }
+        JsonObject payload = new JsonObject();
+        payload.add("addedScopes", addedScopes);
+        wso2IS7APIResourceManagementClient.patchAPIResource(wso2IS7APIResourceId, payload);
+    }
+
+    private WSO2IS7APIResourceInfo createWSO2IS7APIResource(List<WSO2IS7APIResourceScopeInfo> scopes)
+            throws KeyManagerClientException {
+        WSO2IS7APIResourceInfo wso2IS7APIResourceInfo = new WSO2IS7APIResourceInfo();
+        wso2IS7APIResourceInfo.setIdentifier(DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER);
+        wso2IS7APIResourceInfo.setName(DEFAULT_OAUTH_2_RESOURCE_NAME);
+        wso2IS7APIResourceInfo.setDescription(DEFAULT_OAUTH_2_RESOURCE_DESCRIPTION);
+        wso2IS7APIResourceInfo.setRequiresAuthorization(true);
+        wso2IS7APIResourceInfo.setScopes(scopes);
+        return wso2IS7APIResourceManagementClient.createAPIResource(wso2IS7APIResourceInfo);
+    }
+
+    private void createWSO2IS7RoleToScopeBindings(Set<Scope> scopes) throws APIManagementException {
+        for (Scope scope : scopes) { // TODO CHECK WHAT HAPPENS WITH EXISTING ROLE & DELETIONS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+            List<String> roles = getRoles(scope);
+            for (String role : roles) {
+                try {
+                    String roleId = getRoleId(role);
+                    if (roleId != null) {
+                        // Add this scope(permission) to existing role
+                        addScopeToWSO2IS7Role(scope, roleId);
+                    } else {
+                        // Create new role with this scope(permission)
+                        Map<String, String> wso2IS7Scope = new HashMap<>();
+                        wso2IS7Scope.put("value", scope.getKey());
+                        wso2IS7Scope.put("display", scope.getName());
+                        createWSO2IS7Role(role, Collections.singletonList(wso2IS7Scope));
+                    }
+                } catch (KeyManagerClientException e) {
+                    handleException("Failed to get the role ID for role: " + role, e);
+                }
+            }
+        }
+    }
+
+    private String getRoleId(String roleDisplayName) throws KeyManagerClientException {
+        String filter = "displayName eq " + roleDisplayName;
+        JsonObject rolesResponse = wso2IS7SCIMRolesClient.filterRoles(Collections.singletonMap("filter", filter));
+        JsonArray roles = rolesResponse.getAsJsonArray("Resources");
+        if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
+            return roles.get(0).getAsJsonObject().get("id").getAsString();
+        }
+        return null;
+    }
+
+    private void createWSO2IS7Role(String displayName, List<Map<String, String>> scopes)
+            throws APIManagementException {
+        WSO2IS7RoleInfo role = new WSO2IS7RoleInfo();
+        role.setDisplayName(displayName);
+        role.setPermissions(scopes);
+        try {
+            wso2IS7SCIMRolesClient.createRole(role);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to create role: " + displayName, e);
+        }
+    }
+
+    private void addScopeToWSO2IS7Role(Scope scope, String roleId) throws APIManagementException {
+        try {
+            WSO2IS7RoleInfo role = wso2IS7SCIMRolesClient.getRole(roleId);
+            List<Map<String, String>> scopes = role.getPermissions();
+
+            JsonArray allScopes = new Gson().toJsonTree(scopes).getAsJsonArray();
+            JsonObject addedScope = new JsonObject();
+            addedScope.addProperty("value", scope.getKey());
+            addedScope.addProperty("display", scope.getName());
+            allScopes.add(addedScope);
+
+            JsonObject replaceOperation = new JsonObject();
+            replaceOperation.addProperty("op", "replace");
+            replaceOperation.addProperty("path", "permissions");
+            replaceOperation.add("value", allScopes);
+
+            JsonArray operations = new JsonArray();
+            operations.add(replaceOperation);
+            JsonObject payload = new JsonObject();
+            payload.add("Operations", operations);
+
+            wso2IS7SCIMRolesClient.patchRole(roleId, payload);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to add scope: " + scope.getKey() + " to the role with ID: " + roleId, e);
+        }
+    }
+
+    private List<String> getRoles(Scope scope) {
+        if (StringUtils.isNotBlank(scope.getRoles()) && scope.getRoles().trim().split(",").length > 0) {
+            return Arrays.asList(scope.getRoles().trim().split(","));
+        }
+        return Collections.emptyList();
     }
 
 }
