@@ -69,10 +69,10 @@ import org.wso2.is7.client.model.WSO2IS7APIResourceManagementClient;
 import org.wso2.is7.client.model.WSO2IS7APIResourceScopeInfo;
 import org.wso2.is7.client.model.WSO2IS7ClientInfo;
 import org.wso2.is7.client.model.WSO2IS7DCRClient;
+import org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo;
 import org.wso2.is7.client.model.WSO2IS7RoleInfo;
 import org.wso2.is7.client.model.WSO2IS7SCIMMeClient;
 import org.wso2.is7.client.model.WSO2IS7SCIMRolesClient;
-import org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo;
 import org.wso2.is7.client.utils.AttributeMapper;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 

@@ -38,6 +38,9 @@ public class WSO2IS7PatchRoleOperationInfo {
         this.operations = operations;
     }
 
+    /**
+     * Represents the Operation component of the patch role operation payload.
+     */
     public static class Operation {
 
         @SerializedName("op")
@@ -74,6 +77,9 @@ public class WSO2IS7PatchRoleOperationInfo {
         }
     }
 
+    /**
+     * Represents the Value component of the patch role operation payload.
+     */
     public static class Value {
 
         @SerializedName("permissions")
@@ -88,6 +94,9 @@ public class WSO2IS7PatchRoleOperationInfo {
         }
     }
 
+    /**
+     * Represents the Permission component of the patch role operation payload.
+     */
     public static class Permission {
 
         @SerializedName("value")
