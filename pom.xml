@@ -453,7 +453,7 @@
     </scm>
     <properties>
         <common.codec.version>1.15</common.codec.version>
-        <carbon.apimgt.version>9.27.0</carbon.apimgt.version>
+        <carbon.apimgt.version>9.29.120.34</carbon.apimgt.version>
         <carbon.identity.version>5.25.686</carbon.identity.version>
         <carbon.identity-oauth2-grant-jwt.version>2.2.4</carbon.identity-oauth2-grant-jwt.version>
         <json.simple.version>1.1</json.simple.version>
