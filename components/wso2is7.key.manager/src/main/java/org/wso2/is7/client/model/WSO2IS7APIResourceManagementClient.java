@@ -29,7 +29,7 @@ import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 import java.util.Map;
 
 /**
- * Represents the WSO2 Identity Server 7 DCR client.
+ * Represents the WSO2 Identity Server 7 API Resource Management client.
  */
 public interface WSO2IS7APIResourceManagementClient {
 
@@ -49,6 +49,11 @@ public interface WSO2IS7APIResourceManagementClient {
     @Headers("Content-Type: application/json")
     void patchAPIResource(@Param("apiResourceId") String apiResourceId, JsonObject payload)
             throws KeyManagerClientException;
+
+    @RequestLine("PATCH /{apiResourceId}/scopes/{scopeName}")
+    @Headers("Content-Type: application/json")
+    void patchAPIResourceScope(@Param("apiResourceId") String apiResourceId, @Param("scopeName") String scopeName,
+                               JsonObject payload) throws KeyManagerClientException;
 
     @RequestLine("DELETE /{apiResourceId}/scopes/{scopeName}")
     @Headers("Content-Type: application/json")

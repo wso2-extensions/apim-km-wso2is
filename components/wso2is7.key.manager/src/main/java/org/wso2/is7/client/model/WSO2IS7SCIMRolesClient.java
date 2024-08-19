@@ -21,14 +21,11 @@ package org.wso2.is7.client.model;
 import com.google.gson.JsonObject;
 import feign.Headers;
 import feign.Param;
-import feign.QueryMap;
 import feign.RequestLine;
 import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 
-import java.util.Map;
-
 /**
- * Represents the WSO2 Identity Server 7 DCR client.
+ * Represents the WSO2 Identity Server SCIM2 Roles client.
  */
 public interface WSO2IS7SCIMRolesClient {
 
@@ -40,9 +37,9 @@ public interface WSO2IS7SCIMRolesClient {
     @Headers("Content-Type: application/json")
     WSO2IS7RoleInfo createRole(WSO2IS7RoleInfo role) throws KeyManagerClientException;
 
-    @RequestLine("GET ?{parameters}")
+    @RequestLine("POST /.search")
     @Headers("Content-Type: application/json")
-    JsonObject filterRoles(@QueryMap Map<String, String> parameters) throws KeyManagerClientException;
+    JsonObject searchRoles(JsonObject payload) throws KeyManagerClientException;
 
     @RequestLine("PATCH /{roleId}")
     @Headers("Content-Type: application/json")

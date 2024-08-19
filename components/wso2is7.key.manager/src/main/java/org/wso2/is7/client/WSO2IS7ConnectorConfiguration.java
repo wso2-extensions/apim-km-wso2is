@@ -58,8 +58,6 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
         configurationDtoList
                 .add(new ConfigurationDto("Password", "Password", "input",
                         "Password of Admin user", "", true, true, Collections.emptyList(), false));
-
-        // TODO finalize the following new ones
         configurationDtoList.add(new ConfigurationDto("api_resource_management_endpoint",
                 "WSO2 Identity Server 7 API Resource Management Endpoint", "input",
                 String.format("E.g., %s/api/server/v1/api-resources",

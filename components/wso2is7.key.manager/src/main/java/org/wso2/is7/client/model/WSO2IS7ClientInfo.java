@@ -152,6 +152,9 @@ public class WSO2IS7ClientInfo {
     @SerializedName("request_object_encryption_enc")
     private String requestObjectEncryptionEnc;
 
+    @SerializedName("ext_allowed_audience")
+    private String extAllowedAudience;
+
     public List<String> getRedirectUris() {
         return redirectUris;
     }
@@ -480,4 +483,11 @@ public class WSO2IS7ClientInfo {
         this.requestObjectEncryptionEnc = requestObjectEncryptionEnc;
     }
 
+    public String getExtAllowedAudience() {
+        return extAllowedAudience;
+    }
+
+    public void setExtAllowedAudience(String extAllowedAudience) {
+        this.extAllowedAudience = extAllowedAudience;
+    }
 }
