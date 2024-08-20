@@ -867,8 +867,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (wso2IS7APIResourceId != null) {
             try {
                 JsonArray scopes = wso2IS7APIResourceManagementClient.getAPIResourceScopes(wso2IS7APIResourceId);
-                JsonObject rolesResponse = searchRoles(null);
-                JsonArray allRoles = rolesResponse.getAsJsonArray("Resources");
+                JsonArray allRoles = searchRoles(null);
                 for (JsonElement scope : scopes) {
                     JsonObject scopeJsonObject = scope.getAsJsonObject();
                     String scopeName = scopeJsonObject.get("name").getAsString();
@@ -934,8 +933,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
         try {
             JsonArray scopesResponse = wso2IS7APIResourceManagementClient.getAPIResourceScopes(wso2IS7APIResourceId);
-            JsonObject rolesResponse = searchRoles(null);
-            JsonArray allRoles = rolesResponse.getAsJsonArray("Resources");
+            JsonArray allRoles = searchRoles(null);
 
             for (JsonElement scopeJsonElement : scopesResponse) {
                 String scopeName = scopeJsonElement.getAsJsonObject().get("name").getAsString();
@@ -1042,25 +1040,28 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                             DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
                 }
             }
-            JsonObject allRolesResponse = searchRoles(null);
-            JsonArray allRoles = allRolesResponse.getAsJsonArray("Resources");
+            JsonArray allRoles = searchRoles(null);
             List<String> existingRoles = getWSO2IS7RolesHavingScope(scope.getKey(), allRoles);
 
             // Add new scope-to-role bindings
             List<String> roles = getRoles(scope);
             List<String> roleBindingsToAdd = new ArrayList<>(roles);
             roleBindingsToAdd.removeAll(existingRoles);
-            Scope addableScope = new Scope();
-            addableScope.setKey(scope.getKey());
-            addableScope.setName(scope.getName());
-            addableScope.setDescription(scope.getDescription());
-            addableScope.setRoles(String.join(",", roleBindingsToAdd));
-            createWSO2IS7RoleToScopeBindings(Collections.singleton(addableScope));
+            if (!roleBindingsToAdd.isEmpty()) {
+                Scope addableScope = new Scope();
+                addableScope.setKey(scope.getKey());
+                addableScope.setName(scope.getName());
+                addableScope.setDescription(scope.getDescription());
+                addableScope.setRoles(String.join(",", roleBindingsToAdd));
+                createWSO2IS7RoleToScopeBindings(Collections.singleton(addableScope));
+            }
 
             // Remove old scope-to-role bindings
             List<String> roleBindingsToRemove = new ArrayList<>(existingRoles);
             roleBindingsToRemove.removeAll(roles);
-            removeWSO2IS7RoleToScopeBindings(scope.getKey(), roleBindingsToRemove);
+            if (!roleBindingsToRemove.isEmpty()) {
+                removeWSO2IS7RoleToScopeBindings(scope.getKey(), roleBindingsToRemove);
+            }
         } catch (KeyManagerClientException e) {
             handleException("Failed to update scope: " + scope.getName(), e);
         }
@@ -1476,8 +1477,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private String getWSO2IS7RoleId(String roleDisplayName) throws KeyManagerClientException {
 
         String filter = "displayName eq " + roleDisplayName;
-        JsonObject rolesResponse = searchRoles(filter);
-        JsonArray roles = rolesResponse.getAsJsonArray("Resources");
+        JsonArray roles = searchRoles(filter);
         if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
             return roles.get(0).getAsJsonObject().get("id").getAsString();
         }
@@ -1542,7 +1542,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * @return                              Response with the list of roles.
      * @throws KeyManagerClientException    Failed to search for roles.
      */
-    private JsonObject searchRoles(String filter) throws KeyManagerClientException {
+    private JsonArray searchRoles(String filter) throws KeyManagerClientException {
 
         JsonObject payload = new JsonObject();
         JsonArray schemas = new JsonArray();
@@ -1551,7 +1551,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (filter != null) {
             payload.addProperty("filter", filter);
         }
-        return wso2IS7SCIMRolesClient.searchRoles(payload);
+        JsonObject rolesResponse = wso2IS7SCIMRolesClient.searchRoles(payload);
+        return rolesResponse.getAsJsonArray("Resources");
     }
 
     /**
