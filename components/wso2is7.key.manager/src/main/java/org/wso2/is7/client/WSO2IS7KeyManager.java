@@ -862,8 +862,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      */
     @Override
     public Scope getScopeByName(String name) throws APIManagementException {
-        // TODO Check - Why do we really need the validateScopes method? That's the only usage for this method
-        // TODO Test that usage
 
         String wso2IS7APIResourceId = getWSO2IS7APIResourceId();
         if (wso2IS7APIResourceId != null) {
@@ -1150,9 +1148,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * @param scopes Scope set to validate
      * @throws APIManagementException if an error occurs while validating and populating
      */
-    @Override // TODO [TEST]?
+    @Override
     public void validateScopes(Set<Scope> scopes) throws APIManagementException {
-        // TODO Why do we need this method? It's just setting on top of legacy scopes, but nothing to do with IS7 scopes
 
         for (Scope scope : scopes) {
             Scope sharedScope = getScopeByName(scope.getKey());
