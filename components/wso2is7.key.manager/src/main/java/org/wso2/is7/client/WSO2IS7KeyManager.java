@@ -821,6 +821,27 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     }
 
     /**
+     * Gets the ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @return                          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} if exists, else null.
+     * @throws APIManagementException   Failed to get the ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     */
+    private String getWSO2IS7APIResourceId() throws APIManagementException {
+
+        try {
+            String filter = "identifier eq " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER;
+            JsonObject apiResourcesResponse = wso2IS7APIResourceManagementClient
+                    .getAPIResources(Collections.singletonMap("filter", filter));
+            JsonArray apiResources = apiResourcesResponse.getAsJsonArray("apiResources");
+            if (apiResources != null && !apiResources.isJsonNull() && apiResources.size() > 0) {
+                return apiResources.get(0).getAsJsonObject().get("id").getAsString();
+            }
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to get the ID of WSO2 IS7 API Resource: " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+        }
+        return null;
+    }
+
+    /**
      * Registers WSO2 IS7 Scopes in the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource of WSO2 IS7,
      * for the provided scopes.
      * @param wso2IS7APIResourceId      ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
@@ -850,6 +871,182 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             }
         }
         createWSO2IS7RoleToScopeBindings(newScopes);
+    }
+
+    /**
+     * Gets the list of existing WSO2 IS7 scope names of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @param wso2IS7APIResourceId          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @return                              Set of existing WSO2 IS7 scope names.
+     * @throws KeyManagerClientException    Failed to get the existing WSO2 IS7 scope names.
+     */
+    private Set<String> getExistingWSO2IS7ScopeNames(String wso2IS7APIResourceId) throws KeyManagerClientException {
+
+        JsonArray existingScopes = wso2IS7APIResourceManagementClient.getAPIResourceScopes(wso2IS7APIResourceId);
+        Set<String> existingScopeNames = new HashSet<>();
+        for (JsonElement scope : existingScopes) {
+            existingScopeNames.add(scope.getAsJsonObject().get("name").getAsString());
+        }
+        return existingScopeNames;
+    }
+
+    /**
+     * Checks the provided set of new WSO2 IS7 scopes against the provided set of existing WSO2 IS7 scope names,
+     * and returns the list of non-existing WSO2 IS7 scopes.
+     * @param newLocalScopes        Set of new WSO2 IS7 scopes that have been created.
+     * @param existingScopeNames    Set of existing WSO2 IS7 scope names.
+     * @return                      List of non-existing WSO2 IS7 scopes.
+     */
+    private List<WSO2IS7APIResourceScopeInfo> getNonExistingWSO2IS7Scopes(Set<Scope> newLocalScopes,
+                                                                          Set<String> existingScopeNames) {
+
+        List<WSO2IS7APIResourceScopeInfo> wso2IS7ScopesToAdd = new ArrayList<>();
+        for (Scope scope : newLocalScopes) {
+            if (!existingScopeNames.contains(scope.getName())) {
+                wso2IS7ScopesToAdd.add(new WSO2IS7APIResourceScopeInfo(scope.getKey(), scope.getName(),
+                        scope.getDescription()));
+            }
+        }
+        return wso2IS7ScopesToAdd;
+    }
+
+    /**
+     * Adds the provided list of WSO2 IS7 scopes to the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource.
+     * @param wso2IS7APIResourceId          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @param scopes                        List of WSO2 IS7 scopes to be added.
+     * @throws KeyManagerClientException    Failed to add scopes to the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     */
+    private void addScopesToWSO2IS7APIResource(String wso2IS7APIResourceId, List<WSO2IS7APIResourceScopeInfo> scopes)
+            throws KeyManagerClientException {
+
+        if (scopes.isEmpty()) {
+            return;
+        }
+        JsonArray addedScopes = new JsonArray();
+        for (WSO2IS7APIResourceScopeInfo scope : scopes) {
+            JsonObject addedScope = new JsonObject();
+            addedScope.addProperty("name", scope.getName());
+            addedScope.addProperty("displayName", scope.getDisplayName());
+            addedScope.addProperty("description", scope.getDescription());
+            addedScopes.add(addedScope);
+        }
+        JsonObject payload = new JsonObject();
+        payload.add("addedScopes", addedScopes);
+        wso2IS7APIResourceManagementClient.patchAPIResource(wso2IS7APIResourceId, payload);
+    }
+
+    /**
+     * Creates the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource with the provided list of WSO2 IS7 scopes.
+     * @param scopes                        List of WSO2 IS7 scopes to be added.
+     * @return                              Created {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource.
+     * @throws KeyManagerClientException    Failed to create {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource.
+     */
+    private WSO2IS7APIResourceInfo createWSO2IS7APIResource(List<WSO2IS7APIResourceScopeInfo> scopes)
+            throws KeyManagerClientException {
+
+        WSO2IS7APIResourceInfo wso2IS7APIResourceInfo = new WSO2IS7APIResourceInfo();
+        wso2IS7APIResourceInfo.setIdentifier(DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER);
+        wso2IS7APIResourceInfo.setName(DEFAULT_OAUTH_2_RESOURCE_NAME);
+        wso2IS7APIResourceInfo.setDescription(DEFAULT_OAUTH_2_RESOURCE_DESCRIPTION);
+        wso2IS7APIResourceInfo.setRequiresAuthorization(true);
+        wso2IS7APIResourceInfo.setScopes(scopes);
+        return wso2IS7APIResourceManagementClient.createAPIResource(wso2IS7APIResourceInfo);
+    }
+
+    /**
+     * Adds WSO2 IS7 role-to-scope bindings for the provided set of scopes.
+     * @param scopes                    Set of scopes to add role-to-scope bindings.
+     * @throws APIManagementException   Failed to add role-to-scope bindings.
+     */
+    private void createWSO2IS7RoleToScopeBindings(Set<Scope> scopes) throws APIManagementException {
+
+        for (Scope scope : scopes) {
+            List<String> roles = getRoles(scope);
+            for (String role : roles) {
+                try {
+                    String roleId = getWSO2IS7RoleId(role);
+                    if (roleId != null) {
+                        // Add this scope(permission) to existing role
+                        addScopeToWSO2IS7Role(scope, roleId);
+                    } else {
+                        // Create new role with this scope(permission)
+                        Map<String, String> wso2IS7Scope = new HashMap<>();
+                        wso2IS7Scope.put("value", scope.getKey());
+                        wso2IS7Scope.put("display", scope.getName());
+                        createWSO2IS7Role(role, Collections.singletonList(wso2IS7Scope));
+                    }
+                } catch (KeyManagerClientException e) {
+                    handleException("Failed to get the role ID for role: " + role, e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets the ID of the WSO2 IS7 role that has the given display name.
+     * @param roleDisplayName               Display name of the WSO2 IS7 role.
+     * @return                              ID of the WSO2 IS7 role if exists, else null.
+     * @throws KeyManagerClientException    Failed to get the ID of the WSO2 IS7 role.
+     */
+    private String getWSO2IS7RoleId(String roleDisplayName) throws KeyManagerClientException {
+
+        String filter = "displayName eq " + roleDisplayName;
+        JsonArray roles = searchRoles(filter);
+        if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
+            return roles.get(0).getAsJsonObject().get("id").getAsString();
+        }
+        return null;
+    }
+
+    /**
+     * Adds the given scope to the WSO2 IS7 role with the given ID.
+     * @param scope                     Scope to add.
+     * @param roleId                    ID of the WSO2 IS7 role.
+     * @throws APIManagementException   Failed to add the scope to the role.
+     */
+    private void addScopeToWSO2IS7Role(Scope scope, String roleId) throws APIManagementException {
+
+        try {
+            WSO2IS7RoleInfo role = wso2IS7SCIMRolesClient.getRole(roleId);
+            List<Map<String, String>> scopes = role.getPermissions();
+
+            JsonArray allScopes = new Gson().toJsonTree(scopes).getAsJsonArray();
+            JsonObject addedScope = new JsonObject();
+            addedScope.addProperty("value", scope.getKey());
+            addedScope.addProperty("display", scope.getName());
+            allScopes.add(addedScope);
+
+            JsonObject replaceOperation = new JsonObject();
+            replaceOperation.addProperty("op", "replace");
+            replaceOperation.addProperty("path", "permissions");
+            replaceOperation.add("value", allScopes);
+
+            JsonArray operations = new JsonArray();
+            operations.add(replaceOperation);
+            JsonObject payload = new JsonObject();
+            payload.add("Operations", operations);
+
+            wso2IS7SCIMRolesClient.patchRole(roleId, payload);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to add scope: " + scope.getKey() + " to the role with ID: " + roleId, e);
+        }
+    }
+
+    /**
+     * Creates a new WSO2 IS7 role with the given display name and scopes.
+     * @param displayName               Display name of the WSO2 IS7 role.
+     * @param scopes                    List of scopes to be added to the role.
+     * @throws APIManagementException   Failed to create the WSO2 IS7 role.
+     */
+    private void createWSO2IS7Role(String displayName, List<Map<String, String>> scopes) throws APIManagementException {
+
+        WSO2IS7RoleInfo role = new WSO2IS7RoleInfo();
+        role.setDisplayName(displayName);
+        role.setPermissions(scopes);
+        try {
+            wso2IS7SCIMRolesClient.createRole(role);
+        } catch (KeyManagerClientException e) {
+            handleException("Failed to create role: " + displayName, e);
+        }
     }
 
     /**
@@ -888,6 +1085,25 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Searches for WSO2 IS7 roles with the given filter.
+     * @param filter                        Filter to search for roles.
+     * @return                              Response with the list of roles.
+     * @throws KeyManagerClientException    Failed to search for roles.
+     */
+    private JsonArray searchRoles(String filter) throws KeyManagerClientException {
+
+        JsonObject payload = new JsonObject();
+        JsonArray schemas = new JsonArray();
+        schemas.add(SEARCH_REQUEST_SCHEMA);
+        payload.add("schemas", schemas);
+        if (filter != null) {
+            payload.addProperty("filter", filter);
+        }
+        JsonObject rolesResponse = wso2IS7SCIMRolesClient.searchRoles(payload);
+        return rolesResponse.getAsJsonArray("Resources");
     }
 
     /**
@@ -1337,222 +1553,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 }
             }
         }
-    }
-
-    /**
-     * Gets the ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
-     * @return                          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} if exists, else null.
-     * @throws APIManagementException   Failed to get the ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
-     */
-    private String getWSO2IS7APIResourceId() throws APIManagementException {
-
-        try {
-            String filter = "identifier eq " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER;
-            JsonObject apiResourcesResponse = wso2IS7APIResourceManagementClient
-                    .getAPIResources(Collections.singletonMap("filter", filter));
-            JsonArray apiResources = apiResourcesResponse.getAsJsonArray("apiResources");
-            if (apiResources != null && !apiResources.isJsonNull() && apiResources.size() > 0) {
-                return apiResources.get(0).getAsJsonObject().get("id").getAsString();
-            }
-        } catch (KeyManagerClientException e) {
-            handleException("Failed to get the ID of WSO2 IS7 API Resource: " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
-        }
-        return null;
-    }
-
-    /**
-     * Gets the list of existing WSO2 IS7 scope names of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
-     * @param wso2IS7APIResourceId          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
-     * @return                              Set of existing WSO2 IS7 scope names.
-     * @throws KeyManagerClientException    Failed to get the existing WSO2 IS7 scope names.
-     */
-    private Set<String> getExistingWSO2IS7ScopeNames(String wso2IS7APIResourceId) throws KeyManagerClientException {
-
-        JsonArray existingScopes = wso2IS7APIResourceManagementClient.getAPIResourceScopes(wso2IS7APIResourceId);
-        Set<String> existingScopeNames = new HashSet<>();
-        for (JsonElement scope : existingScopes) {
-            existingScopeNames.add(scope.getAsJsonObject().get("name").getAsString());
-        }
-        return existingScopeNames;
-    }
-
-    /**
-     * Checks the provided set of new WSO2 IS7 scopes against the provided set of existing WSO2 IS7 scope names,
-     * and returns the list of non-existing WSO2 IS7 scopes.
-     * @param newLocalScopes        Set of new WSO2 IS7 scopes that have been created.
-     * @param existingScopeNames    Set of existing WSO2 IS7 scope names.
-     * @return                      List of non-existing WSO2 IS7 scopes.
-     */
-    private List<WSO2IS7APIResourceScopeInfo> getNonExistingWSO2IS7Scopes(Set<Scope> newLocalScopes,
-                                                                          Set<String> existingScopeNames) {
-
-        List<WSO2IS7APIResourceScopeInfo> wso2IS7ScopesToAdd = new ArrayList<>();
-        for (Scope scope : newLocalScopes) {
-            if (!existingScopeNames.contains(scope.getName())) {
-                wso2IS7ScopesToAdd.add(new WSO2IS7APIResourceScopeInfo(scope.getKey(), scope.getName(),
-                        scope.getDescription()));
-            }
-        }
-        return wso2IS7ScopesToAdd;
-    }
-
-    /**
-     * Adds the provided list of WSO2 IS7 scopes to the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource.
-     * @param wso2IS7APIResourceId          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
-     * @param scopes                        List of WSO2 IS7 scopes to be added.
-     * @throws KeyManagerClientException    Failed to add scopes to the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
-     */
-    private void addScopesToWSO2IS7APIResource(String wso2IS7APIResourceId, List<WSO2IS7APIResourceScopeInfo> scopes)
-            throws KeyManagerClientException {
-
-        if (scopes.isEmpty()) {
-            return;
-        }
-        JsonArray addedScopes = new JsonArray();
-        for (WSO2IS7APIResourceScopeInfo scope : scopes) {
-            JsonObject addedScope = new JsonObject();
-            addedScope.addProperty("name", scope.getName());
-            addedScope.addProperty("displayName", scope.getDisplayName());
-            addedScope.addProperty("description", scope.getDescription());
-            addedScopes.add(addedScope);
-        }
-        JsonObject payload = new JsonObject();
-        payload.add("addedScopes", addedScopes);
-        wso2IS7APIResourceManagementClient.patchAPIResource(wso2IS7APIResourceId, payload);
-    }
-
-    /**
-     * Creates the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource with the provided list of WSO2 IS7 scopes.
-     * @param scopes                        List of WSO2 IS7 scopes to be added.
-     * @return                              Created {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource.
-     * @throws KeyManagerClientException    Failed to create {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource.
-     */
-    private WSO2IS7APIResourceInfo createWSO2IS7APIResource(List<WSO2IS7APIResourceScopeInfo> scopes)
-            throws KeyManagerClientException {
-
-        WSO2IS7APIResourceInfo wso2IS7APIResourceInfo = new WSO2IS7APIResourceInfo();
-        wso2IS7APIResourceInfo.setIdentifier(DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER);
-        wso2IS7APIResourceInfo.setName(DEFAULT_OAUTH_2_RESOURCE_NAME);
-        wso2IS7APIResourceInfo.setDescription(DEFAULT_OAUTH_2_RESOURCE_DESCRIPTION);
-        wso2IS7APIResourceInfo.setRequiresAuthorization(true);
-        wso2IS7APIResourceInfo.setScopes(scopes);
-        return wso2IS7APIResourceManagementClient.createAPIResource(wso2IS7APIResourceInfo);
-    }
-
-    /**
-     * Adds WSO2 IS7 role-to-scope bindings for the provided set of scopes.
-     * @param scopes                    Set of scopes to add role-to-scope bindings.
-     * @throws APIManagementException   Failed to add role-to-scope bindings.
-     */
-    private void createWSO2IS7RoleToScopeBindings(Set<Scope> scopes) throws APIManagementException {
-
-        for (Scope scope : scopes) {
-            List<String> roles = getRoles(scope);
-            for (String role : roles) {
-                try {
-                    String roleId = getWSO2IS7RoleId(role);
-                    if (roleId != null) {
-                        // Add this scope(permission) to existing role
-                        addScopeToWSO2IS7Role(scope, roleId);
-                    } else {
-                        // Create new role with this scope(permission)
-                        Map<String, String> wso2IS7Scope = new HashMap<>();
-                        wso2IS7Scope.put("value", scope.getKey());
-                        wso2IS7Scope.put("display", scope.getName());
-                        createWSO2IS7Role(role, Collections.singletonList(wso2IS7Scope));
-                    }
-                } catch (KeyManagerClientException e) {
-                    handleException("Failed to get the role ID for role: " + role, e);
-                }
-            }
-        }
-    }
-
-    /**
-     * Gets the ID of the WSO2 IS7 role that has the given display name.
-     * @param roleDisplayName               Display name of the WSO2 IS7 role.
-     * @return                              ID of the WSO2 IS7 role if exists, else null.
-     * @throws KeyManagerClientException    Failed to get the ID of the WSO2 IS7 role.
-     */
-    private String getWSO2IS7RoleId(String roleDisplayName) throws KeyManagerClientException {
-
-        String filter = "displayName eq " + roleDisplayName;
-        JsonArray roles = searchRoles(filter);
-        if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
-            return roles.get(0).getAsJsonObject().get("id").getAsString();
-        }
-        return null;
-    }
-
-    /**
-     * Creates a new WSO2 IS7 role with the given display name and scopes.
-     * @param displayName               Display name of the WSO2 IS7 role.
-     * @param scopes                    List of scopes to be added to the role.
-     * @throws APIManagementException   Failed to create the WSO2 IS7 role.
-     */
-    private void createWSO2IS7Role(String displayName, List<Map<String, String>> scopes) throws APIManagementException {
-
-        WSO2IS7RoleInfo role = new WSO2IS7RoleInfo();
-        role.setDisplayName(displayName);
-        role.setPermissions(scopes);
-        try {
-            wso2IS7SCIMRolesClient.createRole(role);
-        } catch (KeyManagerClientException e) {
-            handleException("Failed to create role: " + displayName, e);
-        }
-    }
-
-    /**
-     * Adds the given scope to the WSO2 IS7 role with the given ID.
-     * @param scope                     Scope to add.
-     * @param roleId                    ID of the WSO2 IS7 role.
-     * @throws APIManagementException   Failed to add the scope to the role.
-     */
-    private void addScopeToWSO2IS7Role(Scope scope, String roleId) throws APIManagementException {
-
-        try {
-            WSO2IS7RoleInfo role = wso2IS7SCIMRolesClient.getRole(roleId);
-            List<Map<String, String>> scopes = role.getPermissions();
-
-            JsonArray allScopes = new Gson().toJsonTree(scopes).getAsJsonArray();
-            JsonObject addedScope = new JsonObject();
-            addedScope.addProperty("value", scope.getKey());
-            addedScope.addProperty("display", scope.getName());
-            allScopes.add(addedScope);
-
-            JsonObject replaceOperation = new JsonObject();
-            replaceOperation.addProperty("op", "replace");
-            replaceOperation.addProperty("path", "permissions");
-            replaceOperation.add("value", allScopes);
-
-            JsonArray operations = new JsonArray();
-            operations.add(replaceOperation);
-            JsonObject payload = new JsonObject();
-            payload.add("Operations", operations);
-
-            wso2IS7SCIMRolesClient.patchRole(roleId, payload);
-        } catch (KeyManagerClientException e) {
-            handleException("Failed to add scope: " + scope.getKey() + " to the role with ID: " + roleId, e);
-        }
-    }
-
-    /**
-     * Searches for WSO2 IS7 roles with the given filter.
-     * @param filter                        Filter to search for roles.
-     * @return                              Response with the list of roles.
-     * @throws KeyManagerClientException    Failed to search for roles.
-     */
-    private JsonArray searchRoles(String filter) throws KeyManagerClientException {
-
-        JsonObject payload = new JsonObject();
-        JsonArray schemas = new JsonArray();
-        schemas.add(SEARCH_REQUEST_SCHEMA);
-        payload.add("schemas", schemas);
-        if (filter != null) {
-            payload.addProperty("filter", filter);
-        }
-        JsonObject rolesResponse = wso2IS7SCIMRolesClient.searchRoles(payload);
-        return rolesResponse.getAsJsonArray("Resources");
     }
 
     /**
