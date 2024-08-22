@@ -47,13 +47,13 @@ public interface WSO2IS7APIResourceManagementClient {
 
     @RequestLine("PATCH /{apiResourceId}")
     @Headers("Content-Type: application/json")
-    void patchAPIResource(@Param("apiResourceId") String apiResourceId, JsonObject payload)
-            throws KeyManagerClientException;
+    void patchAPIResource(@Param("apiResourceId") String apiResourceId,
+                          WSO2IS7APIResourceInfo.AddedScopesInfo addedScopes) throws KeyManagerClientException;
 
     @RequestLine("PATCH /{apiResourceId}/scopes/{scopeName}")
     @Headers("Content-Type: application/json")
     void patchAPIResourceScope(@Param("apiResourceId") String apiResourceId, @Param("scopeName") String scopeName,
-                               JsonObject payload) throws KeyManagerClientException;
+                               WSO2IS7APIResourceScopeInfo scope) throws KeyManagerClientException;
 
     @RequestLine("DELETE /{apiResourceId}/scopes/{scopeName}")
     @Headers("Content-Type: application/json")

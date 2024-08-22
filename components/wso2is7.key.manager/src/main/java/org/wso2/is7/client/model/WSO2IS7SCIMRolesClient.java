@@ -43,6 +43,7 @@ public interface WSO2IS7SCIMRolesClient {
 
     @RequestLine("PATCH /{roleId}")
     @Headers("Content-Type: application/json")
-    void patchRole(@Param("roleId") String roleId, JsonObject payload) throws KeyManagerClientException;
+    void patchRole(@Param("roleId") String roleId, WSO2IS7PatchRoleOperationInfo patchRoleOperationInfo)
+            throws KeyManagerClientException;
 
 }

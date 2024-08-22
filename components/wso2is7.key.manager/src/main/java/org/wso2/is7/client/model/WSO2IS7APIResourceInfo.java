@@ -50,9 +50,6 @@ public class WSO2IS7APIResourceInfo {
     private List<WSO2IS7APIResourceScopeInfo> scopes;
 
 
-    // TODO Properties? do we need, and can we survive without this
-
-
     public String getId() {
         return id;
     }
@@ -107,5 +104,19 @@ public class WSO2IS7APIResourceInfo {
 
     public void setScopes(List<WSO2IS7APIResourceScopeInfo> scopes) {
         this.scopes = scopes;
+    }
+
+    public static class AddedScopesInfo {
+
+        @SerializedName("addedScopes")
+        private List<WSO2IS7APIResourceScopeInfo> addedScopes;
+
+        public List<WSO2IS7APIResourceScopeInfo> getAddedScopes() {
+            return addedScopes;
+        }
+
+        public void setAddedScopes(List<WSO2IS7APIResourceScopeInfo> addedScopes) {
+            this.addedScopes = addedScopes;
+        }
     }
 }

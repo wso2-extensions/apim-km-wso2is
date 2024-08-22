@@ -72,6 +72,7 @@ import org.wso2.is7.client.model.WSO2IS7DCRClient;
 import org.wso2.is7.client.model.WSO2IS7RoleInfo;
 import org.wso2.is7.client.model.WSO2IS7SCIMMeClient;
 import org.wso2.is7.client.model.WSO2IS7SCIMRolesClient;
+import org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo;
 import org.wso2.is7.client.utils.AttributeMapper;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 
@@ -921,17 +922,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (scopes.isEmpty()) {
             return;
         }
-        JsonArray addedScopes = new JsonArray();
-        for (WSO2IS7APIResourceScopeInfo scope : scopes) {
-            JsonObject addedScope = new JsonObject();
-            addedScope.addProperty("name", scope.getName());
-            addedScope.addProperty("displayName", scope.getDisplayName());
-            addedScope.addProperty("description", scope.getDescription());
-            addedScopes.add(addedScope);
-        }
-        JsonObject payload = new JsonObject();
-        payload.add("addedScopes", addedScopes);
-        wso2IS7APIResourceManagementClient.patchAPIResource(wso2IS7APIResourceId, payload);
+        WSO2IS7APIResourceInfo.AddedScopesInfo addedScopes = new WSO2IS7APIResourceInfo.AddedScopesInfo();
+        addedScopes.setAddedScopes(scopes);
+        wso2IS7APIResourceManagementClient.patchAPIResource(wso2IS7APIResourceId, addedScopes);
     }
 
     /**
@@ -1007,28 +1000,45 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         try {
             WSO2IS7RoleInfo role = wso2IS7SCIMRolesClient.getRole(roleId);
-            List<Map<String, String>> scopes = role.getPermissions();
+            List<Map<String, String>> permissions = role.getPermissions();
 
-            JsonArray allScopes = new Gson().toJsonTree(scopes).getAsJsonArray();
-            JsonObject addedScope = new JsonObject();
-            addedScope.addProperty("value", scope.getKey());
-            addedScope.addProperty("display", scope.getName());
-            allScopes.add(addedScope);
+            List<WSO2IS7PatchRoleOperationInfo.Permission> allPermissions = new ArrayList<>();
+            for (Map<String, String> existingPermission : permissions) {
+                WSO2IS7PatchRoleOperationInfo.Permission permission = new WSO2IS7PatchRoleOperationInfo.Permission();
+                permission.setValue(existingPermission.get("value"));
+                permission.setDisplay(existingPermission.get("display"));
+                allPermissions.add(permission);
+            }
+            WSO2IS7PatchRoleOperationInfo.Permission addedPermission = new WSO2IS7PatchRoleOperationInfo.Permission();
+            addedPermission.setValue(scope.getKey());
+            addedPermission.setDisplay(scope.getName());
+            allPermissions.add(addedPermission);
 
-            JsonObject replaceOperation = new JsonObject();
-            replaceOperation.addProperty("op", "replace");
-            replaceOperation.addProperty("path", "permissions");
-            replaceOperation.add("value", allScopes);
-
-            JsonArray operations = new JsonArray();
-            operations.add(replaceOperation);
-            JsonObject payload = new JsonObject();
-            payload.add("Operations", operations);
-
-            wso2IS7SCIMRolesClient.patchRole(roleId, payload);
+            updateWSO2IS7RoleWithScopes(roleId, allPermissions);
         } catch (KeyManagerClientException e) {
             handleException("Failed to add scope: " + scope.getKey() + " to the role with ID: " + roleId, e);
         }
+    }
+
+    /**
+     * Updates the WSO2 IS7 role with the given ID, with the provided WSO2 IS7 scopes.
+     * @param roleId                        ID of the WSO2 IS7 role.
+     * @param scopes                        List of WSO2 IS7 scopes, that the WSO2 IS7 role should be updated with.
+     * @throws KeyManagerClientException    Failed to update the WSO2 IS7 role.
+     */
+    private void updateWSO2IS7RoleWithScopes(String roleId, List<WSO2IS7PatchRoleOperationInfo.Permission> scopes)
+            throws KeyManagerClientException {
+        WSO2IS7PatchRoleOperationInfo.Value value = new WSO2IS7PatchRoleOperationInfo.Value();
+        value.setPermissions(scopes);
+
+        WSO2IS7PatchRoleOperationInfo.Operation replaceOperation =
+                new WSO2IS7PatchRoleOperationInfo.Operation();
+        replaceOperation.setOp("replace");
+        replaceOperation.setValue(value);
+
+        WSO2IS7PatchRoleOperationInfo patchOperationInfo = new WSO2IS7PatchRoleOperationInfo();
+        patchOperationInfo.setOperations(Collections.singletonList(replaceOperation));
+        wso2IS7SCIMRolesClient.patchRole(roleId, patchOperationInfo);
     }
 
     /**
@@ -1245,12 +1255,12 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         try {
             String wso2IS7APIResourceId = getWSO2IS7APIResourceId();
             if (wso2IS7APIResourceId != null) {
-                JsonObject payload = new JsonObject();
-                payload.addProperty("displayName", scope.getName());
-                payload.addProperty("description", scope.getDescription());
+                WSO2IS7APIResourceScopeInfo scopeInfo = new WSO2IS7APIResourceScopeInfo();
+                scopeInfo.setDisplayName(scope.getName());
+                scopeInfo.setDescription(scope.getDescription());
                 try {
                     wso2IS7APIResourceManagementClient.patchAPIResourceScope(wso2IS7APIResourceId, scope.getKey(),
-                            payload);
+                            scopeInfo);
                 } catch (KeyManagerClientException e) {
                     handleException("Failed to update scope: " + scope.getName() + " in WSO2 IS7 API Resource: " +
                             DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
@@ -1298,27 +1308,16 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     List<Map<String, String>> existingScopes = roleInfo.getPermissions();
 
                     // Update the role with all the existing scopes(permissions) except the given scope(permission)
-                    JsonArray permissions = new JsonArray();
+                    List<WSO2IS7PatchRoleOperationInfo.Permission> permissions = new ArrayList<>();
                     for (Map<String, String> existingScope : existingScopes) {
                         if (!scopeName.equals(existingScope.get("value"))) {
-                            JsonObject permission = new JsonObject();
-                            permission.addProperty("value", existingScope.get("value"));
+                            WSO2IS7PatchRoleOperationInfo.Permission permission =
+                                    new WSO2IS7PatchRoleOperationInfo.Permission();
+                            permission.setValue(existingScope.get("value"));
                             permissions.add(permission);
                         }
                     }
-                    JsonObject payload = new JsonObject();
-                    JsonObject value = new JsonObject();
-                    value.add("permissions", permissions);
-
-                    JsonObject replaceOperation = new JsonObject();
-                    replaceOperation.addProperty("op", "replace");
-                    replaceOperation.add("value", value);
-                    JsonArray operations = new JsonArray();
-                    operations.add(replaceOperation);
-
-                    payload.add("Operations", operations);
-
-                    wso2IS7SCIMRolesClient.patchRole(roleId, payload);
+                    updateWSO2IS7RoleWithScopes(roleId, permissions);
                 }
             } catch (KeyManagerClientException e) {
                 handleException("Failed to remove role-to-scope bindings for role: " + role, e);
