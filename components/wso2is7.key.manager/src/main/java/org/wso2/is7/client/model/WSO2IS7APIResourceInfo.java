@@ -106,6 +106,9 @@ public class WSO2IS7APIResourceInfo {
         this.scopes = scopes;
     }
 
+    /**
+     * Represents the added scopes payload for WSO2 Identity Server 7.
+     */
     public static class AddedScopesInfo {
 
         @SerializedName("addedScopes")
