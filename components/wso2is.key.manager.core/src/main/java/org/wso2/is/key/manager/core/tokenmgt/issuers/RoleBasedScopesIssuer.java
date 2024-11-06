@@ -313,7 +313,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             }
             requestedScopes.removeAll(scopes);
             if (requestedScopes.isEmpty()) {
-                return scopes;
+                return getAllowedScopes(scopes);
             }
         }
         String clientId = oAuthAuthzReqMessageContext.getAuthorizationReqDTO().getConsumerKey();
@@ -388,7 +388,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         String clientId = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getClientId();
         AuthenticatedUser authenticatedUser = tokReqMsgCtx.getAuthorizedUser();
         if (requestedScopes.isEmpty()) {
-            return scopes;
+            return getAllowedScopes(scopes);
         }
         Map<String, String> appScopes = getAppScopes(clientId, authenticatedUser, requestedScopes);
         if (appScopes != null) {
