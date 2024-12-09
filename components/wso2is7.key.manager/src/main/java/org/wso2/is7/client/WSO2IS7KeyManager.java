@@ -101,6 +101,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
     private static final String API_RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
     private static final String IS7_ROLES_ENDPOINT = "is7_roles_endpoint";
+    private static final String ENABLE_ROLES_CREATION = "enable_roles_creation";
     private static final String GRANT_TYPE_VALUE = "client_credentials";
     private static final String DEFAULT_OAUTH_2_RESOURCE_NAME = "User-defined OAuth2 Resource";
     private static final String DEFAULT_OAUTH_2_RESOURCE_DESCRIPTION = "This is Default OAuth2 Resource Representation";
@@ -111,6 +112,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
     // Name of the default API Resource of WSO2 IS7 - which is used to contain scopes.
     private static final String DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER = "User-defined-oauth2-resource";
+    private boolean enableRoleCreation = false;
 
     private WSO2IS7DCRClient wso2IS7DCRClient;
     private IntrospectionClient introspectionClient;
@@ -702,6 +704,10 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .concat(getTenantAwareContext().trim()).concat("/scim2/v2/Roles");
         }
 
+        if (configuration.getParameter(ENABLE_ROLES_CREATION) instanceof Boolean) {
+            enableRoleCreation = (Boolean) configuration.getParameter(ENABLE_ROLES_CREATION);
+        }
+
         wso2IS7DCRClient = Feign.builder()
                 .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
                 .encoder(new GsonEncoder())
@@ -955,17 +961,18 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         for (Scope scope : scopes) {
             List<String> roles = getRoles(scope);
             for (String role : roles) {
+                String roleName = getWSO2IS7RoleName(role);
                 try {
-                    String roleId = getWSO2IS7RoleId(role);
+                    String roleId = getWSO2IS7RoleId(roleName);
                     if (roleId != null) {
                         // Add this scope(permission) to existing role
                         addScopeToWSO2IS7Role(scope, roleId);
-                    } else {
+                    } else if (enableRoleCreation) {
                         // Create new role with this scope(permission)
                         Map<String, String> wso2IS7Scope = new HashMap<>();
                         wso2IS7Scope.put("value", scope.getKey());
                         wso2IS7Scope.put("display", scope.getName());
-                        createWSO2IS7Role(role, Collections.singletonList(wso2IS7Scope));
+                        createWSO2IS7Role(roleName, Collections.singletonList(wso2IS7Scope));
                     }
                 } catch (KeyManagerClientException e) {
                     handleException("Failed to get the role ID for role: " + role, e);
@@ -1270,7 +1277,11 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             List<String> existingRoles = getWSO2IS7RolesHavingScope(scope.getKey(), allRoles);
 
             // Add new scope-to-role bindings
-            List<String> roles = getRoles(scope);
+            List<String> scopeRoles = getRoles(scope);
+            List<String> roles = new ArrayList<>(scopeRoles.size());
+            for (String role : scopeRoles) {
+                roles.add(getWSO2IS7RoleName(role));
+            }
             List<String> roleBindingsToAdd = new ArrayList<>(roles);
             roleBindingsToAdd.removeAll(existingRoles);
             if (!roleBindingsToAdd.isEmpty()) {
@@ -1302,7 +1313,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private void removeWSO2IS7RoleToScopeBindings(String scopeName, List<String> roles) throws APIManagementException {
         for (String role : roles) {
             try {
-                String roleId = getWSO2IS7RoleId(role);
+                String roleName = getWSO2IS7RoleName(role);
+                String roleId = getWSO2IS7RoleId(roleName);
                 if (roleId != null) {
                     WSO2IS7RoleInfo roleInfo = wso2IS7SCIMRolesClient.getRole(roleId);
                     List<Map<String, String>> existingScopes = roleInfo.getPermissions();
@@ -1565,6 +1577,20 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             return Arrays.asList(scope.getRoles().trim().split(","));
         }
         return Collections.emptyList();
+    }
+
+    private String getWSO2IS7RoleName(String roleName) throws APIManagementException {
+        if (!enableRoleCreation) {
+            return roleName;
+        }
+        // When role creation is enabled, conventions of the WSO2 IS7 migration client are followed for roles.
+        if (roleName.startsWith("Internal/")) {
+            return roleName.replace("Internal/", "");
+        } else if (roleName.startsWith("Application/")) {
+            throw new APIManagementException("Role: " + roleName +
+                    " is invalid since Application roles are not supported in WSO2 IS7.");
+        }
+        return "system_primary_" + roleName;
     }
 
 }
