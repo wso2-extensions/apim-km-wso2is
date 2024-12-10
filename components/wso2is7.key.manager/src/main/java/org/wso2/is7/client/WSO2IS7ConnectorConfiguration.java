@@ -68,7 +68,10 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 String.format("E.g., %s/scim2/v2/Roles",
                         org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "", true, false,
                 Collections.emptyList(), false));
-
+        configurationDtoList.add(new ConfigurationDto("enable_roles_creation",
+                "Create roles in WSO2 Identity Server 7", "checkbox",
+                "Create roles in WSO2 Identity Server 7, corresponding to the roles used in WSO2 API Manager.",
+                "Enable", false, false, Collections.singletonList("Enable"), false));
         return configurationDtoList;
     }
 
