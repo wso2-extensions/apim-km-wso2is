@@ -1587,8 +1587,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (roleName.startsWith("Internal/")) {
             return roleName.replace("Internal/", "");
         } else if (roleName.startsWith("Application/")) {
-            throw new APIManagementException("Role: " + roleName +
-                    " is invalid since Application roles are not supported in WSO2 IS7.");
+            throw new APIManagementException("Role: " + roleName + " is invalid.");
         }
         return "system_primary_" + roleName;
     }
