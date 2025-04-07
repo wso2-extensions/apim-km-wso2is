@@ -30,7 +30,7 @@
 
     <modules>
         <module>components/wso2is7.key.manager</module>
-        <module>components/wso2is.key.manager.operations.endpoint</module>
+        <!--<module>components/wso2is.key.manager.operations.endpoint</module> -->
         <module>components/wso2is.notification.event.handlers</module>
         <module>features/wso2is7.key.manager.feature</module>
         <module>features/wso2is.key.manager.operations.endpoint.feature</module>
