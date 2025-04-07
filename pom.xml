@@ -25,7 +25,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.km.ext.wso2is</groupId>
     <artifactId>wso2is.auth.client</artifactId>
-    <version>2.0.5-SNAPSHOT</version>
+    <version>2.0.5</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -420,7 +420,7 @@
         <connection>scm:git:https://github.com/wso2-extensions/apim-km-wso2is.git</connection>
         <url>https://github.com/wso2-extensions/apim-km-wso2is.git</url>
         <developerConnection>scm:git:https://github.com/wso2-extensions/apim-km-wso2is.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v2.0.5</tag>
     </scm>
     <properties>
         <common.codec.version>1.15</common.codec.version>
