@@ -1601,7 +1601,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * When role creation is enabled, the method applies specific naming conventions:
      * - Removes the "Internal/" prefix if present.
      * - Throws an exception if the role starts with "Application/".
-     * - Returns the role name as-is if it starts with "system_primary_".
      * - Prepends "system_primary_" to the role name if no specific prefix is found.
      *
      * @param roleName The role name to process.
