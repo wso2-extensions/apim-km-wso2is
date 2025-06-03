@@ -88,6 +88,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This class provides the implementation to use WSO2 Identity Server 7 for managing OAuth clients and Tokens
@@ -960,10 +961,10 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         for (Scope scope : scopes) {
             List<String> roles = getRoles(scope);
-            for (String role : roles) {
-                String roleName = getWSO2IS7RoleName(role);
+            for (String apimRole : roles) {
+                String is7RoleName = getWSO2IS7RoleName(apimRole);
                 try {
-                    String roleId = getWSO2IS7RoleId(roleName);
+                    String roleId = getWSO2IS7RoleId(is7RoleName);
                     if (roleId != null) {
                         // Add this scope(permission) to existing role
                         addScopeToWSO2IS7Role(scope, roleId);
@@ -972,10 +973,10 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                         Map<String, String> wso2IS7Scope = new HashMap<>();
                         wso2IS7Scope.put("value", scope.getKey());
                         wso2IS7Scope.put("display", scope.getName());
-                        createWSO2IS7Role(roleName, Collections.singletonList(wso2IS7Scope));
+                        createWSO2IS7Role(is7RoleName, Collections.singletonList(wso2IS7Scope));
                     }
                 } catch (KeyManagerClientException e) {
-                    handleException("Failed to get the role ID for role: " + role, e);
+                    handleException("Failed to get the role ID for role: " + apimRole, e);
                 }
             }
         }
@@ -1087,13 +1088,16 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     String scopeName = scopeJsonObject.get("name").getAsString();
                     if (name.equals(scopeName)) {
                         String scopeDisplayName = scopeJsonObject.get("displayName").getAsString();
-                        String scopeDescription = scopeJsonObject.get("description").getAsString();
 
                         Scope foundScope = new Scope();
                         foundScope.setKey(scopeName);
                         foundScope.setName(scopeDisplayName);
-                        foundScope.setDescription(scopeDescription);
-                        foundScope.setRoles(String.join(",", getWSO2IS7RolesHavingScope(scopeName, allRoles)));
+                        foundScope.setDescription(scopeJsonObject.get("description") != null ?
+                                scopeJsonObject.get("description").getAsString() :
+                                StringUtils.EMPTY);
+                        List<String> is7ScopeRoles = getWSO2IS7RolesHavingScope(scopeName, allRoles);
+                        List<String> apimRoles = getAPIMRolesFromIS7Roles(is7ScopeRoles);
+                        foundScope.setRoles(String.join(",", apimRoles));
                         return foundScope;
                     }
                 }
@@ -1147,7 +1151,21 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
         return scopeRoles;
     }
-
+    /**
+     * Converts a list of WSO2 IS7 roles to API Manager roles.
+     * If a role starts with "system_primary_", it removes the prefix.
+     * Otherwise, it prepends "Internal/" to the role name.
+     *
+     * @param is7Roles List of WSO2 IS7 roles.
+     * @return List of API Manager roles.
+     */
+    private List<String> getAPIMRolesFromIS7Roles(List<String> is7Roles) {
+        return is7Roles.stream()
+                .map(roleName -> roleName.startsWith("system_primary_")
+                        ? roleName.replaceFirst("^system_primary_", "")
+                        : "Internal/" + roleName)
+                .collect(Collectors.toList());
+    }
     /**
      * Copied from AMDefaultKeyManagerImpl.
      * This method will be used to retrieve all the scopes available in the authorization server for the given tenant
@@ -1273,29 +1291,28 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                             DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
                 }
             }
-            JsonArray allRoles = searchRoles(null);
-            List<String> existingRoles = getWSO2IS7RolesHavingScope(scope.getKey(), allRoles);
+            JsonArray allIS7Roles = searchRoles(null);
+            List<String> existingAPIMRoles = getAPIMRolesFromIS7Roles(
+                    getWSO2IS7RolesHavingScope(scope.getKey(), allIS7Roles));
 
             // Add new scope-to-role bindings
-            List<String> scopeRoles = getRoles(scope);
-            List<String> roles = new ArrayList<>(scopeRoles.size());
-            for (String role : scopeRoles) {
-                roles.add(getWSO2IS7RoleName(role));
-            }
-            List<String> roleBindingsToAdd = new ArrayList<>(roles);
-            roleBindingsToAdd.removeAll(existingRoles);
-            if (!roleBindingsToAdd.isEmpty()) {
+            List<String> apimScopeRoles = getRoles(scope);
+
+            List<String> apimRoleBindingsToAdd = new ArrayList<>(apimScopeRoles);
+            apimRoleBindingsToAdd.removeAll(existingAPIMRoles);
+
+            if (!apimRoleBindingsToAdd.isEmpty()) {
                 Scope addableScope = new Scope();
                 addableScope.setKey(scope.getKey());
                 addableScope.setName(scope.getName());
                 addableScope.setDescription(scope.getDescription());
-                addableScope.setRoles(String.join(",", roleBindingsToAdd));
+                addableScope.setRoles(String.join(",", apimRoleBindingsToAdd));
                 createWSO2IS7RoleToScopeBindings(Collections.singleton(addableScope));
             }
 
             // Remove old scope-to-role bindings
-            List<String> roleBindingsToRemove = new ArrayList<>(existingRoles);
-            roleBindingsToRemove.removeAll(roles);
+            List<String> roleBindingsToRemove = new ArrayList<>(existingAPIMRoles);
+            roleBindingsToRemove.removeAll(apimScopeRoles);
             if (!roleBindingsToRemove.isEmpty()) {
                 removeWSO2IS7RoleToScopeBindings(scope.getKey(), roleBindingsToRemove);
             }
@@ -1578,7 +1595,18 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
         return Collections.emptyList();
     }
-
+    /**
+     * Retrieves the WSO2 IS7 role name based on the provided role name.
+     * If role creation is disabled, the original role name is returned.
+     * When role creation is enabled, the method applies specific naming conventions:
+     * - Removes the "Internal/" prefix if present.
+     * - Throws an exception if the role starts with "Application/".
+     * - Prepends "system_primary_" to the role name if no specific prefix is found.
+     *
+     * @param roleName The role name to process.
+     * @return The processed WSO2 IS7 role name.
+     * @throws APIManagementException If the role name is invalid.
+     */
     private String getWSO2IS7RoleName(String roleName) throws APIManagementException {
         if (!enableRoleCreation) {
             return roleName;
