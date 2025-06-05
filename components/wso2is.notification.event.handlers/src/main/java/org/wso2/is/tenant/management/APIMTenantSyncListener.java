@@ -11,14 +11,11 @@ import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.tenant.mgt.internal.TenantMgtServiceComponent;
 import org.wso2.carbon.tenant.mgt.stub.TenantMgtAdminServiceExceptionException;
 import org.wso2.carbon.user.api.Tenant;
-import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.is.tenant.management.internal.ServiceReferenceHolder;
 
 import java.rmi.RemoteException;
-import java.util.Map;
 
 /**
  * Listener class for Tenant management in IS
@@ -38,7 +35,7 @@ public class APIMTenantSyncListener implements TenantMgtListener {
         carbonContext.setTenantDomain(tenantDomain);
 
         RealmService realmService = TenantMgtServiceComponent.getRealmService();
-        UserRealm userRealm = null;
+
         try {
             Tenant tenant = realmService.getTenantManager().getTenant(tenantInfoBean.getTenantId());
             String organizationID = tenant.getAssociatedOrganizationUUID();
@@ -47,35 +44,15 @@ public class APIMTenantSyncListener implements TenantMgtListener {
             if (organizationID == null ||
                     getOrganizationManager().getOrganizationDepthInHierarchy(organizationID) == -1) {
 
-                userRealm = realmService.getTenantUserRealm(tenantInfoBean.getTenantId());
-
-                UserStoreManager userStoreManager = userRealm.getUserStoreManager();
-
-                Map<String, String> claimValues = userStoreManager.getUserClaimValues(
-                        tenantInfoBean.getAdmin(),
-                        new String[]{
-                                "http://wso2.org/claims/givenname",
-                                "http://wso2.org/claims/lastname"
-                        },
-                        null
-                );
-
-                String firstName = claimValues.get("http://wso2.org/claims/givenname");
-                String lastName = claimValues.get("http://wso2.org/claims/lastname");
-
-                log.info("Tenant admin first name: " + firstName);
-                tenantInfoBean.setFirstname(firstName);
-
-                log.info("Tenant admin last name: " + lastName);
-                tenantInfoBean.setLastname(lastName);
-
                 APIMTenantManagementSOAPClient.createTenantInAPIM(tenantInfoBean);
             } else {
-                log.info("Triggered Event is not related to a root org creation");
+                log.info("Skipping creating the tenant in APIM since the triggered Event is not related " +
+                        "to a root org creation.");
             }
 
         //if there was an exception thrown here, tenant activation won't happen
         } catch (UserStoreException | OrganizationManagementServerException e) {
+            log.error(e.getMessage(), e);
             throw new StratosException(e.getMessage());
         } catch (RemoteException | TenantMgtAdminServiceExceptionException e) {
             String errorMessage = "Error while syncing tenant to APIM";
