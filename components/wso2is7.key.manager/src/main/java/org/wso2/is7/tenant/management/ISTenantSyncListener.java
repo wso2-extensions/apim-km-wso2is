@@ -15,7 +15,11 @@ import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.stratos.common.beans.TenantInfoBean;
 import org.wso2.carbon.stratos.common.exception.StratosException;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
+import org.wso2.carbon.tenant.mgt.internal.TenantMgtServiceComponent;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,10 +36,24 @@ public class ISTenantSyncListener implements TenantMgtListener {
     public void onTenantCreate(TenantInfoBean tenantInfoBean) throws StratosException {
         String tenantDomain = tenantInfoBean.getTenantDomain();
         log.info("Tenant created in API Manager: " + tenantDomain);
-
+        try {
+            ISTenantManagementRestClient.createTenantInIS(
+                    tenantInfoBean.getAdmin(),
+                    tenantInfoBean.getAdminPassword(),
+                    tenantInfoBean.getTenantDomain(),
+                    tenantInfoBean.getFirstname(),
+                    tenantInfoBean.getLastname(),
+                    tenantInfoBean.getEmail()
+            );
+        } catch (IOException e) {
+            log.error("Error while creating tenant in IS: " + tenantDomain, e);
+            throw new StratosException(e);
+        }
+        log.info("Tenant created successfully in IS: " + tenantDomain);
         try {
             keyManagersPost(tenantInfoBean);
         } catch (APIManagementException e) {
+            log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
             throw new StratosException(e);
         }
     }
@@ -177,7 +195,21 @@ public class ISTenantSyncListener implements TenantMgtListener {
 
     @Override
     public void onTenantUpdate(TenantInfoBean tenantInfoBean) throws StratosException {
-
+        String tenantDomain = tenantInfoBean.getTenantDomain();
+        log.info("Tenant updated in API Manager: " + tenantDomain);
+        try {
+            ISTenantManagementRestClient.updateTenantInIS(
+                    tenantDomain,
+                    tenantInfoBean.getAdminPassword(),
+                    tenantInfoBean.getFirstname(),
+                    tenantInfoBean.getLastname(),
+                    tenantInfoBean.getEmail()
+            );
+        } catch (IOException e) {
+            log.error("Error while updating tenant in IS: " + tenantDomain, e);
+            throw new StratosException(e);
+        }
+        log.info("Tenant updated successfully in IS: " + tenantDomain);
     }
 
     @Override
@@ -196,13 +228,46 @@ public class ISTenantSyncListener implements TenantMgtListener {
     }
 
     @Override
-    public void onTenantActivation(int i) throws StratosException {
+    public void onTenantActivation(int tenantId) throws StratosException {
+        //should get tenant domain for the corresponding ID as the ID is not the same for IS side
+        TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
+        log.info("Tenant activated in API Manager: " + tenantId);
+        String tenantDomain;
+        try {
+            tenantDomain = tenantManager.getDomain(tenantId);
+        } catch (UserStoreException e) {
+            log.error("Error while getting the tenant domain from ID: " + tenantId, e);
+            throw new StratosException(e);
+        }
 
+        try {
+            ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, true);
+        } catch (IOException e) {
+            log.error("Error while activating tenant in IS: " + tenantDomain, e);
+            throw new StratosException(e);
+        }
+        log.info("Tenant activated successfully in IS: " + tenantDomain);
     }
 
     @Override
-    public void onTenantDeactivation(int i) throws StratosException {
-
+    public void onTenantDeactivation(int tenantId) throws StratosException {
+        //should get tenant domain for the corresponding ID as the ID is not the same for IS side
+        TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
+        log.info("Tenant deactivated in API Manager: " + tenantId);
+        String tenantDomain;
+        try {
+            tenantDomain = tenantManager.getDomain(tenantId);
+        } catch (UserStoreException e) {
+            log.error("Error while getting the tenant domain from ID: " + tenantId, e);
+            throw new StratosException(e);
+        }
+        try {
+            ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, false);
+        } catch (IOException e) {
+            log.error("Error while deactivating tenant in IS: " + tenantId, e);
+            throw new StratosException(e);
+        }
+        log.info("Tenant deactivated successfully in IS: " + tenantId);
     }
 
     @Override

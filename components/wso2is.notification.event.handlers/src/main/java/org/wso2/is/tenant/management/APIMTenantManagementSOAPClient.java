@@ -45,6 +45,42 @@ public class APIMTenantManagementSOAPClient {
         stub.addTenant(tenantInfoBean);
     }
 
+    public static void updateTenantInAPIM(org.wso2.carbon.stratos.common.beans.TenantInfoBean tenant)
+            throws RemoteException, TenantMgtAdminServiceExceptionException {
+        String backendURL = "https://localhost:9443/services/";
+        String username = "tenantmgt";
+        String password = "admin123";
+
+        TenantMgtAdminServiceStub stub = new TenantMgtAdminServiceStub(backendURL + TENANT_MANAGEMENT_ADMIN_SERVICE);
+
+        // Authenticate stub
+        ServiceClient client = stub._getServiceClient();
+        Options options = client.getOptions();
+        HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
+        auth.setUsername(username);
+        auth.setPassword(password);
+        auth.setPreemptiveAuthentication(true);
+        options.setProperty(org.apache.axis2.transport.http.HTTPConstants.AUTHENTICATE, auth);
+
+        //Since it checks for the tenant ID in tenantInfoBean, to access UserRegistry in APIM side
+        TenantInfoBean tenantInfoInAPIM = stub.getTenant(tenant.getTenantDomain());
+
+        // Build tenant DTO
+        TenantInfoBean tenantInfoBean = new TenantInfoBean();
+        tenantInfoBean.setTenantId(tenantInfoInAPIM.getTenantId());
+        tenantInfoBean.setTenantDomain(tenant.getTenantDomain());
+        tenantInfoBean.setAdmin(tenant.getAdmin());
+        tenantInfoBean.setAdminPassword(tenant.getAdminPassword());
+        tenantInfoBean.setEmail(tenant.getEmail());
+        tenantInfoBean.setFirstname(tenant.getFirstname());
+        tenantInfoBean.setLastname(tenant.getLastname());
+        tenantInfoBean.setActive(tenant.isActive());
+        tenantInfoBean.setCreatedDate(tenant.getCreatedDate());
+
+        // Call APIM
+        stub.updateTenant(tenantInfoBean);
+    }
+
     public static void activateTenantInAPIM(String tenantDomain)
             throws RemoteException, TenantMgtAdminServiceExceptionException {
         String backendURL = "https://localhost:9443/services/";

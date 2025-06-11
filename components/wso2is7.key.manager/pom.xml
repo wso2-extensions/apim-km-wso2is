@@ -78,7 +78,8 @@
     </build>
     <properties>
         <carbon.commons.version>4.9.11</carbon.commons.version>
-        <carbon.multitenancy.version>4.9.34</carbon.multitenancy.version>
+        <carbon.tenant.mgt.version>4.9.34</carbon.tenant.mgt.version>
+<!--        <carbon.tenant.mgt.stub.version>4.11.38-SNAPSHOT</carbon.tenant.mgt.stub.version>-->
         <identity.organization.management.version>1.0.99</identity.organization.management.version>
         <carbon.apimgt.version>9.31.137</carbon.apimgt.version>
         <carbon.identity.version>5.25.724</carbon.identity.version>
@@ -126,6 +127,11 @@
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.claim.metadata.mgt</artifactId>
             <version>${carbon.identity.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.multitenancy</groupId>
+            <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
+            <version>${carbon.tenant.mgt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2.wso2</groupId>
