@@ -11,6 +11,7 @@ import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
+import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
@@ -99,6 +100,20 @@ public class TenantManagementServiceComponent {
     protected void unsetOrganizationManager(OrganizationManager organizationManager) {
 
         ServiceReferenceHolder.getInstance().setOrganizationManager(null);
+    }
+
+    @Reference(name = "apim.config.service",
+            service = org.wso2.carbon.apimgt.impl.APIManagerConfigurationService.class,
+            cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetAPIMConfigurationService")
+    protected void setAPIMConfigurationService(APIManagerConfigurationService amcService) {
+
+        org.wso2.is7.client.internal.ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(amcService);
+    }
+
+    protected void unsetAPIMConfigurationService(APIManagerConfigurationService amcService) {
+
+        org.wso2.is7.client.internal.ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(null);
     }
 
     @Deactivate

@@ -27,11 +27,10 @@ public class ISTenantManagementRestClient {
     private static final String TENANT_OWNER_ID = "OWNER_ID";
 
     public static void createTenantInIS(String admin, String adminPassword, String tenantDomain, String firstName,
-                                        String lastName, String email) throws IOException {
+                                        String lastName, String email, String identityUserName,
+                                        String identityUserPassword) throws IOException {
 
         String endpoint = IS_HOST + "/api/server/v1/tenants";
-        String username = "admin";
-        String password = "admin";
 
         // JSON payload (no additional claims)
         String payload = String.format("{%n" +
@@ -58,7 +57,7 @@ public class ISTenantManagementRestClient {
 
 
         // Set Basic Auth Header
-        String auth = username + ":" + password;
+        String auth = identityUserName + ":" + identityUserPassword;
         String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
@@ -75,17 +74,18 @@ public class ISTenantManagementRestClient {
     }
 
     public static void updateTenantInIS(String tenantDomain, String adminPassword, String firstName,
-                                        String lastName, String email) throws IOException {
+                                        String lastName, String email, String identityUserName,
+                                        String identityUserPassword) throws IOException {
 
-        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(tenantDomain);
+        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(tenantDomain,
+                identityUserName, identityUserPassword);
 
         //TODO : remove this API call after IS fixes https://github.com/wso2-enterprise/wso2-iam-internal/issues/3992
-        tenantInfoMap.put(TENANT_OWNER_ID, getTenantOwnerId(tenantInfoMap.get(TENANT_ID)));
+        tenantInfoMap.put(TENANT_OWNER_ID, getTenantOwnerId(tenantInfoMap.get(TENANT_ID), identityUserName,
+                identityUserPassword));
 
         String endpoint = IS_HOST + "/api/server/v1/tenants/" + tenantInfoMap.get(TENANT_ID) +
                 "/owners/" + tenantInfoMap.get(TENANT_OWNER_ID);
-        String username = "admin";
-        String password = "admin";
 
         // JSON payload
         String payload = String.format("{%n" +
@@ -104,7 +104,7 @@ public class ISTenantManagementRestClient {
         connection.setRequestProperty("Content-Type", "application/json");
 
         // Set Basic Auth Header
-        String auth = username + ":" + password;
+        String auth = identityUserName + ":" + identityUserPassword;
         String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
@@ -120,10 +120,9 @@ public class ISTenantManagementRestClient {
     }
 
     //TODO : remove this API call after IS fixes https://github.com/wso2-enterprise/wso2-iam-internal/issues/3992
-    private static String getTenantOwnerId(String tenantId) throws IOException {
+    private static String getTenantOwnerId(String tenantId, String identityUserName, String identityUserPassword)
+            throws IOException {
         String endpoint = IS_HOST + "/api/server/v1/tenants/" + tenantId + "/owners";
-        String username = "admin";
-        String password = "admin";
 
         URL url = new URL(endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -131,7 +130,7 @@ public class ISTenantManagementRestClient {
         connection.setRequestProperty("Accept", "application/json");
 
         // Add Basic Auth
-        String auth = username + ":" + password;
+        String auth = identityUserName + ":" + identityUserPassword;
         String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
@@ -156,11 +155,10 @@ public class ISTenantManagementRestClient {
         }
     }
 
-    private static Map<String, String> getTenantIdAStatusAndOwnerInIS(String tenantDomain) throws IOException {
+    private static Map<String, String> getTenantIdAStatusAndOwnerInIS(String tenantDomain, String identityUserName,
+                                                                      String identityUserPassword) throws IOException {
         Map<String, String> tenantIdStatusMap = new HashMap<>();
         String endpoint = IS_HOST + "/api/server/v1/tenants/domain/" + tenantDomain;
-        String username = "admin";
-        String password = "admin";
 
         URL url = new URL(endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -168,7 +166,7 @@ public class ISTenantManagementRestClient {
         connection.setRequestProperty("Accept", "application/json");
 
         // Add Basic Auth
-        String auth = username + ":" + password;
+        String auth = identityUserName + ":" + identityUserPassword;
         String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
@@ -198,13 +196,13 @@ public class ISTenantManagementRestClient {
         }
     }
 
-    public static void updateTenantStatusInIS(String tenantDomain, boolean isActive) throws IOException {
+    public static void updateTenantStatusInIS(String tenantDomain, boolean isActive, String identityUserName,
+                                              String identityUserPassword) throws IOException {
 
-        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(tenantDomain);
+        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(tenantDomain, identityUserName,
+                identityUserPassword);
 
         String endpoint = IS_HOST + "/api/server/v1/tenants/" + tenantInfoMap.get(TENANT_ID) + "/lifecycle-status";
-        String username = "admin";
-        String password = "admin";
 
         //check if tenant is already active
         if (isActive != Boolean.parseBoolean(tenantInfoMap.get(TENANT_STATUS))) {
@@ -220,7 +218,7 @@ public class ISTenantManagementRestClient {
             connection.setRequestProperty("Content-Type", "application/json");
 
             // Set Basic Auth Header
-            String auth = username + ":" + password;
+            String auth = identityUserName + ":" + identityUserPassword;
             String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
             connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 

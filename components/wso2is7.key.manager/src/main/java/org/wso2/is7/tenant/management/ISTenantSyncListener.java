@@ -11,6 +11,8 @@ import org.wso2.carbon.apimgt.api.dto.KeyManagerPermissionConfigurationDTO;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.APIAdminImpl;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
+import org.wso2.carbon.apimgt.impl.dto.TenantSharingConfigurationDTO;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.stratos.common.beans.TenantInfoBean;
 import org.wso2.carbon.stratos.common.exception.StratosException;
@@ -18,6 +20,7 @@ import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.tenant.mgt.internal.TenantMgtServiceComponent;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.is7.client.internal.ServiceReferenceHolder;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -31,30 +34,47 @@ import java.util.Map;
 public class ISTenantSyncListener implements TenantMgtListener {
     private static final Log log = LogFactory.getLog(ISTenantSyncListener.class);
     private static final String DEFAULT_KEY_MANAGER = "IS7_default_key_manager";
+    private static final APIManagerConfiguration API_MANAGER_CONFIGURATION;
+
+    static {
+        API_MANAGER_CONFIGURATION = ServiceReferenceHolder.getInstance()
+                .getAPIManagerConfigurationService().getAPIManagerConfiguration();
+    }
 
     @Override
     public void onTenantCreate(TenantInfoBean tenantInfoBean) throws StratosException {
         String tenantDomain = tenantInfoBean.getTenantDomain();
         log.info("Tenant created in API Manager: " + tenantDomain);
-        try {
-            ISTenantManagementRestClient.createTenantInIS(
-                    tenantInfoBean.getAdmin(),
-                    tenantInfoBean.getAdminPassword(),
-                    tenantInfoBean.getTenantDomain(),
-                    tenantInfoBean.getFirstname(),
-                    tenantInfoBean.getLastname(),
-                    tenantInfoBean.getEmail()
-            );
-        } catch (IOException e) {
-            log.error("Error while creating tenant in IS: " + tenantDomain, e);
-            throw new StratosException(e);
-        }
-        log.info("Tenant created successfully in IS: " + tenantDomain);
-        try {
-            keyManagersPost(tenantInfoBean);
-        } catch (APIManagementException e) {
-            log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
-            throw new StratosException(e);
+
+        TenantSharingConfigurationDTO tenantSharingConfiguration =
+                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
+
+        if (tenantSharingConfiguration.isIsEnabled()) {
+            try {
+                ISTenantManagementRestClient.createTenantInIS(
+                        tenantInfoBean.getAdmin(),
+                        tenantInfoBean.getAdminPassword(),
+                        tenantInfoBean.getTenantDomain(),
+                        tenantInfoBean.getFirstname(),
+                        tenantInfoBean.getLastname(),
+                        tenantInfoBean.getEmail(),
+                        tenantSharingConfiguration.getReservedUserName(),
+                        tenantSharingConfiguration.getReservedUserPassword()
+                );
+            } catch (IOException e) {
+                log.error("Error while creating tenant in IS: " + tenantDomain, e);
+                throw new StratosException(e);
+            }
+            log.info("Tenant created successfully in IS: " + tenantDomain);
+            try {
+                keyManagersPost(tenantInfoBean);
+            } catch (APIManagementException e) {
+                log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
+                throw new StratosException(e);
+            }
+        } else {
+            log.info("Tenant sharing is not enabled, skipping tenant creation in Identity Server for tenant: "
+                    + tenantDomain);
         }
     }
 
@@ -197,19 +217,28 @@ public class ISTenantSyncListener implements TenantMgtListener {
     public void onTenantUpdate(TenantInfoBean tenantInfoBean) throws StratosException {
         String tenantDomain = tenantInfoBean.getTenantDomain();
         log.info("Tenant updated in API Manager: " + tenantDomain);
-        try {
-            ISTenantManagementRestClient.updateTenantInIS(
-                    tenantDomain,
-                    tenantInfoBean.getAdminPassword(),
-                    tenantInfoBean.getFirstname(),
-                    tenantInfoBean.getLastname(),
-                    tenantInfoBean.getEmail()
-            );
-        } catch (IOException e) {
-            log.error("Error while updating tenant in IS: " + tenantDomain, e);
-            throw new StratosException(e);
+        TenantSharingConfigurationDTO tenantSharingConfiguration =
+                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
+        if (tenantSharingConfiguration.isIsEnabled()) {
+            try {
+                ISTenantManagementRestClient.updateTenantInIS(
+                        tenantDomain,
+                        tenantInfoBean.getAdminPassword(),
+                        tenantInfoBean.getFirstname(),
+                        tenantInfoBean.getLastname(),
+                        tenantInfoBean.getEmail(),
+                        tenantSharingConfiguration.getReservedUserName(),
+                        tenantSharingConfiguration.getReservedUserPassword()
+                );
+            } catch (IOException e) {
+                log.error("Error while updating tenant in IS: " + tenantDomain, e);
+                throw new StratosException(e);
+            }
+            log.info("Tenant updated successfully in IS: " + tenantDomain);
+        } else {
+            log.info("Tenant sharing is not enabled, skipping tenant update in Identity Server for tenant: "
+                    + tenantDomain);
         }
-        log.info("Tenant updated successfully in IS: " + tenantDomain);
     }
 
     @Override
@@ -232,21 +261,30 @@ public class ISTenantSyncListener implements TenantMgtListener {
         //should get tenant domain for the corresponding ID as the ID is not the same for IS side
         TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
         log.info("Tenant activated in API Manager: " + tenantId);
-        String tenantDomain;
-        try {
-            tenantDomain = tenantManager.getDomain(tenantId);
-        } catch (UserStoreException e) {
-            log.error("Error while getting the tenant domain from ID: " + tenantId, e);
-            throw new StratosException(e);
-        }
+        TenantSharingConfigurationDTO tenantSharingConfiguration =
+                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
+        if (tenantSharingConfiguration.isIsEnabled()) {
+            String tenantDomain;
+            try {
+                tenantDomain = tenantManager.getDomain(tenantId);
+            } catch (UserStoreException e) {
+                log.error("Error while getting the tenant domain from ID: " + tenantId, e);
+                throw new StratosException(e);
+            }
 
-        try {
-            ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, true);
-        } catch (IOException e) {
-            log.error("Error while activating tenant in IS: " + tenantDomain, e);
-            throw new StratosException(e);
+            try {
+                ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, true,
+                        tenantSharingConfiguration.getReservedUserName(),
+                        tenantSharingConfiguration.getReservedUserPassword());
+            } catch (IOException e) {
+                log.error("Error while activating tenant in IS: " + tenantDomain, e);
+                throw new StratosException(e);
+            }
+            log.info("Tenant activated successfully in IS: " + tenantDomain);
+        } else {
+            log.info("Tenant sharing is not enabled, skipping tenant activation in Identity Server for " +
+                    "APIM tenant ID: " + tenantId);
         }
-        log.info("Tenant activated successfully in IS: " + tenantDomain);
     }
 
     @Override
@@ -254,20 +292,29 @@ public class ISTenantSyncListener implements TenantMgtListener {
         //should get tenant domain for the corresponding ID as the ID is not the same for IS side
         TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
         log.info("Tenant deactivated in API Manager: " + tenantId);
-        String tenantDomain;
-        try {
-            tenantDomain = tenantManager.getDomain(tenantId);
-        } catch (UserStoreException e) {
-            log.error("Error while getting the tenant domain from ID: " + tenantId, e);
-            throw new StratosException(e);
+        TenantSharingConfigurationDTO tenantSharingConfiguration =
+                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
+        if (tenantSharingConfiguration.isIsEnabled()) {
+            String tenantDomain;
+            try {
+                tenantDomain = tenantManager.getDomain(tenantId);
+            } catch (UserStoreException e) {
+                log.error("Error while getting the tenant domain from ID: " + tenantId, e);
+                throw new StratosException(e);
+            }
+            try {
+                ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, false,
+                        tenantSharingConfiguration.getReservedUserName(),
+                        tenantSharingConfiguration.getReservedUserPassword());
+            } catch (IOException e) {
+                log.error("Error while deactivating tenant in IS: " + tenantId, e);
+                throw new StratosException(e);
+            }
+            log.info("Tenant deactivated successfully in IS: " + tenantId);
+        } else {
+            log.info("Tenant sharing is not enabled, skipping tenant deactivation in Identity Server for APIM " +
+                    "tenant ID: " + tenantId);
         }
-        try {
-            ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, false);
-        } catch (IOException e) {
-            log.error("Error while deactivating tenant in IS: " + tenantId, e);
-            throw new StratosException(e);
-        }
-        log.info("Tenant deactivated successfully in IS: " + tenantId);
     }
 
     @Override
