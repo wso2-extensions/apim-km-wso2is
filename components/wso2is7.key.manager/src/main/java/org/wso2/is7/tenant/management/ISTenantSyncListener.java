@@ -34,6 +34,8 @@ import java.util.Map;
 public class ISTenantSyncListener implements TenantMgtListener {
     private static final Log log = LogFactory.getLog(ISTenantSyncListener.class);
     private static final String DEFAULT_KEY_MANAGER = "IS7_default_key_manager";
+    private static final String IS_HOST = "https://localhost:9444/";
+    private static final String TENANT_PATH_PREFIX = "t/";
     private static final APIManagerConfiguration API_MANAGER_CONFIGURATION;
 
     static {
@@ -124,51 +126,57 @@ public class ISTenantSyncListener implements TenantMgtListener {
          */
         // connector configuration
         Map<String, Object> additionalProperties = new HashMap();
-        additionalProperties.put("Username", tenantInfoBean.getAdmin());
+        additionalProperties.put("Username", tenantInfoBean.getAdmin() + "@" + tenantDomain);
         additionalProperties.put("Password", tenantInfoBean.getAdminPassword());
         additionalProperties.put("api_resource_management_endpoint",
-                "https://localhost:9444/api/server/v1/api-resources");
-        additionalProperties.put("is7_roles_endpoint", "https://localhost:9444/scim2/v2/Roles");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
+        additionalProperties.put("is7_roles_endpoint", IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/v2/Roles");
 
         //endpoints
         additionalProperties.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
-                "https://localhost:9444/api/identity/oauth2/dcr/v1.1/register");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
         endpoints.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
-                "https://localhost:9444/api/identity/oauth2/dcr/v1.1/register");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
 
         additionalProperties.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
-                "https://localhost:9444/oauth2/introspect");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
         endpoints.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
-                "https://localhost:9444/oauth2/introspect");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
 
-        additionalProperties.put(APIConstants.KeyManager.TOKEN_ENDPOINT, "https://localhost:9444/oauth2/token");
-        endpoints.put(APIConstants.KeyManager.TOKEN_ENDPOINT, "https://localhost:9444/oauth2/token");
+        additionalProperties.put(APIConstants.KeyManager.TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+                "/oauth2/token");
+        endpoints.put(APIConstants.KeyManager.TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+                "/oauth2/token");
 
-        additionalProperties.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, "https://localhost:9444/oauth2/token");
-        endpoints.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, "https://localhost:9444/oauth2/token");
+        additionalProperties.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX +
+                tenantDomain + "/oauth2/token");
+        endpoints.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+                "/oauth2/token");
 
-        additionalProperties.put(APIConstants.KeyManager.REVOKE_ENDPOINT, "https://localhost:9444/oauth2/revoke");
-        endpoints.put(APIConstants.KeyManager.REVOKE_ENDPOINT, "https://localhost:9444/oauth2/revoke");
+        additionalProperties.put(APIConstants.KeyManager.REVOKE_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+                "/oauth2/revoke");
+        endpoints.put(APIConstants.KeyManager.REVOKE_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+                "/oauth2/revoke");
 
         additionalProperties.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
-                "https://localhost:9444/oauth2/revoke");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
         endpoints.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
-                "https://localhost:9444/oauth2/revoke");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
 
         additionalProperties.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
-                "https://localhost:9444/scim2/Me");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
         endpoints.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
-                "https://localhost:9444/scim2/Me");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
 
         additionalProperties.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
-                "https://localhost:9444/oauth2/authorize");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
         endpoints.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
-                "https://localhost:9444/oauth2/authorize");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
 
         additionalProperties.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
-                "https://localhost:9444/api/identity/oauth2/v1.0/scopes");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
         endpoints.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
-                "https://localhost:9444/api/identity/oauth2/v1.0/scopes");
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
 
         //grant types
         additionalProperties.put(APIConstants.KeyManager.AVAILABLE_GRANT_TYPE,
@@ -186,14 +194,14 @@ public class ISTenantSyncListener implements TenantMgtListener {
                         "urn:ietf:params:oauth:grant-type:jwt-bearer"
                 });
 
-        additionalProperties.put(APIConstants.KeyManager.ISSUER, "https://localhost:9444/oauth2/token");
+        additionalProperties.put(APIConstants.KeyManager.ISSUER, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+                "/oauth2/token");
 
         // certificates
-        additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_VALUE,
-                "https://localhost:9444/oauth2/jwks");
         additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_TYPE,
                 APIConstants.KeyManager.CERTIFICATE_TYPE_JWKS_ENDPOINT);
-
+        additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_VALUE,
+                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/jwks");
         keyManagerConfigurationDTO.setEndpoints(endpoints);
 
         additionalProperties.put(APIConstants.KeyManager.ENABLE_OAUTH_APP_CREATION, true);

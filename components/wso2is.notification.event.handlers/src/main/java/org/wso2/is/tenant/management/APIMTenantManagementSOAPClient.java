@@ -14,11 +14,10 @@ import java.rmi.RemoteException;
 public class APIMTenantManagementSOAPClient {
     private static final String TENANT_MANAGEMENT_ADMIN_SERVICE = "TenantMgtAdminService";
 
-    public static void createTenantInAPIM(org.wso2.carbon.stratos.common.beans.TenantInfoBean tenant)
+    public static void createTenantInAPIM(org.wso2.carbon.stratos.common.beans.TenantInfoBean tenant,
+                                          String reservedUserName, String reservedUserPassword)
             throws RemoteException, TenantMgtAdminServiceExceptionException {
         String backendURL = "https://localhost:9443/services/";
-        String username = "tenantmgt";
-        String password = "admin123";
 
         TenantMgtAdminServiceStub stub = new TenantMgtAdminServiceStub(backendURL + TENANT_MANAGEMENT_ADMIN_SERVICE);
 
@@ -26,8 +25,8 @@ public class APIMTenantManagementSOAPClient {
         ServiceClient client = stub._getServiceClient();
         Options options = client.getOptions();
         HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-        auth.setUsername(username);
-        auth.setPassword(password);
+        auth.setUsername(reservedUserName);
+        auth.setPassword(reservedUserPassword);
         auth.setPreemptiveAuthentication(true);
         options.setProperty(org.apache.axis2.transport.http.HTTPConstants.AUTHENTICATE, auth);
 
@@ -45,11 +44,10 @@ public class APIMTenantManagementSOAPClient {
         stub.addTenant(tenantInfoBean);
     }
 
-    public static void updateTenantInAPIM(org.wso2.carbon.stratos.common.beans.TenantInfoBean tenant)
+    public static void updateTenantInAPIM(org.wso2.carbon.stratos.common.beans.TenantInfoBean tenant,
+                                          String reservedUserName, String reservedUserPassword)
             throws RemoteException, TenantMgtAdminServiceExceptionException {
         String backendURL = "https://localhost:9443/services/";
-        String username = "tenantmgt";
-        String password = "admin123";
 
         TenantMgtAdminServiceStub stub = new TenantMgtAdminServiceStub(backendURL + TENANT_MANAGEMENT_ADMIN_SERVICE);
 
@@ -57,8 +55,8 @@ public class APIMTenantManagementSOAPClient {
         ServiceClient client = stub._getServiceClient();
         Options options = client.getOptions();
         HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-        auth.setUsername(username);
-        auth.setPassword(password);
+        auth.setUsername(reservedUserName);
+        auth.setPassword(reservedUserPassword);
         auth.setPreemptiveAuthentication(true);
         options.setProperty(org.apache.axis2.transport.http.HTTPConstants.AUTHENTICATE, auth);
 
@@ -81,11 +79,9 @@ public class APIMTenantManagementSOAPClient {
         stub.updateTenant(tenantInfoBean);
     }
 
-    public static void activateTenantInAPIM(String tenantDomain)
+    public static void activateTenantInAPIM(String tenantDomain, String reservedUserName, String reservedUserPassword)
             throws RemoteException, TenantMgtAdminServiceExceptionException {
         String backendURL = "https://localhost:9443/services/";
-        String username = "admin";
-        String password = "admin";
 
         TenantMgtAdminServiceStub stub = new TenantMgtAdminServiceStub(backendURL + TENANT_MANAGEMENT_ADMIN_SERVICE);
 
@@ -93,19 +89,17 @@ public class APIMTenantManagementSOAPClient {
         ServiceClient client = stub._getServiceClient();
         Options options = client.getOptions();
         HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-        auth.setUsername(username);
-        auth.setPassword(password);
+        auth.setUsername(reservedUserName);
+        auth.setPassword(reservedUserPassword);
         auth.setPreemptiveAuthentication(true);
         options.setProperty(org.apache.axis2.transport.http.HTTPConstants.AUTHENTICATE, auth);
 
         stub.activateTenant(tenantDomain);
     }
 
-    public static void deactivateTenantInAPIM(String tenantDomain)
+    public static void deactivateTenantInAPIM(String tenantDomain, String reservedUserName, String reservedUserPassword)
             throws RemoteException, TenantMgtAdminServiceExceptionException {
         String backendURL = "https://localhost:9443/services/";
-        String username = "admin";
-        String password = "admin";
 
         TenantMgtAdminServiceStub stub = new TenantMgtAdminServiceStub(backendURL + TENANT_MANAGEMENT_ADMIN_SERVICE);
 
@@ -113,8 +107,8 @@ public class APIMTenantManagementSOAPClient {
         ServiceClient client = stub._getServiceClient();
         Options options = client.getOptions();
         HttpTransportProperties.Authenticator auth = new HttpTransportProperties.Authenticator();
-        auth.setUsername(username);
-        auth.setPassword(password);
+        auth.setUsername(reservedUserName);
+        auth.setPassword(reservedUserPassword);
         auth.setPreemptiveAuthentication(true);
         options.setProperty(org.apache.axis2.transport.http.HTTPConstants.AUTHENTICATE, auth);
 
