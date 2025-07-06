@@ -31,6 +31,10 @@ import feign.slf4j.Slf4jLogger;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.client.HttpClient;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.HttpClients;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.wso2.carbon.apimgt.api.APIManagementException;
@@ -58,9 +62,11 @@ import org.wso2.carbon.apimgt.impl.kmclient.model.IntrospectionClient;
 import org.wso2.carbon.apimgt.impl.kmclient.model.TenantHeaderInterceptor;
 import org.wso2.carbon.apimgt.impl.kmclient.model.TokenInfo;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
+import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
@@ -76,9 +82,18 @@ import org.wso2.is7.client.model.WSO2IS7SCIMRolesClient;
 import org.wso2.is7.client.utils.AttributeMapper;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -88,6 +103,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.util.stream.Collectors;
 
 /**
@@ -710,12 +728,12 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
 
         wso2IS7DCRClient = Feign.builder()
-                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
+                .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
                 .encoder(new GsonEncoder())
                 .decoder(new GsonDecoder())
                 .logger(new Slf4jLogger())
-                .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
                 .errorDecoder(new KMClientErrorDecoder())
+                .requestInterceptor(template -> template.header("WSO2-Identity-User", username))
                 .target(WSO2IS7DCRClient.class, dcrEndpoint);
 
         introspectionClient = Feign.builder()
@@ -766,6 +784,72 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
     }
+
+    public static HttpClient getMutualTLSHttpClient() throws APIManagementException {
+
+        ServerConfiguration serverConfig = CarbonUtils.getServerConfiguration();
+        String trustStorePath = serverConfig.getFirstProperty("Security.TrustStore.Location");
+        String trustStorePassword = serverConfig.getFirstProperty("Security.TrustStore.Password");
+        System.setProperty("javax.net.ssl.trustStore", trustStorePath);
+        System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+
+        String keyStorePath = serverConfig.getFirstProperty("Security.KeyStore.Location");
+        String keyStoreType = serverConfig.getFirstProperty("Security.KeyStore.Type");
+        String keyStorePassword = serverConfig.getFirstProperty("Security.KeyStore.Password");
+
+        // Load keystore (client certificate)
+        KeyStore keyStore = null;
+        SSLContext sslContext;
+        try {
+            keyStore = KeyStore.getInstance(keyStoreType);
+
+            try (FileInputStream keyStoreFile = new FileInputStream(keyStorePath)) {
+                keyStore.load(keyStoreFile, keyStorePassword.toCharArray());
+            }
+
+            // Load truststore (server CA cert)
+            KeyStore trustStore = KeyStore.getInstance(keyStoreType);
+            try (FileInputStream trustStoreFile = new FileInputStream(trustStorePath)) {
+                trustStore.load(trustStoreFile, trustStorePassword.toCharArray());
+            }
+
+            // Create key managers
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory
+                    .getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());
+
+            // Create trust managers
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory
+                    .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(trustStore);
+
+            // Create SSL context with both managers
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagerFactory.getKeyManagers(),
+                    trustManagerFactory.getTrustManagers(), new SecureRandom());
+
+        } catch (UnrecoverableKeyException | IOException | CertificateException | KeyStoreException |
+                 KeyManagementException | NoSuchAlgorithmException e) {
+            throw new APIManagementException(e);
+        }
+
+        // Create socket factory with hostname verifier
+//        SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+//                sslContext, new DefaultHostnameVerifier());
+
+        SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                sslContext,
+                new String[]{"TLSv1.2", "TLSv1.3"},
+                null,
+                new DefaultHostnameVerifier()
+        );
+
+
+        return HttpClients.custom()
+                .setSSLSocketFactory(sslSocketFactory)
+                .build();
+    }
+
 
     @Override
     public boolean registerNewResource(API api, Map resourceAttributes) throws APIManagementException {
