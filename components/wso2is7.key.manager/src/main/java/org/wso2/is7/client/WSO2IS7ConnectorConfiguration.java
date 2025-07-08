@@ -76,6 +76,66 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
     }
 
     @Override
+    public List<ConfigurationDto> getAuthConfigurations() {
+
+        List<ConfigurationDto> configurationDtoList = new ArrayList<>();
+        List<ConfigurationDto> basicAuthValues = new ArrayList<>();
+        basicAuthValues.add(new ConfigurationDto("Username", "Username", "input",
+                "Username of admin user", "", false, false, Collections.emptyList(),
+                false));
+        basicAuthValues.add(new ConfigurationDto("Password", "Password", "input",
+                "Password of Admin user", "", false, true, Collections.emptyList(),
+                false));
+        ConfigurationDto basicAuthConfigurationDto = new ConfigurationDto("BasicAuth",
+                "Basic Authentication", "labelOnly", "Select to use basic authentication",
+                "", true, false, basicAuthValues, true);
+
+        List<ConfigurationDto> certBasedAuthValues = new ArrayList<>();
+        certBasedAuthValues.add(new ConfigurationDto("ServerWide", "Use Server Wide Certificate",
+                "labelOnly", "Uses the configured global server certificate", "",
+                true, false, Collections.emptyList(), false));
+
+        certBasedAuthValues.add(new ConfigurationDto("TenantWide", "Add a Tenant Wide Certificate",
+                "labelOnly", "Tenant wide certificate for mutual TLS authentication", "",
+                true, false, Collections.singletonList(
+                        new ConfigurationDto("TenantWide", "Paste or upload a certificate",
+                                "certificate", "Tenant wide certificate for mutual TLS authentication",
+                                "", true, false, Collections.emptyList(), false)),
+                false));
+        ConfigurationDto certificateBasedAuthConfigurationDto = new ConfigurationDto("Mutual-TLS",
+                "MTLS Authentication", "labelOnly", "Select to use MTLS authentication",
+                "", true, false, Collections.singletonList(
+                        new ConfigurationDto("Mutual-TLS",
+                                "Select a Certificate Type", "options",
+                                "", "", true, false,
+                                certBasedAuthValues, true)),
+                false);
+
+        List<ConfigurationDto> authValues = new ArrayList<>();
+        authValues.add(basicAuthConfigurationDto);
+        authValues.add(certificateBasedAuthConfigurationDto);
+
+        configurationDtoList.add(new ConfigurationDto("Authentication",
+                "Authentication Type", "dropdown", "Select the authentication type",
+                "BasicAuth", true, false, authValues, true));
+        configurationDtoList.add(new ConfigurationDto("api_resource_management_endpoint",
+                "WSO2 Identity Server 7 API Resource Management Endpoint", "input",
+                String.format("E.g., %s/api/server/v1/api-resources",
+                        org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "",
+                true, false, Collections.emptyList(), false));
+        configurationDtoList.add(new ConfigurationDto("is7_roles_endpoint",
+                "WSO2 Identity Server 7 Roles Endpoint", "input",
+                String.format("E.g., %s/scim2/v2/Roles",
+                        org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "", true,
+                false, Collections.emptyList(), false));
+        configurationDtoList.add(new ConfigurationDto("enable_roles_creation",
+                "Create roles in WSO2 Identity Server 7", "checkbox",
+                "Create roles in WSO2 Identity Server 7, corresponding to the roles used in WSO2 API Manager.",
+                "Enable", false, false, Collections.singletonList("Enable"), false));
+        return configurationDtoList;
+    }
+
+    @Override
     public List<ConfigurationDto> getApplicationConfigurations() {
 
         List<ConfigurationDto> applicationConfigurationsList = new ArrayList();

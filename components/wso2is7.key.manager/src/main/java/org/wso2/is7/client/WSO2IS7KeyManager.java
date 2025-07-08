@@ -131,6 +131,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
     // Name of the default API Resource of WSO2 IS7 - which is used to contain scopes.
     private static final String DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER = "User-defined-oauth2-resource";
+    private static final String WSO2_IDENTITY_USER = "WSO2-Identity-User";
     private boolean enableRoleCreation = false;
 
     private WSO2IS7DCRClient wso2IS7DCRClient;
@@ -733,7 +734,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .decoder(new GsonDecoder())
                 .logger(new Slf4jLogger())
                 .errorDecoder(new KMClientErrorDecoder())
-                .requestInterceptor(template -> template.header("WSO2-Identity-User", username))
+                .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, username))
                 .target(WSO2IS7DCRClient.class, dcrEndpoint);
 
         introspectionClient = Feign.builder()
