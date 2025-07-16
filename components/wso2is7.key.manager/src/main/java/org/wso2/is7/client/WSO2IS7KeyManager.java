@@ -672,7 +672,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         this.configuration = configuration;
 
         String username = (String) configuration.getParameter(APIConstants.KEY_MANAGER_USERNAME);
-        String password = (String) configuration.getParameter(APIConstants.KEY_MANAGER_PASSWORD);
         String keyManagerServiceUrl = (String) configuration.getParameter(APIConstants.AUTHSERVER_URL);
 
         String dcrEndpoint;
@@ -740,7 +739,37 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .errorDecoder(new KMClientErrorDecoder())
                     .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, username))
                     .target(WSO2IS7DCRClient.class, dcrEndpoint);
+
+            introspectionClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, username))
+                    .requestInterceptor(new TenantHeaderInterceptor(tenantDomain))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .encoder(new FormEncoder())
+                    .target(IntrospectionClient.class, introspectionEndpoint);
+
+            wso2IS7APIResourceManagementClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, username))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
+
+            wso2IS7SCIMRolesClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, username))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
         } else {
+            String password = (String) configuration.getParameter(APIConstants.KEY_MANAGER_PASSWORD);
             wso2IS7DCRClient = Feign.builder()
                     .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
                     .encoder(new GsonEncoder())
@@ -749,19 +778,36 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7DCRClient.class, dcrEndpoint);
+
+            introspectionClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(introspectionEndpoint)))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                    .requestInterceptor(new TenantHeaderInterceptor(tenantDomain))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .encoder(new FormEncoder())
+                    .target(IntrospectionClient.class, introspectionEndpoint);
+
+            wso2IS7APIResourceManagementClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(apiResourceManagementEndpoint)))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
+
+            wso2IS7SCIMRolesClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(rolesEndpoint)))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
         }
-
-        introspectionClient = Feign.builder()
-                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(introspectionEndpoint)))
-                .encoder(new GsonEncoder())
-                .decoder(new GsonDecoder())
-                .logger(new Slf4jLogger())
-                .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
-                .requestInterceptor(new TenantHeaderInterceptor(tenantDomain))
-                .errorDecoder(new KMClientErrorDecoder())
-                .encoder(new FormEncoder())
-                .target(IntrospectionClient.class, introspectionEndpoint);
-
         authClient = Feign.builder()
                 .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(tokenEndpoint)))
                 .encoder(new GsonEncoder())
@@ -778,24 +824,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .logger(new Slf4jLogger())
                 .errorDecoder(new KMClientErrorDecoder())
                 .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
-
-        wso2IS7APIResourceManagementClient = Feign.builder()
-                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(apiResourceManagementEndpoint)))
-                .encoder(new GsonEncoder())
-                .decoder(new GsonDecoder())
-                .logger(new Slf4jLogger())
-                .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
-                .errorDecoder(new KMClientErrorDecoder())
-                .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
-
-        wso2IS7SCIMRolesClient = Feign.builder()
-                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(rolesEndpoint)))
-                .encoder(new GsonEncoder())
-                .decoder(new GsonDecoder())
-                .logger(new Slf4jLogger())
-                .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
-                .errorDecoder(new KMClientErrorDecoder())
-                .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
     }

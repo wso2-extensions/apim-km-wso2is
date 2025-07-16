@@ -126,11 +126,14 @@ public class ISTenantSyncListener implements TenantMgtListener {
          */
         // connector configuration
         Map<String, Object> additionalProperties = new HashMap();
-        additionalProperties.put("Username", tenantInfoBean.getAdmin() + "@" + tenantDomain);
-        additionalProperties.put("Password", tenantInfoBean.getAdminPassword());
+        additionalProperties.put("Authentication", "Mutual-TLS");
+        additionalProperties.put("Mutual-TLS", "ServerWide");
+        additionalProperties.put("TenantDomain", tenantDomain);
         additionalProperties.put("api_resource_management_endpoint",
                 IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
         additionalProperties.put("is7_roles_endpoint", IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/v2/Roles");
+        additionalProperties.put("client_secret", "");
+        additionalProperties.put("audience", "https://[tenant].[region].auth0.com/api/v2/");
 
         //endpoints
         additionalProperties.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
@@ -208,6 +211,9 @@ public class ISTenantSyncListener implements TenantMgtListener {
         additionalProperties.put(APIConstants.KeyManager.ENABLE_MAP_OAUTH_CONSUMER_APPS, true);
         additionalProperties.put(APIConstants.KeyManager.ENABLE_TOKEN_GENERATION, true);
         additionalProperties.put(APIConstants.KeyManager.SELF_VALIDATE_JWT, true);
+
+        // Add username of the tenantAdmin, since currently it's required, for authorization of DCR call in IS side
+        additionalProperties.put(APIConstants.KeyManager.USERNAME, tenantInfoBean.getAdmin() + "@" + tenantDomain);
 
 //        additionalProperties
 //                    .put(APIConstants.KeyManager.TOKEN_FORMAT_STRING, new Gson().toJson(tokenValidationDTOList));
