@@ -33,8 +33,6 @@ import java.util.Map;
  */
 public class ISTenantSyncListener implements TenantMgtListener {
     private static final Log log = LogFactory.getLog(ISTenantSyncListener.class);
-    private static final String DEFAULT_KEY_MANAGER = "IS7_default_key_manager";
-    private static final String IS_HOST = "https://localhost:9444/";
     private static final String TENANT_PATH_PREFIX = "t/";
     private static final APIManagerConfiguration API_MANAGER_CONFIGURATION;
 
@@ -51,7 +49,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         TenantSharingConfigurationDTO tenantSharingConfiguration =
                 API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
 
-        if (tenantSharingConfiguration.isIsEnabled()) {
+        if (tenantSharingConfiguration.getIsEnabled()) {
             try {
                 ISTenantManagementRestClient.createTenantInIS(
                         tenantInfoBean.getAdmin(),
@@ -68,8 +66,13 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 throw new StratosException(e);
             }
             log.info("Tenant created successfully in IS: " + tenantDomain);
+            boolean skipCreateDefaultResidentKm = Boolean.parseBoolean(API_MANAGER_CONFIGURATION
+                    .getFirstProperty(APIConstants.SKIP_CREATE_RESIDENT_KM));
             try {
-                keyManagersPost(tenantInfoBean);
+                //cannot create another km with name Resident, if resident km is already there
+                if (skipCreateDefaultResidentKm) {
+                    keyManagersPost(tenantInfoBean);
+                }
             } catch (APIManagementException e) {
                 log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
                 throw new StratosException(e);
@@ -96,19 +99,26 @@ public class ISTenantSyncListener implements TenantMgtListener {
                     APIConstants.AuditLogConstants.CREATED, "reservedUserName");
         } catch (IllegalArgumentException e) {
             String error = "Error while storing Key Manager permission roles with name "
-                    + DEFAULT_KEY_MANAGER + " in tenant " + organization;
+                    + APIConstants.KeyManager.DEFAULT_KEY_MANAGER + " in tenant " + organization;
             throw new APIManagementException(error, e, ExceptionCodes.ROLE_DOES_NOT_EXIST);
         }
     }
 
     public static KeyManagerConfigurationDTO getKeyManagerConfigurationDTO(TenantInfoBean tenantInfoBean) {
         String tenantDomain = tenantInfoBean.getTenantDomain();
+        TenantSharingConfigurationDTO tenantSharingConfiguration =
+                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
+
+        String identityServerBaseUrl = tenantSharingConfiguration.getIdentityServerBaseUrl();
+        if (!identityServerBaseUrl.endsWith("/")) {
+            identityServerBaseUrl += "/";
+        }
 
         KeyManagerConfigurationDTO keyManagerConfigurationDTO = new KeyManagerConfigurationDTO();
         Map<String, String> endpoints = new HashMap<>();
 
-        keyManagerConfigurationDTO.setName(DEFAULT_KEY_MANAGER);
-        keyManagerConfigurationDTO.setDisplayName("IS7 Default Key Manager");
+        keyManagerConfigurationDTO.setName(APIConstants.KeyManager.DEFAULT_KEY_MANAGER);
+        keyManagerConfigurationDTO.setDisplayName("IS7 as Default Key Manager");
         keyManagerConfigurationDTO.setDescription("Default key manager created for IS7 when " +
                         "tenant synchronization is enabled");
         keyManagerConfigurationDTO.setEnabled(true);
@@ -130,56 +140,59 @@ public class ISTenantSyncListener implements TenantMgtListener {
         additionalProperties.put("Mutual-TLS", "ServerWide");
         additionalProperties.put("TenantDomain", tenantDomain);
         additionalProperties.put("api_resource_management_endpoint",
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
-        additionalProperties.put("is7_roles_endpoint", IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/v2/Roles");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
+        additionalProperties.put("is7_roles_endpoint", identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain
+                + "/scim2/v2/Roles");
         additionalProperties.put("client_secret", "");
         additionalProperties.put("audience", "https://[tenant].[region].auth0.com/api/v2/");
 
         //endpoints
         additionalProperties.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
         endpoints.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
 
         additionalProperties.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
         endpoints.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
 
-        additionalProperties.put(APIConstants.KeyManager.TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+        additionalProperties.put(APIConstants.KeyManager.TOKEN_ENDPOINT, identityServerBaseUrl +
+                TENANT_PATH_PREFIX + tenantDomain +
                 "/oauth2/token");
-        endpoints.put(APIConstants.KeyManager.TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
-                "/oauth2/token");
-
-        additionalProperties.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX +
+        endpoints.put(APIConstants.KeyManager.TOKEN_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
                 tenantDomain + "/oauth2/token");
-        endpoints.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
+
+        additionalProperties.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, identityServerBaseUrl +
+                TENANT_PATH_PREFIX + tenantDomain + "/oauth2/token");
+        endpoints.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
+                tenantDomain +
                 "/oauth2/token");
 
-        additionalProperties.put(APIConstants.KeyManager.REVOKE_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
-                "/oauth2/revoke");
-        endpoints.put(APIConstants.KeyManager.REVOKE_ENDPOINT, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
-                "/oauth2/revoke");
+        additionalProperties.put(APIConstants.KeyManager.REVOKE_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
+                tenantDomain + "/oauth2/revoke");
+        endpoints.put(APIConstants.KeyManager.REVOKE_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
+                tenantDomain + "/oauth2/revoke");
 
         additionalProperties.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
         endpoints.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
 
         additionalProperties.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
         endpoints.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
 
         additionalProperties.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
         endpoints.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
 
         additionalProperties.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
         endpoints.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
 
         //grant types
         additionalProperties.put(APIConstants.KeyManager.AVAILABLE_GRANT_TYPE,
@@ -197,14 +210,14 @@ public class ISTenantSyncListener implements TenantMgtListener {
                         "urn:ietf:params:oauth:grant-type:jwt-bearer"
                 });
 
-        additionalProperties.put(APIConstants.KeyManager.ISSUER, IS_HOST + TENANT_PATH_PREFIX + tenantDomain +
-                "/oauth2/token");
+        additionalProperties.put(APIConstants.KeyManager.ISSUER, identityServerBaseUrl + TENANT_PATH_PREFIX +
+                tenantDomain + "/oauth2/token");
 
         // certificates
         additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_TYPE,
                 APIConstants.KeyManager.CERTIFICATE_TYPE_JWKS_ENDPOINT);
         additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_VALUE,
-                IS_HOST + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/jwks");
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/jwks");
         keyManagerConfigurationDTO.setEndpoints(endpoints);
 
         additionalProperties.put(APIConstants.KeyManager.ENABLE_OAUTH_APP_CREATION, true);
@@ -214,13 +227,6 @@ public class ISTenantSyncListener implements TenantMgtListener {
 
         // Add username of the tenantAdmin, since currently it's required, for authorization of DCR call in IS side
         additionalProperties.put(APIConstants.KeyManager.USERNAME, tenantInfoBean.getAdmin() + "@" + tenantDomain);
-
-//        additionalProperties
-//                    .put(APIConstants.KeyManager.TOKEN_FORMAT_STRING, new Gson().toJson(tokenValidationDTOList));
-//        additionalProperties
-//                    .put(APIConstants.KeyManager.CLAIM_MAPPING, new Gson().toJsonTree(claimMapping));
-//        additionalProperties.put(APIConstants.KeyManager.CONSUMER_KEY_CLAIM, keyManagerDTO.getConsumerKeyClaim());
-//        additionalProperties.put(APIConstants.KeyManager.SCOPES_CLAIM, keyManagerDTO.getScopesClaim());
 
         keyManagerConfigurationDTO.setAdditionalProperties(additionalProperties);
         return keyManagerConfigurationDTO;
@@ -233,7 +239,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         log.info("Tenant updated in API Manager: " + tenantDomain);
         TenantSharingConfigurationDTO tenantSharingConfiguration =
                 API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-        if (tenantSharingConfiguration.isIsEnabled()) {
+        if (tenantSharingConfiguration.getIsEnabled()) {
             try {
                 ISTenantManagementRestClient.updateTenantInIS(
                         tenantDomain,
@@ -277,7 +283,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         log.info("Tenant activated in API Manager: " + tenantId);
         TenantSharingConfigurationDTO tenantSharingConfiguration =
                 API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-        if (tenantSharingConfiguration.isIsEnabled()) {
+        if (tenantSharingConfiguration.getIsEnabled()) {
             String tenantDomain;
             try {
                 tenantDomain = tenantManager.getDomain(tenantId);
@@ -308,7 +314,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         log.info("Tenant deactivated in API Manager: " + tenantId);
         TenantSharingConfigurationDTO tenantSharingConfiguration =
                 API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-        if (tenantSharingConfiguration.isIsEnabled()) {
+        if (tenantSharingConfiguration.getIsEnabled()) {
             String tenantDomain;
             try {
                 tenantDomain = tenantManager.getDomain(tenantId);
