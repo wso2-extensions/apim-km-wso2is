@@ -63,6 +63,11 @@ public class WSO2ISConnectorConfiguration extends DefaultKeyManagerConnectorConf
         configurationDtoList.add(new ConfigurationDto(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_NAME,
                 WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_LABEL, "checkbox", WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_LABEL,
                 "", false, false, Collections.singletonList(WSO2ISConstants.KM_ADMIN_AS_APP_OWNER_VALUE), false));
+        configurationDtoList
+                .add(new ConfigurationDto(WSO2ISConstants.ENABLE_APPLICATION_SCOPE_NAME,
+                        WSO2ISConstants.ENABLE_APPLICATION_SCOPE_LABEL, "checkbox",
+                        WSO2ISConstants.ENABLE_APPLICATION_SCOPE_LABEL, "", false, false,
+                        Collections.singletonList(WSO2ISConstants.ENABLE_APPLICATION_SCOPE_VALUE), false));
         configurationDtoList.addAll(super.getConnectionConfigurations());
         return configurationDtoList;
     }
