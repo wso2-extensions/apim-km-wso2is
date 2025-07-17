@@ -91,14 +91,14 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 "", true, false, basicAuthValues, true);
 
         List<ConfigurationDto> certBasedAuthValues = new ArrayList<>();
-        certBasedAuthValues.add(new ConfigurationDto("ServerWide", "Use Server Wide Certificate",
+        certBasedAuthValues.add(new ConfigurationDto("ServerWide", "Server-Wide Certificate",
                 "labelOnly", "Uses the configured global server certificate", "",
                 true, false, Collections.emptyList(), false));
 
-        certBasedAuthValues.add(new ConfigurationDto("TenantWide", "Add a Tenant Wide Certificate",
+        certBasedAuthValues.add(new ConfigurationDto("TenantWide", "Tenant-Wide Certificate",
                 "labelOnly", "Tenant wide certificate for mutual TLS authentication", "",
                 true, false, Collections.singletonList(
-                        new ConfigurationDto("TenantWide", "Paste or upload a certificate",
+                        new ConfigurationDto("TenantWide", "",
                                 "certificate", "Tenant wide certificate for mutual TLS authentication",
                                 "", true, false, Collections.emptyList(), false)),
                 false));
