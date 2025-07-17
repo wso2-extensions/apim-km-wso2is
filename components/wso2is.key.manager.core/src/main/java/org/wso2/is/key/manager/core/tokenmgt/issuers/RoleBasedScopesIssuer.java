@@ -34,6 +34,8 @@ import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorC
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.PermissionsAndRoleConfig;
 import org.wso2.carbon.identity.application.common.model.RoleMapping;
+import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.application.common.model.ServiceProviderProperty;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationManagementUtil;
 import org.wso2.carbon.identity.base.IdentityConstants;
@@ -77,6 +79,7 @@ import org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtUtil;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -111,6 +114,8 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     private static final String ISSUER_PREFIX = "default";
     OAuthServerConfiguration oAuthServerConfiguration = OAuthServerConfiguration.getInstance();
     private static final String REFRESH_TOKEN_GRANT_TYPE = "refresh_token";
+    private static final String CLIENT_CREDENTIALS_GRANT_TYPE = "client_credentials";
+    private static final String APPLICATION_SCOPES_PREFIX = "app_scopes_";
 
     @Override
     public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
@@ -368,7 +373,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     @Override
     public List<String> getScopes(OAuthTokenReqMessageContext tokReqMsgCtx) {
 
-        List<String> authorizedScopes;
+        List<String> authorizedScopes = new ArrayList<>();
         List<String> scopes = new ArrayList<>();
         List<String> requestedScopes = new ArrayList<>(Arrays.asList(tokReqMsgCtx.getScope()));
         boolean isRestrictApimRestApiScopes = ServiceReferenceHolder.isRestrictApimRestApiScopes();
@@ -387,6 +392,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         requestedScopes.removeAll(scopes);
         String clientId = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getClientId();
         AuthenticatedUser authenticatedUser = tokReqMsgCtx.getAuthorizedUser();
+        String grantType = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getGrantType();
         if (requestedScopes.isEmpty()) {
             return getAllowedScopes(scopes);
         }
@@ -394,12 +400,12 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         if (appScopes != null) {
             String[] userRoles = new String[0];
             // If no scopes can be found in the context of the application
-            if (isAppScopesEmpty(appScopes, clientId)) {
+            if (isAppScopesEmpty(appScopes, clientId) && !StringUtils.equals(CLIENT_CREDENTIALS_GRANT_TYPE,
+                    grantType)) {
                 authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
                 scopes.addAll(authorizedScopes);
                 return scopes;
             }
-            String grantType = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getGrantType();
 
             // If GrantType is SAML20_BEARER and CHECK_ROLES_FROM_SAML_ASSERTION is true, or if GrantType is
             // JWT_BEARER and retrieveRolesFromUserStoreForScopeValidation system property is true,
@@ -439,9 +445,52 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
                 userRoles = getUserRoles(authenticatedUser, grantType);
             }
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
-            scopes.addAll(authorizedScopes);
         }
+        if (StringUtils.equals(CLIENT_CREDENTIALS_GRANT_TYPE, grantType)) {
+            // If the grant type is client_credentials, add application scopes to the authorized scopes if requested
+            try {
+                Set<String> authorizedScopesSet = new HashSet<>(authorizedScopes);
+                ServiceProvider sp = OAuth2Util.getServiceProvider(clientId);
+                List<String> applicationScopes = getApplicationScopesFromSP(sp);
+                authorizedScopesSet.remove(DEFAULT_SCOPE_NAME);
+                boolean isMergeApplicationScopes = ServiceReferenceHolder.isMergeApplicationScopes();
+                if (!isMergeApplicationScopes) {
+                    authorizedScopesSet.clear();
+                }
+                for (String scope : applicationScopes) {
+                    if (requestedScopes.contains(scope)) {
+                        authorizedScopesSet.add(scope);
+                    }
+                }
+                if (authorizedScopesSet.isEmpty() && authorizedScopes.contains(DEFAULT_SCOPE_NAME)) {
+                    authorizedScopesSet.add(DEFAULT_SCOPE_NAME);
+                }
+                authorizedScopes = new ArrayList<>(authorizedScopesSet);
+            } catch (IdentityOAuth2Exception e) {
+                log.error("Error when retrieving the service provider " + e.getMessage(), e);
+            }
+        }
+        scopes.addAll(authorizedScopes);
         return scopes;
+    }
+
+    /**
+     * Retrieve application scopes from the service provider properties.
+     *
+     * @param sp ServiceProvider object
+     * @return List of application scopes
+     */
+    private List<String> getApplicationScopesFromSP(ServiceProvider sp) {
+        List<String> applicationScopes = new ArrayList<>();
+        ServiceProviderProperty[] spProperties = sp.getSpProperties();
+        if (spProperties != null) {
+            for (ServiceProviderProperty property : spProperties) {
+                if (property.getName().startsWith(APPLICATION_SCOPES_PREFIX)) {
+                    applicationScopes.add(property.getValue());
+                }
+            }
+        }
+        return applicationScopes;
     }
 
     /**
