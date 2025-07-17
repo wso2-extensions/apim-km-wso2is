@@ -20,6 +20,9 @@ package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
 
 import org.wso2.carbon.identity.oauth.dcr.bean.ApplicationUpdateRequest;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This class used to send update request to oauth application
  */
@@ -35,6 +38,8 @@ public class ExtendedApplicationUpdateRequest extends ApplicationUpdateRequest {
     private Boolean pkceMandatory = false;
     private Boolean pkceSupportPlain = false;
     private Boolean bypassClientCredentials = false;
+    // List of scopes that can be requested in client credentials grant type
+    private List<String> applicationScopes = new ArrayList<String>();
 
     public void setApplicationAccessTokenLifeTime(Long applicationAccessTokenLifeTime) {
 
@@ -110,4 +115,15 @@ public class ExtendedApplicationUpdateRequest extends ApplicationUpdateRequest {
     public void setBypassClientCredentials(Boolean bypassClientCredentials) {
         this.bypassClientCredentials = bypassClientCredentials;
     }
+
+    public void setApplicationScopes(List<String> applicationScopes) {
+
+        this.applicationScopes = applicationScopes;
+    }
+
+    public List<String> getApplicationScopes() {
+
+        return applicationScopes;
+    }
+
 }

@@ -72,6 +72,7 @@ public class DCRMService {
     private static final String GRANT_TYPE_SEPARATOR = " ";
     private static final String APP_DISPLAY_NAME = "DisplayName";
     private static Pattern clientIdRegexPattern = null;
+    private static final String APPLICATION_SCOPES_PREFIX = "app_scopes_";
 
     public DCRMService() {
 
@@ -119,8 +120,11 @@ public class DCRMService {
         // We are setting this to true in order to support cross tenant subscriptions.
         sp.setSaasApp(true);
 
-        // Update service provider property list with display name property
-        updateServiceProviderPropertyList(sp, updateRequest.getApplicationDisplayName());
+        // Update service provider property list with display name, application scopes properties
+        updateServiceProviderPropertyList(sp, updateRequest.getApplicationDisplayName(),
+                updateRequest.getApplicationScopes());
+        // Get application scopes from the service provider properties
+        List<String> applicationScopes = getApplicationScopesFromSP(sp);
 
         if (StringUtils.isNotEmpty(clientName)) {
             // Regex validation of the application name.
@@ -188,7 +192,7 @@ public class DCRMService {
                     ErrorMessages.FAILED_TO_UPDATE_APPLICATION, clientId, e);
         }
 
-        return buildResponse(getApplicationById(clientId));
+        return buildResponse(getApplicationById(clientId), applicationScopes);
     }
 
     /**
@@ -196,8 +200,10 @@ public class DCRMService {
      *
      * @param sp                     Service provider
      * @param applicationDisplayName Display name of the application
+     * @param applicationScopes      List of application scopes
      */
-    private void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName) {
+    private void updateServiceProviderPropertyList(ServiceProvider sp, String applicationDisplayName,
+            List<String> applicationScopes) {
 
         // Retrieve existing service provider properties
         ServiceProviderProperty[] serviceProviderProperties = sp.getSpProperties();
@@ -212,11 +218,53 @@ public class DCRMService {
             serviceProviderProperty.setValue(applicationDisplayName);
             serviceProviderProperties = (ServiceProviderProperty[]) ArrayUtils.add(serviceProviderProperties,
                     serviceProviderProperty);
-
-            // Update service provider property list
-            sp.setSpProperties(serviceProviderProperties);
         }
+        // Update application scopes related properties
+        serviceProviderProperties = updateSPProperties(serviceProviderProperties, applicationScopes);
 
+        // Update service provider property list
+        sp.setSpProperties(serviceProviderProperties);
+    }
+
+    /**
+     * Update service provider properties with application scopes.
+     *
+     * @param spProperties        ServiceProviderProperty array
+     * @param applicationScopes   List of application scopes
+     * @return Updated ServiceProviderProperty array
+     */
+    private ServiceProviderProperty[] updateSPProperties(ServiceProviderProperty[] spProperties,
+            List<String> applicationScopes) {
+
+        // Remove all application scopes and add the requested application scopes
+        List<ServiceProviderProperty> updatedProperties = new ArrayList<>(Arrays.asList(spProperties));
+        updatedProperties.removeIf(prop -> prop.getName().startsWith(APPLICATION_SCOPES_PREFIX));
+        for (String scope : applicationScopes) {
+            ServiceProviderProperty spProp = new ServiceProviderProperty();
+            spProp.setName(APPLICATION_SCOPES_PREFIX + scope);
+            spProp.setValue(scope);
+            updatedProperties.add(spProp);
+        }
+        return updatedProperties.toArray(new ServiceProviderProperty[0]);
+    }
+
+    /**
+     * Retrieve application scopes from the service provider properties.
+     *
+     * @param sp ServiceProvider object
+     * @return List of application scopes
+     */
+    private List<String> getApplicationScopesFromSP(ServiceProvider sp) {
+        List<String> applicationScopes = new ArrayList<>();
+        ServiceProviderProperty[] spProperties = sp.getSpProperties();
+        if (spProperties != null) {
+            for (ServiceProviderProperty property : spProperties) {
+                if (property.getName().startsWith(APPLICATION_SCOPES_PREFIX)) {
+                    applicationScopes.add(property.getValue());
+                }
+            }
+        }
+        return applicationScopes;
     }
 
     /**
@@ -228,7 +276,15 @@ public class DCRMService {
      */
     public ExtendedApplication getApplication(String clientId) throws DCRMException {
 
-        return this.buildResponse(this.getApplicationById(clientId, true));
+        OAuthConsumerAppDTO dto = this.getApplicationById(clientId, true);
+        // Application name is already checked in the getApplicationById method.
+        String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        ServiceProvider sp = getServiceProvider(dto.getApplicationName(), tenantDomain);
+        if (sp == null) {
+            throw DCRMUtils.generateClientException(DCRMConstants.ErrorMessages.FAILED_TO_GET_SP,
+                    dto.getApplicationName(), null);
+        }
+        return this.buildResponse(dto, getApplicationScopesFromSP(sp));
     }
 
     /**
@@ -376,7 +432,7 @@ public class DCRMService {
      * create OAuthApplication
      *
      * @param registrationRequest RegistrationRequest
-     * @return ExtendedApplication ExtendedApplication
+     * @return ExtendedApplication
      * @throws DCRMException DCRMException
      */
     private ExtendedApplication createOAuthApplication(ExtendedApplicationRegistrationRequest registrationRequest)
@@ -422,8 +478,11 @@ public class DCRMService {
             throw ex;
         }
 
-        // Update service provider property list with display name property
-        updateServiceProviderPropertyList(serviceProvider, registrationRequest.getApplicationDisplayName());
+        // Update service provider property list with display name property and application scopes
+        updateServiceProviderPropertyList(serviceProvider, registrationRequest.getApplicationDisplayName(),
+                registrationRequest.getApplicationScopes());
+        // Get application scopes from the service provider properties
+        List<String> applicationScopes = getApplicationScopesFromSP(serviceProvider);
 
         try {
             updateServiceProviderWithOAuthAppDetails(serviceProvider, createdApp, applicationOwner, tenantDomain);
@@ -432,16 +491,17 @@ public class DCRMService {
             deleteApplication(createdApp.getOauthConsumerKey());
             throw ex;
         }
-        return buildResponse(createdApp);
+        return buildResponse(createdApp, applicationScopes);
     }
 
     /**
      * Build the response
      *
-     * @param createdApp createdApp
+     * @param createdApp        createdApp
+     * @param applicationScopes applicationScopes
      * @return ExtendedApplication
      */
-    private ExtendedApplication buildResponse(OAuthConsumerAppDTO createdApp) {
+    private ExtendedApplication buildResponse(OAuthConsumerAppDTO createdApp, List<String> applicationScopes) {
 
         List<String> redirectUrisList = new ArrayList<>();
         redirectUrisList.add(createdApp.getCallbackUrl());
@@ -465,6 +525,7 @@ public class DCRMService {
         application.setPkceSupportPlain(createdApp.getPkceSupportPlain());
         application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
         application.setTokenType(createdApp.getTokenType());
+        application.setApplicationScopes(applicationScopes);
         return application;
     }
 
@@ -898,12 +959,17 @@ public class DCRMService {
         OAuthConsumerAppDTO appDTO;
         try {
             appDTO = oAuthAdminService.updateAndRetrieveOauthSecretKey(clientId);
-
-        } catch (IdentityOAuthAdminException e) {
+            String tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+            ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
+            if (sp == null) {
+                throw DCRMUtils.generateClientException(DCRMConstants.ErrorMessages.FAILED_TO_GET_SP,
+                        appDTO.getApplicationName(), null);
+            }
+            return buildResponse(appDTO, getApplicationScopesFromSP(sp));
+        } catch (IdentityOAuthAdminException | DCRMException e) {
             throw DCRMUtils.generateServerException(
                     ErrorMessages.FAILED_TO_UPDATE_APPLICATION, clientId, e);
         }
-        return buildResponse(appDTO);
     }
 
     /**
@@ -937,6 +1003,6 @@ public class DCRMService {
                     ErrorMessages.FAILED_TO_UPDATE_APPLICATION, clientId, e);
         }
 
-        return buildResponse(getApplicationById(clientId));
+        return buildResponse(getApplicationById(clientId), getApplicationScopesFromSP(sp));
     }
 }

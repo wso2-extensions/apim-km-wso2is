@@ -33,6 +33,7 @@ public class UpdateRequestDTO   {
     private Boolean pkceMandatory = null;
     private Boolean pkceSupportPlain = null;
     private Boolean bypassClientCredentials = null;
+    private List<String> applicationScopes = new ArrayList<>();
 
   /**
    **/
@@ -323,6 +324,23 @@ public class UpdateRequestDTO   {
     this.bypassClientCredentials = bypassClientCredentials;
   }
 
+  /**
+   **/
+  public UpdateRequestDTO applicationScopes(List<String> applicationScopes) {
+    this.applicationScopes = applicationScopes;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("application_scopes")
+  public List<String> getApplicationScopes() {
+    return applicationScopes;
+  }
+  public void setApplicationScopes(List<String> applicationScopes) {
+    this.applicationScopes = applicationScopes;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -349,12 +367,13 @@ public class UpdateRequestDTO   {
         Objects.equals(extIdTokenLifetime, updateRequest.extIdTokenLifetime) &&
         Objects.equals(pkceMandatory, updateRequest.pkceMandatory) &&
         Objects.equals(pkceSupportPlain, updateRequest.pkceSupportPlain) &&
-        Objects.equals(bypassClientCredentials, updateRequest.bypassClientCredentials);
+        Objects.equals(bypassClientCredentials, updateRequest.bypassClientCredentials) &&
+        Objects.equals(applicationScopes, updateRequest.applicationScopes);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain, bypassClientCredentials);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, tokenTypeExtension, extApplicationOwner, backchannelLogoutUri, backchannelLogoutSessionRequired, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain, bypassClientCredentials, applicationScopes);
   }
 
   @Override
@@ -379,6 +398,7 @@ public class UpdateRequestDTO   {
     sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
+    sb.append("    applicationScopes: ").append(toIndentedString(applicationScopes)).append("\n");
     sb.append("}");
     return sb.toString();
   }
