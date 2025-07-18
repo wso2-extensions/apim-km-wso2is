@@ -25,6 +25,7 @@ import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.jwt.JWTValidatorImpl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -98,13 +99,16 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
         certBasedAuthValues.add(new ConfigurationDto("TenantWide", "Tenant-Wide Certificate",
                 "labelOnly", "Tenant wide certificate for mutual TLS authentication", "",
                 true, false, Collections.singletonList(
-                        new ConfigurationDto("TenantWide", "",
+                        new ConfigurationDto("TenantWide", "Add a new certificate",
                                 "certificate", "Tenant wide certificate for mutual TLS authentication",
                                 "", true, false, Collections.emptyList(), false)),
                 false));
         ConfigurationDto certificateBasedAuthConfigurationDto = new ConfigurationDto("Mutual-TLS",
                 "MTLS Authentication", "labelOnly", "Select to use MTLS authentication",
-                "", true, false, Collections.singletonList(
+                "", true, false, Arrays.asList(
+                        new ConfigurationDto("IdentityUser", "Identity Username", "input",
+                                "Username of identity user who belongs to the same tenant domain",
+                                "", false, false, Collections.emptyList(), false),
                         new ConfigurationDto("Mutual-TLS",
                                 "Select a Certificate Type", "options",
                                 "", "", true, false,
