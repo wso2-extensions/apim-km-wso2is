@@ -139,6 +139,10 @@ public class ISTenantSyncListener implements TenantMgtListener {
         additionalProperties.put("Authentication", "Mutual-TLS");
         additionalProperties.put("Mutual-TLS", "ServerWide");
         additionalProperties.put("TenantDomain", tenantDomain);
+        /* Add username of the user provided identity user, since currently it's required, for authorization of
+         DCR call in IS side */
+        additionalProperties.put(APIConstants.KeyManager.IS7_IDENTITY_USER,
+                tenantInfoBean.getAdmin() + "@" + tenantDomain);
         additionalProperties.put("api_resource_management_endpoint",
                 identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
         additionalProperties.put("is7_roles_endpoint", identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain
@@ -223,9 +227,6 @@ public class ISTenantSyncListener implements TenantMgtListener {
         additionalProperties.put(APIConstants.KeyManager.ENABLE_MAP_OAUTH_CONSUMER_APPS, true);
         additionalProperties.put(APIConstants.KeyManager.ENABLE_TOKEN_GENERATION, true);
         additionalProperties.put(APIConstants.KeyManager.SELF_VALIDATE_JWT, true);
-
-        // Add username of the tenantAdmin, since currently it's required, for authorization of DCR call in IS side
-        additionalProperties.put(APIConstants.KeyManager.USERNAME, tenantInfoBean.getAdmin() + "@" + tenantDomain);
 
         keyManagerConfigurationDTO.setAdditionalProperties(additionalProperties);
         return keyManagerConfigurationDTO;
