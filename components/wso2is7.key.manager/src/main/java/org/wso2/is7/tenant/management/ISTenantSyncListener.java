@@ -144,7 +144,6 @@ public class ISTenantSyncListener implements TenantMgtListener {
         additionalProperties.put("is7_roles_endpoint", identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain
                 + "/scim2/v2/Roles");
         additionalProperties.put("client_secret", "");
-        additionalProperties.put("audience", "https://[tenant].[region].auth0.com/api/v2/");
 
         //endpoints
         additionalProperties.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
