@@ -34,11 +34,18 @@ import java.util.Map;
 public class ISTenantSyncListener implements TenantMgtListener {
     private static final Log log = LogFactory.getLog(ISTenantSyncListener.class);
     private static final String TENANT_PATH_PREFIX = "t/";
-    private static final APIManagerConfiguration API_MANAGER_CONFIGURATION;
+    private static final APIManagerConfiguration apiManagerConfiguration;
 
     static {
-        API_MANAGER_CONFIGURATION = ServiceReferenceHolder.getInstance()
+        apiManagerConfiguration = ServiceReferenceHolder.getInstance()
                 .getAPIManagerConfigurationService().getAPIManagerConfiguration();
+    }
+
+    private String getRefinedIdentityServerBaseUrl (String identityServerBaseUrl) {
+        if (!identityServerBaseUrl.endsWith("/")) {
+            identityServerBaseUrl += "/";
+        }
+        return identityServerBaseUrl;
     }
 
     @Override
@@ -46,49 +53,67 @@ public class ISTenantSyncListener implements TenantMgtListener {
         String tenantDomain = tenantInfoBean.getTenantDomain();
         log.info("Tenant created in API Manager: " + tenantDomain);
 
-        TenantSharingConfigurationDTO tenantSharingConfiguration =
-                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
+        TenantSharingConfigurationDTO tenantSharingConfiguration = apiManagerConfiguration
+                .getTenantSharingConfiguration(APIConstants.KeyManager.WSO2_IS7_KEY_MANAGER_TYPE);
 
-        if (tenantSharingConfiguration.getIsEnabled()) {
+        if (tenantSharingConfiguration == null || tenantSharingConfiguration.getProperties() == null) {
+            throw new StratosException("Tenant Sharing configuration not found for WSO2-IS-7");
+        }
+        boolean isTenantSyncEnabled = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.ENABLE_TENANT_SYNC));
+        boolean isAutoConfigureKeyManagerOfCurrentType = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.AUTO_CONFIGURE_KEY_MANAGER));
+        String identityServerBaseUrl = getRefinedIdentityServerBaseUrl(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL));
+
+        if (isTenantSyncEnabled) {
+            String identityServerAdminUsername = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.USERNAME);
+            String identityServerAdminPassword = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.PASSWORD);
             try {
                 ISTenantManagementRestClient.createTenantInIS(
+                        identityServerBaseUrl,
                         tenantInfoBean.getAdmin(),
                         tenantInfoBean.getAdminPassword(),
                         tenantInfoBean.getTenantDomain(),
                         tenantInfoBean.getFirstname(),
                         tenantInfoBean.getLastname(),
                         tenantInfoBean.getEmail(),
-                        tenantSharingConfiguration.getReservedUserName(),
-                        tenantSharingConfiguration.getReservedUserPassword()
+                        identityServerAdminUsername,
+                        identityServerAdminPassword
                 );
             } catch (IOException e) {
                 log.error("Error while creating tenant in IS: " + tenantDomain, e);
                 throw new StratosException(e);
             }
             log.info("Tenant created successfully in IS: " + tenantDomain);
-            boolean skipCreateDefaultResidentKm = Boolean.parseBoolean(API_MANAGER_CONFIGURATION
-                    .getFirstProperty(APIConstants.SKIP_CREATE_RESIDENT_KM));
-            try {
-                //cannot create another km with name Resident, if resident km is already there
-                if (skipCreateDefaultResidentKm) {
-                    keyManagersPost(tenantInfoBean);
-                }
-            } catch (APIManagementException e) {
-                log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
-                throw new StratosException(e);
-            }
         } else {
             log.info("Tenant sharing is not enabled, skipping tenant creation in Identity Server for tenant: "
                     + tenantDomain);
         }
+
+        boolean skipCreateDefaultResidentKm = Boolean.parseBoolean(apiManagerConfiguration
+                .getFirstProperty(APIConstants.SKIP_CREATE_RESIDENT_KEY_MANAGER));
+        try {
+            //cannot create another km with name Resident, if resident km is already there
+            if (skipCreateDefaultResidentKm && isAutoConfigureKeyManagerOfCurrentType) {
+                keyManagersPost(tenantInfoBean, identityServerBaseUrl);
+            }
+        } catch (APIManagementException e) {
+            log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
+            throw new StratosException(e);
+        }
     }
 
-    private void keyManagersPost(TenantInfoBean tenantInfoBean) throws APIManagementException {
+    private void keyManagersPost(TenantInfoBean tenantInfoBean, String identityServerBaseUrl)
+            throws APIManagementException {
 
         APIAdmin apiAdmin = new APIAdminImpl();
         String organization = tenantInfoBean.getTenantDomain();
         try {
-            KeyManagerConfigurationDTO keyManagerConfigurationDTO = getKeyManagerConfigurationDTO(tenantInfoBean);
+            KeyManagerConfigurationDTO keyManagerConfigurationDTO =
+                    getKeyManagerConfigurationDTO(tenantInfoBean, identityServerBaseUrl);
 
             log.info("KeyManager ConfigurationDTO : " + new Gson().toJson(keyManagerConfigurationDTO));
 
@@ -104,15 +129,9 @@ public class ISTenantSyncListener implements TenantMgtListener {
         }
     }
 
-    public static KeyManagerConfigurationDTO getKeyManagerConfigurationDTO(TenantInfoBean tenantInfoBean) {
+    public static KeyManagerConfigurationDTO getKeyManagerConfigurationDTO(TenantInfoBean tenantInfoBean,
+                                                                           String identityServerBaseUrl) {
         String tenantDomain = tenantInfoBean.getTenantDomain();
-        TenantSharingConfigurationDTO tenantSharingConfiguration =
-                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-
-        String identityServerBaseUrl = tenantSharingConfiguration.getIdentityServerBaseUrl();
-        if (!identityServerBaseUrl.endsWith("/")) {
-            identityServerBaseUrl += "/";
-        }
 
         KeyManagerConfigurationDTO keyManagerConfigurationDTO = new KeyManagerConfigurationDTO();
         Map<String, String> endpoints = new HashMap<>();
@@ -237,18 +256,33 @@ public class ISTenantSyncListener implements TenantMgtListener {
     public void onTenantUpdate(TenantInfoBean tenantInfoBean) throws StratosException {
         String tenantDomain = tenantInfoBean.getTenantDomain();
         log.info("Tenant updated in API Manager: " + tenantDomain);
-        TenantSharingConfigurationDTO tenantSharingConfiguration =
-                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-        if (tenantSharingConfiguration.getIsEnabled()) {
+
+        TenantSharingConfigurationDTO tenantSharingConfiguration = apiManagerConfiguration
+                .getTenantSharingConfiguration(APIConstants.KeyManager.WSO2_IS7_KEY_MANAGER_TYPE);
+
+        if (tenantSharingConfiguration == null || tenantSharingConfiguration.getProperties() == null) {
+            throw new StratosException("Tenant Sharing configuration not found for WSO2-IS-7");
+        }
+        boolean isTenantSyncEnabled = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.ENABLE_TENANT_SYNC));
+        String identityServerBaseUrl = getRefinedIdentityServerBaseUrl(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL));
+
+        if (isTenantSyncEnabled) {
+            String identityServerAdminUsername = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.USERNAME);
+            String identityServerAdminPassword = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.PASSWORD);
             try {
                 ISTenantManagementRestClient.updateTenantInIS(
+                        identityServerBaseUrl,
                         tenantDomain,
                         tenantInfoBean.getAdminPassword(),
                         tenantInfoBean.getFirstname(),
                         tenantInfoBean.getLastname(),
                         tenantInfoBean.getEmail(),
-                        tenantSharingConfiguration.getReservedUserName(),
-                        tenantSharingConfiguration.getReservedUserPassword()
+                        identityServerAdminUsername,
+                        identityServerAdminPassword
                 );
             } catch (IOException e) {
                 log.error("Error while updating tenant in IS: " + tenantDomain, e);
@@ -281,9 +315,23 @@ public class ISTenantSyncListener implements TenantMgtListener {
         //should get tenant domain for the corresponding ID as the ID is not the same for IS side
         TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
         log.info("Tenant activated in API Manager: " + tenantId);
-        TenantSharingConfigurationDTO tenantSharingConfiguration =
-                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-        if (tenantSharingConfiguration.getIsEnabled()) {
+
+        TenantSharingConfigurationDTO tenantSharingConfiguration = apiManagerConfiguration
+                .getTenantSharingConfiguration(APIConstants.KeyManager.WSO2_IS7_KEY_MANAGER_TYPE);
+
+        if (tenantSharingConfiguration == null || tenantSharingConfiguration.getProperties() == null) {
+            throw new StratosException("Tenant Sharing configuration not found for WSO2-IS-7");
+        }
+        boolean isTenantSyncEnabled = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.ENABLE_TENANT_SYNC));
+        String identityServerBaseUrl = getRefinedIdentityServerBaseUrl(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL));
+
+        if (isTenantSyncEnabled) {
+            String identityServerAdminUsername = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.USERNAME);
+            String identityServerAdminPassword = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.PASSWORD);
             String tenantDomain;
             try {
                 tenantDomain = tenantManager.getDomain(tenantId);
@@ -293,9 +341,12 @@ public class ISTenantSyncListener implements TenantMgtListener {
             }
 
             try {
-                ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, true,
-                        tenantSharingConfiguration.getReservedUserName(),
-                        tenantSharingConfiguration.getReservedUserPassword());
+                ISTenantManagementRestClient.updateTenantStatusInIS(
+                        identityServerBaseUrl,
+                        tenantDomain,
+                        true,
+                        identityServerAdminUsername,
+                        identityServerAdminPassword);
             } catch (IOException e) {
                 log.error("Error while activating tenant in IS: " + tenantDomain, e);
                 throw new StratosException(e);
@@ -312,9 +363,23 @@ public class ISTenantSyncListener implements TenantMgtListener {
         //should get tenant domain for the corresponding ID as the ID is not the same for IS side
         TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
         log.info("Tenant deactivated in API Manager: " + tenantId);
-        TenantSharingConfigurationDTO tenantSharingConfiguration =
-                API_MANAGER_CONFIGURATION.getTenantSharingConfiguration();
-        if (tenantSharingConfiguration.getIsEnabled()) {
+
+        TenantSharingConfigurationDTO tenantSharingConfiguration = apiManagerConfiguration
+                .getTenantSharingConfiguration(APIConstants.KeyManager.WSO2_IS7_KEY_MANAGER_TYPE);
+
+        if (tenantSharingConfiguration == null || tenantSharingConfiguration.getProperties() == null) {
+            throw new StratosException("Tenant Sharing configuration not found for WSO2-IS-7");
+        }
+        boolean isTenantSyncEnabled = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.ENABLE_TENANT_SYNC));
+        String identityServerBaseUrl = getRefinedIdentityServerBaseUrl(tenantSharingConfiguration.getProperties()
+                .get(APIConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL));
+
+        if (isTenantSyncEnabled) {
+            String identityServerAdminUsername = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.USERNAME);
+            String identityServerAdminPassword = tenantSharingConfiguration.getProperties()
+                    .get(APIConstants.IS7TenantSharingConfigs.PASSWORD);
             String tenantDomain;
             try {
                 tenantDomain = tenantManager.getDomain(tenantId);
@@ -323,9 +388,12 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 throw new StratosException(e);
             }
             try {
-                ISTenantManagementRestClient.updateTenantStatusInIS(tenantDomain, false,
-                        tenantSharingConfiguration.getReservedUserName(),
-                        tenantSharingConfiguration.getReservedUserPassword());
+                ISTenantManagementRestClient.updateTenantStatusInIS(
+                        identityServerBaseUrl,
+                        tenantDomain,
+                        false,
+                        identityServerAdminUsername,
+                        identityServerAdminPassword);
             } catch (IOException e) {
                 log.error("Error while deactivating tenant in IS: " + tenantId, e);
                 throw new StratosException(e);

@@ -20,17 +20,17 @@ import java.util.Map;
  * * REST Client for Managing Tenants in WSO2 Identity Server
  */
 public class ISTenantManagementRestClient {
-
-    private static final String IS_HOST = "https://localhost:9444";
     private static final String TENANT_ID = "ID";
     private static final String TENANT_STATUS = "STATUS";
     private static final String TENANT_OWNER_ID = "OWNER_ID";
+    private static final String TENANT_MANAGEMENT_RESOURCE_PATH = "api/server/v1/tenants/";
 
-    public static void createTenantInIS(String admin, String adminPassword, String tenantDomain, String firstName,
+    public static void createTenantInIS(String identityServerBaseUrl, String admin, String adminPassword,
+                                        String tenantDomain, String firstName,
                                         String lastName, String email, String identityUserName,
                                         String identityUserPassword) throws IOException {
 
-        String endpoint = IS_HOST + "/api/server/v1/tenants";
+        String endpoint = identityServerBaseUrl + TENANT_MANAGEMENT_RESOURCE_PATH;
 
         // JSON payload (no additional claims)
         String payload = String.format("{%n" +
@@ -73,18 +73,18 @@ public class ISTenantManagementRestClient {
         }
     }
 
-    public static void updateTenantInIS(String tenantDomain, String adminPassword, String firstName,
-                                        String lastName, String email, String identityUserName,
+    public static void updateTenantInIS(String identityServerBaseUrl, String tenantDomain, String adminPassword,
+                                        String firstName, String lastName, String email, String identityUserName,
                                         String identityUserPassword) throws IOException {
 
-        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(tenantDomain,
+        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(identityServerBaseUrl, tenantDomain,
                 identityUserName, identityUserPassword);
 
         //TODO : remove this API call after IS fixes https://github.com/wso2-enterprise/wso2-iam-internal/issues/3992
-        tenantInfoMap.put(TENANT_OWNER_ID, getTenantOwnerId(tenantInfoMap.get(TENANT_ID), identityUserName,
-                identityUserPassword));
+        tenantInfoMap.put(TENANT_OWNER_ID, getTenantOwnerId(identityServerBaseUrl, tenantInfoMap.get(TENANT_ID),
+                identityUserName, identityUserPassword));
 
-        String endpoint = IS_HOST + "/api/server/v1/tenants/" + tenantInfoMap.get(TENANT_ID) +
+        String endpoint = identityServerBaseUrl + TENANT_MANAGEMENT_RESOURCE_PATH + tenantInfoMap.get(TENANT_ID) +
                 "/owners/" + tenantInfoMap.get(TENANT_OWNER_ID);
 
         // JSON payload
@@ -120,9 +120,9 @@ public class ISTenantManagementRestClient {
     }
 
     //TODO : remove this API call after IS fixes https://github.com/wso2-enterprise/wso2-iam-internal/issues/3992
-    private static String getTenantOwnerId(String tenantId, String identityUserName, String identityUserPassword)
-            throws IOException {
-        String endpoint = IS_HOST + "/api/server/v1/tenants/" + tenantId + "/owners";
+    private static String getTenantOwnerId(String identityServerBaseUrl, String tenantId, String identityUserName,
+                                           String identityUserPassword) throws IOException {
+        String endpoint = identityServerBaseUrl + TENANT_MANAGEMENT_RESOURCE_PATH + tenantId + "/owners";
 
         URL url = new URL(endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -155,10 +155,11 @@ public class ISTenantManagementRestClient {
         }
     }
 
-    private static Map<String, String> getTenantIdAStatusAndOwnerInIS(String tenantDomain, String identityUserName,
+    private static Map<String, String> getTenantIdAStatusAndOwnerInIS(String identityServerBaseUrl, String tenantDomain,
+                                                                      String identityUserName,
                                                                       String identityUserPassword) throws IOException {
         Map<String, String> tenantIdStatusMap = new HashMap<>();
-        String endpoint = IS_HOST + "/api/server/v1/tenants/domain/" + tenantDomain;
+        String endpoint = identityServerBaseUrl + TENANT_MANAGEMENT_RESOURCE_PATH + tenantDomain;
 
         URL url = new URL(endpoint);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -196,13 +197,15 @@ public class ISTenantManagementRestClient {
         }
     }
 
-    public static void updateTenantStatusInIS(String tenantDomain, boolean isActive, String identityUserName,
+    public static void updateTenantStatusInIS(String identityServerBaseUrl, String tenantDomain,
+                                              boolean isActive, String identityUserName,
                                               String identityUserPassword) throws IOException {
 
-        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(tenantDomain, identityUserName,
-                identityUserPassword);
+        Map<String, String> tenantInfoMap = getTenantIdAStatusAndOwnerInIS(identityServerBaseUrl, tenantDomain,
+                identityUserName, identityUserPassword);
 
-        String endpoint = IS_HOST + "/api/server/v1/tenants/" + tenantInfoMap.get(TENANT_ID) + "/lifecycle-status";
+        String endpoint = identityServerBaseUrl + TENANT_MANAGEMENT_RESOURCE_PATH + tenantInfoMap.get(TENANT_ID)
+                + "/lifecycle-status";
 
         //check if tenant is already active
         if (isActive != Boolean.parseBoolean(tenantInfoMap.get(TENANT_STATUS))) {
