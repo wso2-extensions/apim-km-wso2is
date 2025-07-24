@@ -451,7 +451,7 @@
         <carbon.identity-inbound-auth-oauth.version>7.0.26</carbon.identity-inbound-auth-oauth.version>
         <carbon.identity-data-publisher-application-authentication.version>5.4.4
         </carbon.identity-data-publisher-application-authentication.version>
-        <http.client.version>4.3.6.wso2v1</http.client.version>
+        <http.client.version>4.5.13.wso2v1</http.client.version>
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
         <imp.package.version.osgi.service>[1.2.0,1.3.0)</imp.package.version.osgi.service>
         <imp.package.version.osgi.util>[1.2.0,2.0.0)</imp.package.version.osgi.util>
