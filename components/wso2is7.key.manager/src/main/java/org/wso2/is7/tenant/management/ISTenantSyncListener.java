@@ -31,6 +31,7 @@ import org.wso2.is7.client.model.TenantModel;
 import org.wso2.is7.client.model.TenantResponseModel;
 import org.wso2.is7.client.model.WSO2IS7TenantManagementClient;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,10 @@ import java.util.Map;
 public class ISTenantSyncListener implements TenantMgtListener {
     private static final Log log = LogFactory.getLog(ISTenantSyncListener.class);
     private static final String TENANT_PATH_PREFIX = "t/";
-    private static final String TENANT_MANAGEMENT_API_PATH = "api/server/v1/tenants";
+    private static final String TENANT_MANAGEMENT_API_PATH = "api/server/v1";
+
+    private static final String MULTIVALUED = "multivalued";
+    private static final String MULTIVALUED_STRING = "multivalued_";
     private static final APIManagerConfiguration apiManagerConfiguration;
     private WSO2IS7TenantManagementClient wso2IS7TenantManagementClient;
     TenantSharingConfigurationDTO tenantSharingConfiguration;
@@ -58,11 +62,11 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 .getAPIManagerConfigurationService().getAPIManagerConfiguration();
     }
 
-    public ISTenantSyncListener() throws APIManagementException {
+    public ISTenantSyncListener()  {
         initializeTenantManagementClient();
     }
 
-    private void initializeTenantManagementClient() throws APIManagementException {
+     private void initializeTenantManagementClient() {
         tenantSharingConfiguration = apiManagerConfiguration
                 .getTenantSharingConfiguration(APIConstants.KeyManager.WSO2_IS7_KEY_MANAGER_TYPE);
 
@@ -84,15 +88,22 @@ public class ISTenantSyncListener implements TenantMgtListener {
                         .get(APIConstants.IS7TenantSharingConfigs.PASSWORD);
                 String tenantManagementEndpoint = identityServerBaseUrl + TENANT_MANAGEMENT_API_PATH;
 
-                wso2IS7TenantManagementClient = Feign.builder()
-                        .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(tenantManagementEndpoint)))
-                        .encoder(new GsonEncoder())
-                        .decoder(new GsonDecoder())
-                        .logger(new Slf4jLogger())
-                        .requestInterceptor(new BasicAuthRequestInterceptor(identityServerAdminUsername,
-                                identityServerAdminPassword))
-                        .errorDecoder(new KMClientErrorDecoder())
-                        .target(WSO2IS7TenantManagementClient.class, tenantManagementEndpoint);
+                try {
+                    wso2IS7TenantManagementClient = Feign.builder()
+                            .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(tenantManagementEndpoint)))
+                            .encoder(new GsonEncoder())
+                            .decoder(new GsonDecoder())
+                            .logger(new Slf4jLogger())
+                            .requestInterceptor(new BasicAuthRequestInterceptor(identityServerAdminUsername,
+                                    identityServerAdminPassword))
+                            .errorDecoder(new KMClientErrorDecoder())
+                            .target(WSO2IS7TenantManagementClient.class, tenantManagementEndpoint);
+                } catch (Exception e) {
+                    log.info("Endpoint for tenant management : " + tenantManagementEndpoint);
+                    log.error("Error initializing Feign client for tenant management: " + e.getMessage(), e);
+                    // Optionally, set a flag to indicate the client is not initialized
+                    wso2IS7TenantManagementClient = null;
+                }
             }
         }
     }
@@ -185,10 +196,12 @@ public class ISTenantSyncListener implements TenantMgtListener {
         // connector configuration
         Map<String, Object> additionalProperties = new HashMap();
         additionalProperties.put(APIConstants.KeyManager.IS7_AUTHENTICATION, APIConstants.KeyManager.IS7_MTLS);
-        additionalProperties.put(APIConstants.KeyManager.IS7_MTLS, "ServerWide");
+        additionalProperties.put(APIConstants.KeyManager.IS7_MTLS, MULTIVALUED);
         additionalProperties.put("TenantDomain", tenantDomain);
         /* Add username of the user provided identity user, since currently it's required, for authorization of
          DCR call in IS side */
+        additionalProperties.put(MULTIVALUED_STRING + APIConstants.KeyManager.IS7_MTLS,
+                Arrays.asList(APIConstants.KeyManager.IS7_IDENTITY_USER, "ServerWide"));
         additionalProperties.put(APIConstants.KeyManager.IS7_IDENTITY_USER,
                 tenantInfoBean.getAdmin() + "@" + tenantDomain);
         additionalProperties.put("api_resource_management_endpoint",
@@ -347,9 +360,10 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 log.info("Tenant is already activated in IS: " + tenantDomain);
                 return;
             }
+            TenantModel.TenantPutModel tenantPutModel = new TenantModel.TenantPutModel(true);
             wso2IS7TenantManagementClient.updateTenantStatus(
                     tenantInfoByDomain.getId(),
-                    true
+                    tenantPutModel
             );
             log.info("Tenant activated successfully in IS: " + tenantDomain);
         } else {
@@ -379,9 +393,10 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 log.info("Tenant is already de-activated in IS: " + tenantDomain);
                 return;
             }
+            TenantModel.TenantPutModel tenantPutModel = new TenantModel.TenantPutModel(false);
             wso2IS7TenantManagementClient.updateTenantStatus(
                     tenantInfoByDomain.getId(),
-                    false
+                    tenantPutModel
             );
             log.info("Tenant de-activated successfully in IS: " + tenantDomain);
         } else {
