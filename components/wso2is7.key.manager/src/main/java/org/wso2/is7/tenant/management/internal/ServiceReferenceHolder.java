@@ -1,5 +1,6 @@
 package org.wso2.is7.tenant.management.internal;
 
+import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
@@ -17,6 +18,7 @@ public class ServiceReferenceHolder {
     private TenantRegistryLoader tenantRegistryLoader;
     private ConfigurationContextService contextService;
     private OrganizationManager organizationManager;
+    private APIManagerConfigurationService apiManagerConfigurationService;
 
     public static ServiceReferenceHolder getInstance() {
 
@@ -67,6 +69,14 @@ public class ServiceReferenceHolder {
 
     public void setOrganizationManager(OrganizationManager organizationManager) {
         this.organizationManager = organizationManager;
+    }
+
+    public APIManagerConfigurationService getAPIManagerConfigurationService() {
+        return apiManagerConfigurationService;
+    }
+
+    public void setAPIManagerConfigurationService(APIManagerConfigurationService apiManagerConfigurationService) {
+        this.apiManagerConfigurationService = apiManagerConfigurationService;
     }
 
 }

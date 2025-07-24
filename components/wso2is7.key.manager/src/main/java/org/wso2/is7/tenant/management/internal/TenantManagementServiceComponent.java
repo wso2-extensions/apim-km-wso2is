@@ -102,18 +102,18 @@ public class TenantManagementServiceComponent {
         ServiceReferenceHolder.getInstance().setOrganizationManager(null);
     }
 
-    @Reference(name = "apim.config.service",
+    @Reference(name = "api.manager.config.service",
             service = org.wso2.carbon.apimgt.impl.APIManagerConfigurationService.class,
             cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetAPIMConfigurationService")
-    protected void setAPIMConfigurationService(APIManagerConfigurationService amcService) {
+            unbind = "unsetAPIManagerConfigurationService")
+    protected void setAPIManagerConfigurationService(APIManagerConfigurationService amcService) {
 
-        org.wso2.is7.client.internal.ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(amcService);
+        ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(amcService);
     }
 
-    protected void unsetAPIMConfigurationService(APIManagerConfigurationService amcService) {
+    protected void unsetAPIManagerConfigurationService(APIManagerConfigurationService amcService) {
 
-        org.wso2.is7.client.internal.ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(null);
+        ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(null);
     }
 
     @Deactivate
