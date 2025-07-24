@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com)
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -246,6 +246,9 @@ public class TenantModel {
         }
     }
 
+    /**
+     * Represents the request payload to update the lifecycle status of a tenant.
+     */
     public static class TenantPutModel {
         public TenantPutModel(boolean activated) {
             this.activated = activated;

@@ -103,10 +103,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
-import java.util.stream.Collectors;
 
 /**
  * This class provides the implementation to use WSO2 Identity Server 7 for managing OAuth clients and Tokens
@@ -876,10 +876,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                  KeyManagementException | NoSuchAlgorithmException e) {
             throw new APIManagementException(e);
         }
-
-        // Create socket factory with hostname verifier
-//        SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-//                sslContext, new DefaultHostnameVerifier());
 
         SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
                 sslContext,

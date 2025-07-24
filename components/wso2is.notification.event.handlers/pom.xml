@@ -33,7 +33,6 @@
 
                         <Private-Package>
                             org.wso2.is.notification.internal.*;
-                            org.wso2.carbon.tenant.mgt.internal.*;
                         </Private-Package>
                         <Import-Package>
                             org.apache.commons.codec.*,
@@ -58,7 +57,7 @@
         <carbon.tenant.mgt.version>4.11.39</carbon.tenant.mgt.version>
         <carbon.tenant.mgt.stub.version>4.9.34</carbon.tenant.mgt.stub.version>
         <identity.organization.management.version>1.1.24</identity.organization.management.version>
-        <carbon.identity.version>7.8.23</carbon.identity.version>
+        <carbon.identity.version>7.8.23.33-SNAPSHOT</carbon.identity.version>
     </properties>
     <dependencies>
         <dependency>
@@ -105,6 +104,12 @@
             <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
             <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
             <version>${identity.organization.management.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.core</artifactId>
+            <version>${carbon.identity.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
