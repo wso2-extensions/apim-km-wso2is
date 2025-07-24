@@ -245,4 +245,18 @@ public class TenantModel {
             this.additionalClaims = additionalClaims;
         }
     }
+
+    public static class TenantPutModel {
+        public TenantPutModel(boolean activated) {
+            this.activated = activated;
+        }
+        private Boolean activated;
+
+        public Boolean getActivated() {
+            return activated;
+        }
+        public void setActivated(Boolean activated) {
+            this.activated = activated;
+        }
+    }
 }

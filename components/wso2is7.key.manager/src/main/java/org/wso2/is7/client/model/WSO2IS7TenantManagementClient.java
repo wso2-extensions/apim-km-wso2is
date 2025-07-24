@@ -52,6 +52,7 @@ public interface WSO2IS7TenantManagementClient {
 
     @RequestLine("PUT /tenants/{tenant-id}/lifecycle-status")
     @Headers("Content-Type: application/json")
-    String updateTenantStatus(@Param("tenant-id") String tenantId, boolean activated) throws StratosException;
+    String updateTenantStatus(@Param("tenant-id") String tenantId, TenantModel.TenantPutModel tenantPutModel)
+            throws StratosException;
 
 }
