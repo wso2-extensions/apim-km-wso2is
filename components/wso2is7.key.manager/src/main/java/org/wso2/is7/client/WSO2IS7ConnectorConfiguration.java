@@ -82,33 +82,33 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
         List<ConfigurationDto> configurationDtoList = new ArrayList<>();
         List<ConfigurationDto> basicAuthValues = new ArrayList<>();
         basicAuthValues.add(new ConfigurationDto("Username", "Username", "input",
-                "Username of admin user", "", false, false, Collections.emptyList(),
+                "Username of admin user", "", true, false, Collections.emptyList(),
                 false));
         basicAuthValues.add(new ConfigurationDto("Password", "Password", "input",
-                "Password of Admin user", "", false, true, Collections.emptyList(),
+                "Password of Admin user", "", true, true, Collections.emptyList(),
                 false));
         ConfigurationDto basicAuthConfigurationDto = new ConfigurationDto("BasicAuth",
                 "Basic Authentication", "labelOnly", "Select to use basic authentication",
-                "", true, false, basicAuthValues, true);
+                "", false, false, basicAuthValues, true);
 
         List<ConfigurationDto> certBasedAuthValues = new ArrayList<>();
         certBasedAuthValues.add(new ConfigurationDto("ServerWide", "Server-Wide Certificate",
                 "labelOnly", "Uses the configured global server certificate", "",
-                true, false, Collections.emptyList(), false));
+                false, false, Collections.emptyList(), false));
 
         certBasedAuthValues.add(new ConfigurationDto("TenantWide", "Tenant-Wide Certificate",
                 "labelOnly", "Tenant wide certificate for mutual TLS authentication", "",
-                true, false, Collections.singletonList(
+                false, false, Collections.singletonList(
                         new ConfigurationDto("TenantWide", "Add a new certificate",
                                 "certificate", "Tenant wide certificate for mutual TLS authentication",
                                 "", true, false, Collections.emptyList(), false)),
                 false));
         ConfigurationDto certificateBasedAuthConfigurationDto = new ConfigurationDto("Mutual-TLS",
                 "MTLS Authentication", "labelOnly", "Select to use MTLS authentication",
-                "", true, false, Arrays.asList(
+                "", false, false, Arrays.asList(
                         new ConfigurationDto("IdentityUser", "Identity Username", "input",
                                 "Username of identity user who belongs to the same tenant domain",
-                                "", false, false, Collections.emptyList(), false),
+                                "", true, false, Collections.emptyList(), false),
                         new ConfigurationDto("Mutual-TLS",
                                 "Select a Certificate Type", "options",
                                 "", "", true, false,
