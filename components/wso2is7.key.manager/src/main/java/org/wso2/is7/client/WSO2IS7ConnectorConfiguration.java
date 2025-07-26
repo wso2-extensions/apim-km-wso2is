@@ -81,58 +81,71 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
 
         List<ConfigurationDto> configurationDtoList = new ArrayList<>();
         List<ConfigurationDto> basicAuthValues = new ArrayList<>();
-        basicAuthValues.add(new ConfigurationDto("Username", "Username", "input",
-                "Username of admin user", "", true, false, Collections.emptyList(),
-                false));
-        basicAuthValues.add(new ConfigurationDto("Password", "Password", "input",
-                "Password of Admin user", "", true, true, Collections.emptyList(),
-                false));
-        ConfigurationDto basicAuthConfigurationDto = new ConfigurationDto("BasicAuth",
+        basicAuthValues.add(new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME,
+                "Username", "input", "Username of admin user", "", true,
+                false, Collections.emptyList(), false));
+        basicAuthValues.add(new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD,
+                "Password", "input", "Password of Admin user", "", true,
+                true, Collections.emptyList(), false));
+        ConfigurationDto basicAuthConfigurationDto = new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.BASIC_AUTH,
                 "Basic Authentication", "labelOnly", "Select to use basic authentication",
                 "", false, false, basicAuthValues, true);
 
         List<ConfigurationDto> certBasedAuthValues = new ArrayList<>();
-        certBasedAuthValues.add(new ConfigurationDto("ServerWide", "Server-Wide Certificate",
-                "labelOnly", "Uses the configured global server certificate", "",
+        certBasedAuthValues.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.SERVERWIDE,
+                "Server-Wide Certificate", "labelOnly",
+                "Uses the configured global server certificate", "",
                 false, false, Collections.emptyList(), false));
 
-        certBasedAuthValues.add(new ConfigurationDto("TenantWide", "Tenant-Wide Certificate",
-                "labelOnly", "Tenant wide certificate for mutual TLS authentication", "",
+        certBasedAuthValues.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.TENANTWIDE,
+                "Tenant-Wide Certificate", "labelOnly",
+                "Tenant wide certificate for mutual TLS authentication", "",
                 false, false, Collections.singletonList(
-                        new ConfigurationDto("TenantWide", "Add a new certificate",
-                                "certificate", "Tenant wide certificate for mutual TLS authentication",
+                        new ConfigurationDto(
+                                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.TENANTWIDE_CERTIFICATE,
+                                "Add a new certificate", "certificate",
+                                "Tenant wide certificate for mutual TLS authentication",
                                 "", true, false, Collections.emptyList(), false)),
                 false));
-        ConfigurationDto certificateBasedAuthConfigurationDto = new ConfigurationDto("Mutual-TLS",
+        ConfigurationDto certificateBasedAuthConfigurationDto = new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS,
                 "MTLS Authentication", "labelOnly", "Select to use MTLS authentication",
                 "", false, false, Arrays.asList(
-                        new ConfigurationDto("IdentityUser", "Identity Username", "input",
+                        new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER,
+                                "Identity Username", "input",
                                 "Username of identity user who belongs to the same tenant domain",
                                 "", true, false, Collections.emptyList(), false),
-                        new ConfigurationDto("Mutual-TLS",
+                        new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS,
                                 "Select a Certificate Type", "options",
                                 "", "", true, false,
-                                certBasedAuthValues, true)),
-                false);
+                                certBasedAuthValues, false)),
+                true);
 
         List<ConfigurationDto> authValues = new ArrayList<>();
         authValues.add(basicAuthConfigurationDto);
         authValues.add(certificateBasedAuthConfigurationDto);
 
-        configurationDtoList.add(new ConfigurationDto("Authentication",
+        configurationDtoList.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
                 "Authentication Type", "dropdown", "Select the authentication type",
-                "BasicAuth", true, false, authValues, true));
-        configurationDtoList.add(new ConfigurationDto("api_resource_management_endpoint",
+                "BasicAuth", true, false, authValues, false));
+        configurationDtoList.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.API_RESOURCE_MANAGEMENT_ENDPOINT,
                 "WSO2 Identity Server 7 API Resource Management Endpoint", "input",
                 String.format("E.g., %s/api/server/v1/api-resources",
                         org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "",
                 true, false, Collections.emptyList(), false));
-        configurationDtoList.add(new ConfigurationDto("is7_roles_endpoint",
+        configurationDtoList.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ROLES_ENDPOINT,
                 "WSO2 Identity Server 7 Roles Endpoint", "input",
                 String.format("E.g., %s/scim2/v2/Roles",
                         org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "", true,
                 false, Collections.emptyList(), false));
-        configurationDtoList.add(new ConfigurationDto("enable_roles_creation",
+        configurationDtoList.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_ROLES_CREATION,
                 "Create roles in WSO2 Identity Server 7", "checkbox",
                 "Create roles in WSO2 Identity Server 7, corresponding to the roles used in WSO2 API Manager.",
                 "Enable", false, false, Collections.singletonList("Enable"), false));

@@ -34,6 +34,36 @@ public class WSO2IS7KeyManagerConstants {
     public static final String PUBLIC_CLIENT = "ext_public_client";
     public static final String REFRESH_TOKEN_TYPE = "Refresh";
 
+    /**
+     * Constants related to WSO2 Identity Server 7 Key Manager Connector Configuration.
+     */
+    public static class ConnectorConfigurationConstants {
+        public static final String AUTHENTICATION = "Authentication";
+        public static final String MTLS = "Mutual-TLS";
+        public static final String BASIC_AUTH = "BasicAuth";
+        public static final String USERNAME = "Username";
+        public static final String PASSWORD = "Password";
+        public static final String MTLS_OPTIONS = "Mutual-TLS-Options";
+        public static final String IDENTITY_USER = "IdentityUser";
+        public static final String SERVERWIDE = "ServerWide";
+        public static final String TENANTWIDE = "TenantWide";
+        public static final String TENANTWIDE_CERTIFICATE = "TenantWideCertificate";
+        public static final String API_RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
+        public static final String ROLES_ENDPOINT = "is7_roles_endpoint";
+        public static final String ENABLE_ROLES_CREATION = "enable_roles_creation";
+    }
+
+    /**
+     * Constants related to WSO2 Identity Server 7 Tenant Sharing Configurations.
+     */
+    public static class IS7TenantSharingConfigs {
+        public static final String ENABLE_TENANT_SYNC = "enable_tenant_sync";
+        public static final String AUTO_CONFIGURE_KEY_MANAGER = "auto_configure_key_manager";
+        public static final String USERNAME = "username";
+        public static final String PASSWORD = "password";
+        public static final String IDENTITY_SERVER_BASE_URL = "identity_server_base_url";
+    }
+
     private WSO2IS7KeyManagerConstants() {
         // Prevents instantiation.
     }

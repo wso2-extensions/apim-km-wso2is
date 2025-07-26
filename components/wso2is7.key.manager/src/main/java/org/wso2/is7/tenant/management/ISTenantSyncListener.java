@@ -44,12 +44,12 @@ import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.tenant.mgt.internal.TenantMgtServiceComponent;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.is7.client.WSO2IS7KeyManagerConstants;
 import org.wso2.is7.client.internal.ServiceReferenceHolder;
 import org.wso2.is7.client.model.TenantModel;
 import org.wso2.is7.client.model.TenantResponseModel;
 import org.wso2.is7.client.model.WSO2IS7TenantManagementClient;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,9 +62,6 @@ public class ISTenantSyncListener implements TenantMgtListener {
     private static final Log log = LogFactory.getLog(ISTenantSyncListener.class);
     private static final String TENANT_PATH_PREFIX = "t/";
     private static final String TENANT_MANAGEMENT_API_PATH = "api/server/v1";
-
-    private static final String MULTIVALUED = "multivalued";
-    private static final String MULTIVALUED_STRING = "multivalued_";
     private static final APIManagerConfiguration apiManagerConfiguration;
     private WSO2IS7TenantManagementClient wso2IS7TenantManagementClient;
     TenantSharingConfigurationDTO tenantSharingConfiguration;
@@ -93,17 +90,17 @@ public class ISTenantSyncListener implements TenantMgtListener {
 
         if (tenantSharingConfiguration != null && tenantSharingConfiguration.getProperties() != null) {
             isTenantSyncEnabled = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
-                    .get(APIConstants.IS7TenantSharingConfigs.ENABLE_TENANT_SYNC));
+                    .get(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.ENABLE_TENANT_SYNC));
             isAutoConfigureKeyManagerOfCurrentType = Boolean.parseBoolean(tenantSharingConfiguration.getProperties()
-                    .get(APIConstants.IS7TenantSharingConfigs.AUTO_CONFIGURE_KEY_MANAGER));
+                    .get(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.AUTO_CONFIGURE_KEY_MANAGER));
             identityServerBaseUrl = getRefinedIdentityServerBaseUrl(tenantSharingConfiguration.getProperties()
-                    .get(APIConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL));
+                    .get(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL));
 
             if (isTenantSyncEnabled) {
                 identityServerAdminUsername = tenantSharingConfiguration.getProperties()
-                        .get(APIConstants.IS7TenantSharingConfigs.USERNAME);
+                        .get(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.USERNAME);
                 identityServerAdminPassword = tenantSharingConfiguration.getProperties()
-                        .get(APIConstants.IS7TenantSharingConfigs.PASSWORD);
+                        .get(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.PASSWORD);
                 String tenantManagementEndpoint = identityServerBaseUrl + TENANT_MANAGEMENT_API_PATH;
 
                 try {
@@ -200,7 +197,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
                         "tenant synchronization is enabled");
         keyManagerConfigurationDTO.setEnabled(true);
 
-        keyManagerConfigurationDTO.setType("WSO2-IS-7");
+        keyManagerConfigurationDTO.setType(WSO2IS7KeyManagerConstants.WSO2_IS7_TYPE);
         keyManagerConfigurationDTO.setOrganization(tenantDomain);
         keyManagerConfigurationDTO.setTokenType(KeyManagerConfiguration.TokenType.DIRECT.toString());
         KeyManagerPermissionConfigurationDTO permissionsConfiguration = new KeyManagerPermissionConfigurationDTO();
@@ -213,18 +210,22 @@ public class ISTenantSyncListener implements TenantMgtListener {
          */
         // connector configuration
         Map<String, Object> additionalProperties = new HashMap();
-        additionalProperties.put(APIConstants.KeyManager.IS7_AUTHENTICATION, APIConstants.KeyManager.IS7_MTLS);
-        additionalProperties.put(APIConstants.KeyManager.IS7_MTLS, MULTIVALUED);
         additionalProperties.put("TenantDomain", tenantDomain);
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS);
+        Map<String, String> mtlsValuesMap = new HashMap<>();
         /* Add username of the user provided identity user, since currently it's required, for authorization of
          DCR call in IS side */
-        additionalProperties.put(MULTIVALUED_STRING + APIConstants.KeyManager.IS7_MTLS,
-                Arrays.asList(APIConstants.KeyManager.IS7_IDENTITY_USER, "ServerWide"));
-        additionalProperties.put(APIConstants.KeyManager.IS7_IDENTITY_USER,
+        mtlsValuesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER,
                 tenantInfoBean.getAdmin() + "@" + tenantDomain);
-        additionalProperties.put("api_resource_management_endpoint",
+        mtlsValuesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS,
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.SERVERWIDE);
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS, mtlsValuesMap);
+        additionalProperties.put(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.API_RESOURCE_MANAGEMENT_ENDPOINT,
                 identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
-        additionalProperties.put("is7_roles_endpoint", identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ROLES_ENDPOINT,
+                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain
                 + "/scim2/v2/Roles");
         additionalProperties.put("client_secret", "");
 

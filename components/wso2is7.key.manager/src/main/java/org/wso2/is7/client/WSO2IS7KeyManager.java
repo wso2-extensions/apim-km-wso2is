@@ -131,7 +131,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
     // Name of the default API Resource of WSO2 IS7 - which is used to contain scopes.
     private static final String DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER = "User-defined-oauth2-resource";
-    private static final String WSO2_IDENTITY_USER = "WSO2-Identity-User";
+    private static final String WSO2_IDENTITY_USER_HEADER = "WSO2-Identity-User";
 
     private boolean enableRoleCreation = false;
 
@@ -727,17 +727,18 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             enableRoleCreation = (Boolean) configuration.getParameter(ENABLE_ROLES_CREATION);
         }
 
-        if (configuration.getConfiguration().get(APIConstants.KeyManager.IS7_AUTHENTICATION)
-                .equals(APIConstants.KeyManager.IS7_MTLS)) {
+        if (configuration.getConfiguration()
+                .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION)
+                .equals(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS)) {
             String identityUser = (String) configuration.getConfiguration()
-                    .get(APIConstants.KeyManager.IS7_IDENTITY_USER);
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
             wso2IS7DCRClient = Feign.builder()
                     .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
                     .errorDecoder(new KMClientErrorDecoder())
-                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, identityUser))
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER_HEADER, identityUser))
                     .target(WSO2IS7DCRClient.class, dcrEndpoint);
 
             introspectionClient = Feign.builder()
@@ -745,7 +746,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, identityUser))
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER_HEADER, identityUser))
                     .requestInterceptor(new TenantHeaderInterceptor(tenantDomain))
                     .errorDecoder(new KMClientErrorDecoder())
                     .encoder(new FormEncoder())
@@ -756,7 +757,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, identityUser))
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER_HEADER, identityUser))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
 
@@ -765,7 +766,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER, identityUser))
+                    .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER_HEADER, identityUser))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
         } else {
