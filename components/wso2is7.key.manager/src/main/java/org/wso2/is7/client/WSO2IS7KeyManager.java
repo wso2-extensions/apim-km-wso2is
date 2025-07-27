@@ -731,7 +731,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION)
                 .equals(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS)) {
             String identityUser = (String) configuration.getConfiguration()
-                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER_PATH);
             wso2IS7DCRClient = Feign.builder()
                     .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
                     .encoder(new GsonEncoder())
@@ -770,8 +770,10 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
         } else {
-            String username = (String) configuration.getParameter(APIConstants.KEY_MANAGER_USERNAME);
-            String password = (String) configuration.getParameter(APIConstants.KEY_MANAGER_PASSWORD);
+            String username = (String) configuration
+                    .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME_PATH);
+            String password = (String) configuration
+                    .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD_PATH);
             wso2IS7DCRClient = Feign.builder()
                     .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
                     .encoder(new GsonEncoder())

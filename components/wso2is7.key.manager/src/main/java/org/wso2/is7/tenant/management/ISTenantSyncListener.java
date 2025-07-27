@@ -213,14 +213,12 @@ public class ISTenantSyncListener implements TenantMgtListener {
         additionalProperties.put("TenantDomain", tenantDomain);
         additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS);
-        Map<String, String> mtlsValuesMap = new HashMap<>();
         /* Add username of the user provided identity user, since currently it's required, for authorization of
          DCR call in IS side */
-        mtlsValuesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER,
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER_PATH,
                 tenantInfoBean.getAdmin() + "@" + tenantDomain);
-        mtlsValuesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS,
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS_PATH,
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.SERVERWIDE);
-        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS, mtlsValuesMap);
         additionalProperties.put(
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.API_RESOURCE_MANAGEMENT_ENDPOINT,
                 identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");

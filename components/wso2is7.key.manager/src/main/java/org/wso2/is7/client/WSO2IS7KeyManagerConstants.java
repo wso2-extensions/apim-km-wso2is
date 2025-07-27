@@ -33,6 +33,7 @@ public class WSO2IS7KeyManagerConstants {
     public static final String PKCE_SUPPORT_PLAIN = "ext_pkce_support_plain";
     public static final String PUBLIC_CLIENT = "ext_public_client";
     public static final String REFRESH_TOKEN_TYPE = "Refresh";
+    public static final String DOT = ".";
 
     /**
      * Constants related to WSO2 Identity Server 7 Key Manager Connector Configuration.
@@ -51,6 +52,28 @@ public class WSO2IS7KeyManagerConstants {
         public static final String API_RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
         public static final String ROLES_ENDPOINT = "is7_roles_endpoint";
         public static final String ENABLE_ROLES_CREATION = "enable_roles_creation";
+
+        public static final String MTLS_PATH =
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION
+                .concat(WSO2IS7KeyManagerConstants.DOT)
+                .concat(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS);
+        public static final String IDENTITY_USER_PATH =
+                MTLS_PATH
+                .concat(WSO2IS7KeyManagerConstants.DOT)
+                .concat(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
+
+        public static final String MTLS_OPTIONS_PATH = MTLS_PATH
+                .concat(WSO2IS7KeyManagerConstants.DOT)
+                .concat(ConnectorConfigurationConstants.MTLS_OPTIONS);
+        public static final String BASIC_AUTH_PATH =
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION
+                        .concat(WSO2IS7KeyManagerConstants.DOT)
+                        .concat(ConnectorConfigurationConstants.BASIC_AUTH);
+        public static final String USERNAME_PATH =
+                BASIC_AUTH_PATH.concat(DOT).concat(ConnectorConfigurationConstants.USERNAME);
+        public static final String PASSWORD_PATH =
+                BASIC_AUTH_PATH.concat(DOT).concat(ConnectorConfigurationConstants.PASSWORD);
+
     }
 
     /**
