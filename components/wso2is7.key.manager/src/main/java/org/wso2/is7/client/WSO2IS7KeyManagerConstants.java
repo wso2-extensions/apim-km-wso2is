@@ -40,11 +40,11 @@ public class WSO2IS7KeyManagerConstants {
      */
     public static class ConnectorConfigurationConstants {
         public static final String AUTHENTICATION = "Authentication";
-        public static final String MTLS = "Mutual-TLS";
+        public static final String MTLS = "MutualTLS";
         public static final String BASIC_AUTH = "BasicAuth";
         public static final String USERNAME = "Username";
         public static final String PASSWORD = "Password";
-        public static final String MTLS_OPTIONS = "Mutual-TLS-Options";
+        public static final String MTLS_OPTIONS = "MutualTLSOptions";
         public static final String IDENTITY_USER = "IdentityUser";
         public static final String SERVERWIDE = "ServerWide";
         public static final String TENANTWIDE = "TenantWide";

@@ -79,7 +79,6 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
     @Override
     public List<ConfigurationDto> getAuthConfigurations() {
 
-        List<ConfigurationDto> configurationDtoList = new ArrayList<>();
         List<ConfigurationDto> basicAuthValues = new ArrayList<>();
         basicAuthValues.add(new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME,
                 "Username", "input", "Username of admin user", "", true,
@@ -131,28 +130,10 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
         authValues.add(basicAuthConfigurationDto);
         authValues.add(certificateBasedAuthConfigurationDto);
 
-        configurationDtoList.add(new ConfigurationDto(
+        return Collections.singletonList(new ConfigurationDto(
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
                 "Authentication Type", "dropdown", "Select the authentication type",
                 "BasicAuth", true, false, authValues, false));
-        configurationDtoList.add(new ConfigurationDto(
-                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.API_RESOURCE_MANAGEMENT_ENDPOINT,
-                "WSO2 Identity Server 7 API Resource Management Endpoint", "input",
-                String.format("E.g., %s/api/server/v1/api-resources",
-                        org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "",
-                true, false, Collections.emptyList(), false));
-        configurationDtoList.add(new ConfigurationDto(
-                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ROLES_ENDPOINT,
-                "WSO2 Identity Server 7 Roles Endpoint", "input",
-                String.format("E.g., %s/scim2/v2/Roles",
-                        org.wso2.carbon.apimgt.api.APIConstants.DEFAULT_KEY_MANAGER_HOST), "", true,
-                false, Collections.emptyList(), false));
-        configurationDtoList.add(new ConfigurationDto(
-                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_ROLES_CREATION,
-                "Create roles in WSO2 Identity Server 7", "checkbox",
-                "Create roles in WSO2 Identity Server 7, corresponding to the roles used in WSO2 API Manager.",
-                "Enable", false, false, Collections.singletonList("Enable"), false));
-        return configurationDtoList;
     }
 
     @Override
