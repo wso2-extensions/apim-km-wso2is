@@ -141,7 +141,7 @@ public class TenantManagementServiceComponent {
             serviceRegistration.unregister();
         }
         if (log.isDebugEnabled()) {
-            log.info("Oauth Listeners disabled");
+            log.info("Tenant Sharing Listener disabled");
         }
     }
 }

@@ -85,7 +85,7 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 "Username", "input", "Username of admin user", "", true,
                 false, Collections.emptyList(), false));
         basicAuthValues.add(new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD,
-                "Password", "input", "Password of Admin user", "", true,
+                "Password", "input", "Password of admin user", "", true,
                 true, Collections.emptyList(), false));
         ConfigurationDto basicAuthConfigurationDto = new ConfigurationDto(
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.BASIC_AUTH,
@@ -96,13 +96,14 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
         certBasedAuthValues.add(new ConfigurationDto(
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.SERVERWIDE,
                 "Server-Wide Certificate", "labelOnly",
-                "Uses the configured global server certificate", "",
+                "Uses a globally trusted client certificate already configured on the server. " +
+                        "No upload is required", "",
                 false, false, Collections.emptyList(), false));
 
         certBasedAuthValues.add(new ConfigurationDto(
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.TENANTWIDE,
                 "Tenant-Wide Certificate", "labelOnly",
-                "Tenant wide certificate for mutual TLS authentication", "",
+                "Upload a dedicated certificate specifically for this tenant", "",
                 false, false, Collections.singletonList(
                         new ConfigurationDto(
                                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.TENANTWIDE_CERTIFICATE,
@@ -116,7 +117,9 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 "", false, false, Arrays.asList(
                         new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER,
                                 "Identity Username", "input",
-                                "Username of identity user who belongs to the same tenant domain",
+                                "Username of an identity user who belongs to the same tenant domain. " +
+                                        "This username links the client's mTLS identity and is required to " +
+                                        "establish ownership and context for API operations.",
                                 "", true, false, Collections.emptyList(), false),
                         new ConfigurationDto(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS,
                                 "Select a Certificate Type", "options",

@@ -132,6 +132,16 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     // Name of the default API Resource of WSO2 IS7 - which is used to contain scopes.
     private static final String DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER = "User-defined-oauth2-resource";
     private static final String WSO2_IDENTITY_USER_HEADER = "WSO2-Identity-User";
+    private static final String TRUST_STORE_LOCATION = "Security.TrustStore.Location";
+    private static final String TRUST_STORE_PASSWORD = "Security.TrustStore.Password";
+    private static final String KEY_STORE_LOCATION = "Security.KeyStore.Location";
+    private static final String KEY_STORE_TYPE = "Security.KeyStore.Type";
+    private static final String KEY_STORE_PASSWORD = "Security.KeyStore.Password";
+    private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
+    private static final String TLS = "TLS";
+    private static final String TLS_V1_2 = "TLSv1.2";
+    private static final String TLS_V1_3 = "TLSv1.3";
 
     private boolean enableRoleCreation = false;
 
@@ -727,9 +737,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             enableRoleCreation = (Boolean) configuration.getParameter(ENABLE_ROLES_CREATION);
         }
 
-        if (configuration.getConfiguration()
-                .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION)
-                .equals(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS)) {
+        if ((WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS).equals(configuration.getConfiguration()
+                .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION))) {
             String identityUser = (String) configuration.getConfiguration()
                     .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER_PATH);
             wso2IS7DCRClient = Feign.builder()
@@ -835,14 +844,14 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     public static HttpClient getMutualTLSHttpClient() throws APIManagementException {
 
         ServerConfiguration serverConfig = CarbonUtils.getServerConfiguration();
-        String trustStorePath = serverConfig.getFirstProperty("Security.TrustStore.Location");
-        String trustStorePassword = serverConfig.getFirstProperty("Security.TrustStore.Password");
-        System.setProperty("javax.net.ssl.trustStore", trustStorePath);
-        System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
+        String trustStorePath = serverConfig.getFirstProperty(TRUST_STORE_LOCATION);
+        String trustStorePassword = serverConfig.getFirstProperty(TRUST_STORE_PASSWORD);
+        System.setProperty(JAVAX_NET_SSL_TRUST_STORE, trustStorePath);
+        System.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, trustStorePassword);
 
-        String keyStorePath = serverConfig.getFirstProperty("Security.KeyStore.Location");
-        String keyStoreType = serverConfig.getFirstProperty("Security.KeyStore.Type");
-        String keyStorePassword = serverConfig.getFirstProperty("Security.KeyStore.Password");
+        String keyStorePath = serverConfig.getFirstProperty(KEY_STORE_LOCATION);
+        String keyStoreType = serverConfig.getFirstProperty(KEY_STORE_TYPE);
+        String keyStorePassword = serverConfig.getFirstProperty(KEY_STORE_PASSWORD);
 
         // Load keystore (client certificate)
         KeyStore keyStore = null;
@@ -871,18 +880,19 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             trustManagerFactory.init(trustStore);
 
             // Create SSL context with both managers
-            sslContext = SSLContext.getInstance("TLS");
+            sslContext = SSLContext.getInstance(TLS);
             sslContext.init(keyManagerFactory.getKeyManagers(),
                     trustManagerFactory.getTrustManagers(), new SecureRandom());
 
         } catch (UnrecoverableKeyException | IOException | CertificateException | KeyStoreException |
                  KeyManagementException | NoSuchAlgorithmException e) {
+            log.error("Error while initializing SSL context for mutual TLS", e);
             throw new APIManagementException(e);
         }
 
         SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
                 sslContext,
-                new String[]{"TLSv1.2", "TLSv1.3"},
+                new String[]{TLS_V1_2, TLS_V1_3},
                 null,
                 new DefaultHostnameVerifier()
         );

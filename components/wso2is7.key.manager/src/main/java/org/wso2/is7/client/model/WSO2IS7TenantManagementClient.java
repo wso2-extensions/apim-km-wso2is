@@ -34,25 +34,25 @@ public interface WSO2IS7TenantManagementClient {
 
     @RequestLine("POST /tenants")
     @Headers("Content-Type: application/json")
-    String createTenant(TenantModel tenantInfo) throws StratosException;
+    String createTenant(TenantInfo tenantInfo) throws StratosException;
 
     @RequestLine("GET /tenants/domain/{tenant-domain}")
     @Headers("Content-Type: application/json")
-    TenantResponseModel getTenantByDomain(@Param("tenant-domain") String tenantDomain) throws StratosException;
+    TenantResponse getTenantByDomain(@Param("tenant-domain") String tenantDomain) throws StratosException;
 
     @RequestLine("GET /tenants/{tenant-id}/owners")
     @Headers("Content-Type: application/json")
-    List<TenantResponseModel.OwnerResponse> getTenantOwners(@Param("tenant-id") String tenantId)
+    List<TenantOwnerResponse> getTenantOwners(@Param("tenant-id") String tenantId)
             throws StratosException;
 
     @RequestLine("PUT /tenants/{tenant-id}/owners/{owner-id}")
     @Headers("Content-Type: application/json")
     void updateTenantOwner(@Param("tenant-id") String tenantId, @Param("owner-id") String ownerId,
-                                 TenantModel.OwnerPutModel tenantOwner) throws StratosException;
+                                 TenantOwnerUpdateInfo tenantOwner) throws StratosException;
 
     @RequestLine("PUT /tenants/{tenant-id}/lifecycle-status")
     @Headers("Content-Type: application/json")
-    String updateTenantStatus(@Param("tenant-id") String tenantId, TenantModel.TenantPutModel tenantPutModel)
+    String updateTenantStatus(@Param("tenant-id") String tenantId, TenantStatusUpdateInfo tenantStatusUpdateInfo)
             throws StratosException;
 
 }

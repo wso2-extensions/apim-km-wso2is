@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Represents the tenant response model for WSO2 Identity Server 7.
 **/
-public class TenantResponseModel  {
+public class TenantResponse {
 
     @SerializedName("id")
     private String id;
@@ -36,13 +36,13 @@ public class TenantResponseModel  {
     private String domain;
 
     @SerializedName("owners")
-    private List<OwnerResponse> owners = null;
+    private List<TenantOwnerResponse> owners = null;
 
     @SerializedName("createdDate")
     private String createdDate;
 
     @SerializedName("lifecycleStatus")
-    private LifeCycleStatus lifecycleStatus;
+    private TenantLifeCycleStatus lifecycleStatus;
 
     @SerializedName("region")
     private String region;
@@ -68,10 +68,10 @@ public class TenantResponseModel  {
         this.domain = domain;
     }
 
-    public List<OwnerResponse> getOwners() {
+    public List<TenantOwnerResponse> getOwners() {
         return owners;
     }
-    public void setOwners(List<OwnerResponse> owners) {
+    public void setOwners(List<TenantOwnerResponse> owners) {
         this.owners = owners;
     }
 
@@ -83,10 +83,10 @@ public class TenantResponseModel  {
         this.createdDate = createdDate;
     }
 
-    public LifeCycleStatus getLifecycleStatus() {
+    public TenantLifeCycleStatus getLifecycleStatus() {
         return lifecycleStatus;
     }
-    public void setLifecycleStatus(LifeCycleStatus lifecycleStatus) {
+    public void setLifecycleStatus(TenantLifeCycleStatus lifecycleStatus) {
         this.lifecycleStatus = lifecycleStatus;
     }
 
@@ -97,38 +97,5 @@ public class TenantResponseModel  {
         this.region = region;
     }
 
-    /**
-     * Represents an owner of a tenant.
-     */
-    public static class OwnerResponse  {
-        private String id;
-        private String username;
-        public String getId() {
-            return id;
-        }
-        public void setId(String id) {
-            this.id = id;
-        }
-        public String getUsername() {
-            return username;
-        }
-        public void setUsername(String username) {
-            this.username = username;
-        }
-    }
-
-    /**
-     * Represents the lifecycle status of a tenant.
-     */
-    public static class LifeCycleStatus  {
-        private Boolean activated;
-
-        public Boolean getActivated() {
-            return activated;
-        }
-        public void setActivated(Boolean activated) {
-            this.activated = activated;
-        }
-    }
 }
 
