@@ -18,7 +18,6 @@
 
 package org.wso2.is7.tenant.management;
 
-import com.google.gson.Gson;
 import feign.Feign;
 import feign.auth.BasicAuthRequestInterceptor;
 import feign.gson.GsonDecoder;
@@ -26,12 +25,7 @@ import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.apimgt.api.APIAdmin;
 import org.wso2.carbon.apimgt.api.APIManagementException;
-import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
-import org.wso2.carbon.apimgt.api.dto.KeyManagerPermissionConfigurationDTO;
-import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
-import org.wso2.carbon.apimgt.impl.APIAdminImpl;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dto.TenantSharingConfigurationDTO;
@@ -44,6 +38,7 @@ import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.tenant.mgt.internal.TenantMgtServiceComponent;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.tenant.TenantManager;
+import org.wso2.is7.client.WSO2IS7ConnectorConfiguration;
 import org.wso2.is7.client.WSO2IS7KeyManagerConstants;
 import org.wso2.is7.client.internal.ServiceReferenceHolder;
 import org.wso2.is7.client.model.TenantInfo;
@@ -174,146 +169,15 @@ public class ISTenantSyncListener implements TenantMgtListener {
     private void keyManagersPost(TenantInfoBean tenantInfoBean, String identityServerBaseUrl)
             throws APIManagementException {
 
-        APIAdmin apiAdmin = new APIAdminImpl();
-
-        KeyManagerConfigurationDTO keyManagerConfigurationDTO =
-                getKeyManagerConfigurationDTO(tenantInfoBean, identityServerBaseUrl);
-
-        log.info("KeyManager ConfigurationDTO : " + new Gson().toJson(keyManagerConfigurationDTO));
-
-        apiAdmin.addKeyManagerConfiguration(keyManagerConfigurationDTO);
-
-        APIUtil.logAuditMessage(APIConstants.AuditLogConstants.KEY_MANAGER,
-                new Gson().toJson(keyManagerConfigurationDTO),
-                APIConstants.AuditLogConstants.CREATED, "reservedUserName");
+        Map<String, String> connectorPropertiesMap = new HashMap();
+        connectorPropertiesMap.put(APIConstants.TENANT_DOMAIN, tenantInfoBean.getTenantDomain());
+        connectorPropertiesMap.put(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL,
+                identityServerBaseUrl);
+        connectorPropertiesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME,
+                tenantInfoBean.getAdmin());
+        WSO2IS7ConnectorConfiguration wso2IS7ConnectorConfiguration = new WSO2IS7ConnectorConfiguration();
+        wso2IS7ConnectorConfiguration.configureDefaultKeyManager(connectorPropertiesMap);
     }
-
-    public static KeyManagerConfigurationDTO getKeyManagerConfigurationDTO(TenantInfoBean tenantInfoBean,
-                                                                           String identityServerBaseUrl) {
-        String tenantDomain = tenantInfoBean.getTenantDomain();
-
-        KeyManagerConfigurationDTO keyManagerConfigurationDTO = new KeyManagerConfigurationDTO();
-        Map<String, String> endpoints = new HashMap<>();
-
-        keyManagerConfigurationDTO.setName(APIConstants.KeyManager.DEFAULT_KEY_MANAGER);
-        keyManagerConfigurationDTO.setDisplayName("IS7 as Default Key Manager");
-        keyManagerConfigurationDTO.setDescription("Default key manager created for IS7 when " +
-                        "tenant synchronization is enabled");
-        keyManagerConfigurationDTO.setEnabled(true);
-
-        keyManagerConfigurationDTO.setType(WSO2IS7KeyManagerConstants.WSO2_IS7_TYPE);
-        keyManagerConfigurationDTO.setOrganization(tenantDomain);
-        keyManagerConfigurationDTO.setTokenType(KeyManagerConfiguration.TokenType.DIRECT.toString());
-        KeyManagerPermissionConfigurationDTO permissionsConfiguration = new KeyManagerPermissionConfigurationDTO();
-        permissionsConfiguration.setPermissionType("PUBLIC");
-        keyManagerConfigurationDTO.setPermissions(permissionsConfiguration);
-        keyManagerConfigurationDTO.setAllowedOrganizations(Collections.singletonList("ALL"));
-
-        /**
-         * setting additional properties
-         */
-        // connector configuration
-        Map<String, Object> additionalProperties = new HashMap();
-        additionalProperties.put("TenantDomain", tenantDomain);
-        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
-                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS);
-        /* Add username of the user provided identity user, since currently it's required, for authorization of
-         DCR call in IS side */
-        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER_PATH,
-                tenantInfoBean.getAdmin() + "@" + tenantDomain);
-        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS_PATH,
-                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.SERVERWIDE);
-        additionalProperties.put(
-                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.API_RESOURCE_MANAGEMENT_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/server/v1/api-resources");
-        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ROLES_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain
-                + "/scim2/v2/Roles");
-        additionalProperties.put("client_secret", "");
-
-        //endpoints
-        additionalProperties.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
-        endpoints.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
-
-        additionalProperties.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
-        endpoints.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/introspect");
-
-        additionalProperties.put(APIConstants.KeyManager.TOKEN_ENDPOINT, identityServerBaseUrl +
-                TENANT_PATH_PREFIX + tenantDomain +
-                "/oauth2/token");
-        endpoints.put(APIConstants.KeyManager.TOKEN_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
-                tenantDomain + "/oauth2/token");
-
-        additionalProperties.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, identityServerBaseUrl +
-                TENANT_PATH_PREFIX + tenantDomain + "/oauth2/token");
-        endpoints.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
-                tenantDomain +
-                "/oauth2/token");
-
-        additionalProperties.put(APIConstants.KeyManager.REVOKE_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
-                tenantDomain + "/oauth2/revoke");
-        endpoints.put(APIConstants.KeyManager.REVOKE_ENDPOINT, identityServerBaseUrl + TENANT_PATH_PREFIX +
-                tenantDomain + "/oauth2/revoke");
-
-        additionalProperties.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
-        endpoints.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/revoke");
-
-        additionalProperties.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
-        endpoints.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/scim2/Me");
-
-        additionalProperties.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
-        endpoints.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/authorize");
-
-        additionalProperties.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
-        endpoints.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
-
-        //grant types
-        additionalProperties.put(APIConstants.KeyManager.AVAILABLE_GRANT_TYPE,
-                new String[]{
-                        "refresh_token",
-                        "urn:ietf:params:oauth:grant-type:saml2-bearer",
-                        "password",
-                        "client_credentials",
-                        "iwa:ntlm",
-                        "urn:ietf:params:oauth:grant-type:device_code",
-                        "authorization_code",
-                        "account_switch",
-                        "urn:ietf:params:oauth:grant-type:token-exchange",
-                        "organization_switch",
-                        "urn:ietf:params:oauth:grant-type:jwt-bearer"
-                });
-
-        additionalProperties.put(APIConstants.KeyManager.ISSUER, identityServerBaseUrl + TENANT_PATH_PREFIX +
-                tenantDomain + "/oauth2/token");
-
-        // certificates
-        additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_TYPE,
-                APIConstants.KeyManager.CERTIFICATE_TYPE_JWKS_ENDPOINT);
-        additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_VALUE,
-                identityServerBaseUrl + TENANT_PATH_PREFIX + tenantDomain + "/oauth2/jwks");
-        keyManagerConfigurationDTO.setEndpoints(endpoints);
-
-        additionalProperties.put(APIConstants.KeyManager.ENABLE_OAUTH_APP_CREATION, true);
-        additionalProperties.put(APIConstants.KeyManager.ENABLE_MAP_OAUTH_CONSUMER_APPS, true);
-        additionalProperties.put(APIConstants.KeyManager.ENABLE_TOKEN_GENERATION, true);
-        additionalProperties.put(APIConstants.KeyManager.SELF_VALIDATE_JWT, true);
-
-        keyManagerConfigurationDTO.setAdditionalProperties(additionalProperties);
-        return keyManagerConfigurationDTO;
-    }
-
 
     @Override
     public void onTenantUpdate(TenantInfoBean tenantInfoBean) throws StratosException {

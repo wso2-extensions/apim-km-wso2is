@@ -51,6 +51,7 @@ import org.wso2.carbon.apimgt.api.model.Scope;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
+import org.wso2.carbon.apimgt.impl.certificatemgt.TrustStoreUtils;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.kmclient.ApacheFeignHttpClient;
 import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
@@ -62,6 +63,7 @@ import org.wso2.carbon.apimgt.impl.kmclient.model.IntrospectionClient;
 import org.wso2.carbon.apimgt.impl.kmclient.model.TenantHeaderInterceptor;
 import org.wso2.carbon.apimgt.impl.kmclient.model.TokenInfo;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.impl.utils.CertificateMgtUtils;
 import org.wso2.carbon.base.ServerConfiguration;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.user.core.UserCoreConstants;
@@ -82,8 +84,13 @@ import org.wso2.is7.client.model.WSO2IS7SCIMRolesClient;
 import org.wso2.is7.client.utils.AttributeMapper;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -93,7 +100,10 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -107,6 +117,8 @@ import java.util.stream.Collectors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
+import static org.wso2.carbon.apimgt.impl.utils.APIUtil.getTenantIdFromTenantDomain;
 
 /**
  * This class provides the implementation to use WSO2 Identity Server 7 for managing OAuth clients and Tokens
@@ -152,6 +164,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private WSO2IS7SCIMRolesClient wso2IS7SCIMRolesClient;
     private WSO2IS7SCIMMeClient wso2IS7SCIMMeClient;
     private Map<String, String> claimMappings;
+    private CertificateMgtUtils certificateMgtUtils = CertificateMgtUtils.getInstance();
+    private static String certificateType = "X.509";
 
 
     /* Copied from AMDefaultKeyManagerImpl. WSO2IS7ClientInfo is used instead of ClientInfo. */
@@ -674,6 +688,117 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         return oAuthApplicationInfo;
     }
 
+    private String getTenantWideCertificateValue(Object certificateObject) {
+        if (certificateObject instanceof Map) {
+            Map<String, String> certificateMap = (Map<String, String>) certificateObject;
+            Object value = certificateMap.get("value");
+            if (value != null) {
+                return value.toString();
+            }
+        }
+        return null;
+    }
+
+    private String getTenantCertAlias(String keyManagerName, String keyManagerTenantDomain) {
+        return "tenant_wide_" + keyManagerName + "_"
+                + getTenantIdFromTenantDomain(keyManagerTenantDomain);
+    }
+
+    private KeyStore getTrustStore() throws APIManagementException {
+        ServerConfiguration serverConfig = CarbonUtils.getServerConfiguration();
+        String trustStorePath = serverConfig.getFirstProperty(TRUST_STORE_LOCATION);
+        String trustStorePassword = serverConfig.getFirstProperty(TRUST_STORE_PASSWORD);
+        String keyStoreType = serverConfig.getFirstProperty(KEY_STORE_TYPE);
+
+        // Load truststore (server CA cert)
+        KeyStore trustStore = null;
+
+        try (FileInputStream trustStoreFile = new FileInputStream(trustStorePath)) {
+            trustStore = KeyStore.getInstance(keyStoreType);
+            trustStore.load(trustStoreFile, trustStorePassword.toCharArray());
+            return trustStore;
+        } catch (NoSuchAlgorithmException | CertificateException | IOException | KeyStoreException e) {
+            throw new APIManagementException(e);
+        }
+    }
+
+    private void addCertificateInTrustStore(KeyStore trustStore, String base64Cert, String alias)
+            throws APIManagementException {
+        boolean isCertExists = false;
+        boolean expired = false;
+        ServerConfiguration serverConfig = CarbonUtils.getServerConfiguration();
+        String trustStorePath = serverConfig.getFirstProperty(TRUST_STORE_LOCATION);
+        String trustStorePassword = serverConfig.getFirstProperty(TRUST_STORE_PASSWORD);
+        try {
+            byte[] cert =
+                    (org.apache.commons.codec.binary.Base64.decodeBase64(base64Cert.getBytes(StandardCharsets.UTF_8)));
+            try (InputStream serverCert = new ByteArrayInputStream(cert)) {
+                if (serverCert.available() == 0) {
+                    log.error("Certificate is empty for the provided alias " + alias);
+                    throw new APIManagementException("Certificate is empty for the provided alias " + alias);
+                }
+                //Read the client-truststore.jks into a KeyStore.
+                synchronized (this) {
+                    File trustStoreFile = new File(trustStorePath);
+                    try (InputStream localTrustStoreStream = new FileInputStream(trustStoreFile)) {
+                        TrustStoreUtils.loadCerts(trustStore, trustStorePath, trustStorePassword.toCharArray());
+                        CertificateFactory cf = CertificateFactory.getInstance(certificateType);
+                        while (serverCert.available() > 0) {
+                            Certificate certificate = cf.generateCertificate(serverCert);
+                            //Check whether the Alias exists in the trust store.
+                            if (trustStore.containsAlias(alias)) {
+                                isCertExists = true;
+                            } else {
+                                /*
+                                 * If alias is not exists, check whether the certificate is expired or not. If expired
+                                 * set the
+                                 * expired flag.
+                                 * */
+                                X509Certificate x509Certificate = (X509Certificate) certificate;
+                                if (x509Certificate.getNotAfter().getTime() <= System.currentTimeMillis()) {
+                                    expired = true;
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("Provided certificate is expired.");
+                                    }
+                                } else {
+                                    //If not expired add the certificate to trust store.
+                                    trustStore.setCertificateEntry(alias, certificate);
+                                }
+                            }
+                        }
+                        if (expired) {
+                            throw new APIManagementException("Provided certificate is expired.");
+                        } else if (isCertExists) {
+                            throw new APIManagementException("Provided certificate already exists in the trust store" +
+                                    " with alias: " + alias);
+                        } else {
+                            log.info("Successfully added the certificate with alias: " +
+                                    alias + " to the trust store.");
+                        }
+                    }
+                }
+            }
+        } catch (CertificateException e) {
+            log.error("Error loading certificate.", e);
+            throw new APIManagementException("Error loading certificate.", e);
+        } catch (FileNotFoundException e) {
+            log.error("Error reading/ writing to the certificate file.", e);
+            throw new APIManagementException("Error reading/ writing to the certificate file.", e);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Could not find the algorithm to load the certificate.", e);
+            throw new APIManagementException("Could not find the algorithm to load the certificate.", e);
+        } catch (UnsupportedEncodingException e) {
+            log.error("Error retrieving certificate from String", e);
+            throw new APIManagementException("Error retrieving certificate from String", e);
+        } catch (KeyStoreException e) {
+            log.error("Error reading certificate contents.", e);
+            throw new APIManagementException("Error reading certificate contents.", e);
+        } catch (IOException e) {
+            log.error("Error in loading the certificate.", e);
+            throw new APIManagementException("Error in loading the certificate.", e);
+        }
+    }
+
     @Override
     public void loadConfiguration(KeyManagerConfiguration configuration) throws APIManagementException {
 
@@ -739,10 +864,19 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         if ((WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS).equals(configuration.getConfiguration()
                 .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION))) {
+            KeyStore trustStore = getTrustStore();
+            // if MTLS is selected and tenant wide cert is provided, load that cert into trust store providing an alias
+            if (WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.TENANTWIDE_CERTIFICATE
+                    .equals(configuration.getParameter(
+                            WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS))) {
+                addCertificateInTrustStore(trustStore, getTenantWideCertificateValue(configuration
+                                .getParameter("certificates")),
+                        getTenantCertAlias(configuration.getName(), configuration.getTenantDomain()));
+            }
             String identityUser = (String) configuration.getConfiguration()
-                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER_PATH);
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
             wso2IS7DCRClient = Feign.builder()
-                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient(trustStore)))
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
@@ -751,7 +885,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .target(WSO2IS7DCRClient.class, dcrEndpoint);
 
             introspectionClient = Feign.builder()
-                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient(trustStore)))
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
@@ -762,7 +896,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .target(IntrospectionClient.class, introspectionEndpoint);
 
             wso2IS7APIResourceManagementClient = Feign.builder()
-                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient(trustStore)))
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
@@ -771,7 +905,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
 
             wso2IS7SCIMRolesClient = Feign.builder()
-                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient()))
+                    .client(new ApacheFeignHttpClient(getMutualTLSHttpClient(trustStore)))
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
@@ -780,9 +914,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
         } else {
             String username = (String) configuration
-                    .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME_PATH);
+                    .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME);
             String password = (String) configuration
-                    .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD_PATH);
+                    .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD);
             wso2IS7DCRClient = Feign.builder()
                     .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(dcrEndpoint)))
                     .encoder(new GsonEncoder())
@@ -841,7 +975,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         claimMappings = ClaimMappingReader.loadClaimMappings();
     }
 
-    public static HttpClient getMutualTLSHttpClient() throws APIManagementException {
+    public static HttpClient getMutualTLSHttpClient(KeyStore trustStore) throws APIManagementException {
 
         ServerConfiguration serverConfig = CarbonUtils.getServerConfiguration();
         String trustStorePath = serverConfig.getFirstProperty(TRUST_STORE_LOCATION);
@@ -861,12 +995,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
             try (FileInputStream keyStoreFile = new FileInputStream(keyStorePath)) {
                 keyStore.load(keyStoreFile, keyStorePassword.toCharArray());
-            }
-
-            // Load truststore (server CA cert)
-            KeyStore trustStore = KeyStore.getInstance(keyStoreType);
-            try (FileInputStream trustStoreFile = new FileInputStream(trustStorePath)) {
-                trustStore.load(trustStoreFile, trustStorePassword.toCharArray());
             }
 
             // Create key managers

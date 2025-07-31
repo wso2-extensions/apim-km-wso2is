@@ -18,16 +18,28 @@
 
 package org.wso2.is7.client;
 
+import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 import org.osgi.service.component.annotations.Component;
+import org.wso2.carbon.apimgt.api.APIAdmin;
+import org.wso2.carbon.apimgt.api.APIManagementException;
+import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
+import org.wso2.carbon.apimgt.api.dto.KeyManagerPermissionConfigurationDTO;
 import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
+import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
+import org.wso2.carbon.apimgt.impl.APIAdminImpl;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.jwt.JWTValidatorImpl;
+import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Connector configuration for WSO2 Identity Server 7.
@@ -53,12 +65,6 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
     public List<ConfigurationDto> getConnectionConfigurations() {
 
         List<ConfigurationDto> configurationDtoList = new ArrayList<>();
-        configurationDtoList
-                .add(new ConfigurationDto("Username", "Username", "input", "Username of admin user", "",
-                        true, false, Collections.emptyList(), false));
-        configurationDtoList
-                .add(new ConfigurationDto("Password", "Password", "input",
-                        "Password of Admin user", "", true, true, Collections.emptyList(), false));
         configurationDtoList.add(new ConfigurationDto("api_resource_management_endpoint",
                 "WSO2 Identity Server 7 API Resource Management Endpoint", "input",
                 String.format("E.g., %s/api/server/v1/api-resources",
@@ -134,6 +140,192 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
                 "Authentication Type", "dropdown", "Select the authentication type",
                 "BasicAuth", true, false, authValues, false));
+    }
+
+    @Override
+    public void processConnectorConfigurations(Map<String, Object> propertiesMap) {
+        if (!propertiesMap.containsKey(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION)) {
+            // the data has the old config structure. Hence, need to set missing fields
+            propertiesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
+                    WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.BASIC_AUTH);
+        }
+    }
+
+    @Override
+    public List<String> validateAuthConfigurations(Map<String, Object> additionalProperties) {
+        List<String> validationErrors = new ArrayList<>();
+        if (WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.BASIC_AUTH.equals(
+                additionalProperties.get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION))) {
+            if (StringUtils.isEmpty(additionalProperties
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME).toString())) {
+                validationErrors.add(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME);
+            }
+            if (StringUtils.isEmpty(additionalProperties
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD).toString())) {
+                validationErrors.add(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASSWORD);
+            }
+        }
+        if (WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS.equals(
+                additionalProperties
+                        .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION))) {
+            Object mtlsOptions = additionalProperties
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS);
+            if (mtlsOptions == null ||
+                    StringUtils.isEmpty(mtlsOptions.toString())) {
+                validationErrors.add(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS);
+            }
+            Object identityUser = additionalProperties
+                    .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
+            if (identityUser == null || StringUtils.isEmpty(identityUser.toString())) {
+                validationErrors.add(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
+            }
+        }
+        return validationErrors;
+    }
+
+    private KeyManagerConfigurationDTO getKeyManagerConfigurationDTO(Map<String, String> propertiesMap) {
+        String tenantDomain = propertiesMap.get(APIConstants.TENANT_DOMAIN);
+        String identityServerBaseUrl = propertiesMap.get(
+                WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL);
+        String tenantAdmin = propertiesMap.get(
+                WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.USERNAME);
+        String tenantPathPrefix = "t/";
+
+        KeyManagerConfigurationDTO keyManagerConfigurationDTO = new KeyManagerConfigurationDTO();
+        Map<String, String> endpoints = new HashMap<>();
+
+        keyManagerConfigurationDTO.setName(APIConstants.KeyManager.DEFAULT_KEY_MANAGER);
+        keyManagerConfigurationDTO.setDisplayName("IS7 as Default Key Manager");
+        keyManagerConfigurationDTO.setDescription("Default key manager created for IS7 when " +
+                "tenant synchronization is enabled");
+        keyManagerConfigurationDTO.setEnabled(true);
+
+        keyManagerConfigurationDTO.setType(WSO2IS7KeyManagerConstants.WSO2_IS7_TYPE);
+        keyManagerConfigurationDTO.setOrganization(tenantDomain);
+        keyManagerConfigurationDTO.setTokenType(KeyManagerConfiguration.TokenType.DIRECT.toString());
+        KeyManagerPermissionConfigurationDTO permissionsConfiguration = new KeyManagerPermissionConfigurationDTO();
+        permissionsConfiguration.setPermissionType("PUBLIC");
+        keyManagerConfigurationDTO.setPermissions(permissionsConfiguration);
+        keyManagerConfigurationDTO.setAllowedOrganizations(Collections.singletonList("ALL"));
+
+        /**
+         * setting additional properties
+         */
+        // connector configuration
+        Map<String, Object> additionalProperties = new HashMap();
+        additionalProperties.put("TenantDomain", tenantDomain);
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION,
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS);
+        /* Add username of the user provided identity user, since currently it's required, for authorization of
+         DCR call in IS side */
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER,
+                tenantAdmin + "@" + tenantDomain);
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS_OPTIONS,
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.SERVERWIDE);
+        additionalProperties.put(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.API_RESOURCE_MANAGEMENT_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/api/server/v1/api-resources");
+        additionalProperties.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ROLES_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain
+                        + "/scim2/v2/Roles");
+        additionalProperties.put("client_secret", "");
+
+        //endpoints
+        additionalProperties.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
+        endpoints.put(APIConstants.KeyManager.CLIENT_REGISTRATION_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/api/identity/oauth2/dcr/v1.1/register");
+
+        additionalProperties.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/introspect");
+        endpoints.put(APIConstants.KeyManager.INTROSPECTION_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/introspect");
+
+        additionalProperties.put(APIConstants.KeyManager.TOKEN_ENDPOINT, identityServerBaseUrl +
+                tenantPathPrefix + tenantDomain +
+                "/oauth2/token");
+        endpoints.put(APIConstants.KeyManager.TOKEN_ENDPOINT, identityServerBaseUrl + tenantPathPrefix +
+                tenantDomain + "/oauth2/token");
+
+        additionalProperties.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, identityServerBaseUrl +
+                tenantPathPrefix + tenantDomain + "/oauth2/token");
+        endpoints.put(APIConstants.KeyManager.DISPLAY_TOKEN_ENDPOINT, identityServerBaseUrl + tenantPathPrefix +
+                tenantDomain +
+                "/oauth2/token");
+
+        additionalProperties.put(APIConstants.KeyManager.REVOKE_ENDPOINT, identityServerBaseUrl + tenantPathPrefix +
+                tenantDomain + "/oauth2/revoke");
+        endpoints.put(APIConstants.KeyManager.REVOKE_ENDPOINT, identityServerBaseUrl + tenantPathPrefix +
+                tenantDomain + "/oauth2/revoke");
+
+        additionalProperties.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/revoke");
+        endpoints.put(APIConstants.KeyManager.DISPLAY_REVOKE_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/revoke");
+
+        additionalProperties.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/scim2/Me");
+        endpoints.put(APIConstants.KeyManager.USERINFO_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/scim2/Me");
+
+        additionalProperties.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/authorize");
+        endpoints.put(APIConstants.KeyManager.AUTHORIZE_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/authorize");
+
+        additionalProperties.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
+        endpoints.put(APIConstants.KeyManager.SCOPE_MANAGEMENT_ENDPOINT,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/api/identity/oauth2/v1.0/scopes");
+
+        //grant types
+        additionalProperties.put(APIConstants.KeyManager.AVAILABLE_GRANT_TYPE,
+                new String[]{
+                        "refresh_token",
+                        "urn:ietf:params:oauth:grant-type:saml2-bearer",
+                        "password",
+                        "client_credentials",
+                        "iwa:ntlm",
+                        "urn:ietf:params:oauth:grant-type:device_code",
+                        "authorization_code",
+                        "account_switch",
+                        "urn:ietf:params:oauth:grant-type:token-exchange",
+                        "organization_switch",
+                        "urn:ietf:params:oauth:grant-type:jwt-bearer"
+                });
+
+        additionalProperties.put(APIConstants.KeyManager.ISSUER, identityServerBaseUrl + tenantPathPrefix +
+                tenantDomain + "/oauth2/token");
+
+        // certificates
+        additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_TYPE,
+                APIConstants.KeyManager.CERTIFICATE_TYPE_JWKS_ENDPOINT);
+        additionalProperties.put(APIConstants.KeyManager.CERTIFICATE_VALUE,
+                identityServerBaseUrl + tenantPathPrefix + tenantDomain + "/oauth2/jwks");
+        keyManagerConfigurationDTO.setEndpoints(endpoints);
+
+        additionalProperties.put(APIConstants.KeyManager.ENABLE_OAUTH_APP_CREATION, true);
+        additionalProperties.put(APIConstants.KeyManager.ENABLE_MAP_OAUTH_CONSUMER_APPS, true);
+        additionalProperties.put(APIConstants.KeyManager.ENABLE_TOKEN_GENERATION, true);
+        additionalProperties.put(APIConstants.KeyManager.SELF_VALIDATE_JWT, true);
+
+        keyManagerConfigurationDTO.setAdditionalProperties(additionalProperties);
+        return keyManagerConfigurationDTO;
+    }
+
+    @Override
+    public boolean configureDefaultKeyManager(Map<String, String> propertiesMap) throws APIManagementException {
+        APIAdmin apiAdmin = new APIAdminImpl();
+        KeyManagerConfigurationDTO keyManagerConfigurationDTO =
+                getKeyManagerConfigurationDTO(propertiesMap);
+
+        apiAdmin.addKeyManagerConfiguration(keyManagerConfigurationDTO);
+
+        APIUtil.logAuditMessage(APIConstants.AuditLogConstants.KEY_MANAGER,
+                new Gson().toJson(propertiesMap),
+                APIConstants.AuditLogConstants.CREATED,
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().getUsername());
+        return true;
     }
 
     @Override
