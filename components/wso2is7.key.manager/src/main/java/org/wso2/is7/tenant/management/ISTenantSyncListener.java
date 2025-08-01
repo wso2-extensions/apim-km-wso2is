@@ -150,7 +150,8 @@ public class ISTenantSyncListener implements TenantMgtListener {
             log.info("Tenant created successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Tenant sharing is not enabled, skipping tenant creation in Identity Server for tenant: "
+                log.debug("Tenant sharing is not enabled in API Manager, " +
+                        "skipping tenant creation in Identity Server for tenant: "
                         + tenantDomain);
             }
         }
@@ -205,7 +206,8 @@ public class ISTenantSyncListener implements TenantMgtListener {
             log.info("Tenant updated successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Tenant sharing is not enabled, skipping tenant update in Identity Server for tenant: "
+                log.debug("Tenant sharing is not enabled in API Manager, " +
+                        "skipping tenant update in Identity Server for tenant: "
                         + tenantDomain);
             }
         }
@@ -255,7 +257,8 @@ public class ISTenantSyncListener implements TenantMgtListener {
             log.info("Tenant activated successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Tenant sharing is not enabled, skipping tenant activation in Identity Server for " +
+                log.debug("Tenant sharing is not enabled in API Manager, " +
+                        "skipping tenant activation in Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }
@@ -290,7 +293,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
             log.info("Tenant de-activated successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Tenant sharing is not enabled, skipping tenant de-activation in Identity Server for " +
+                log.debug("Tenant sharing is not enabled in API Manager, skipping tenant de-activation in Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }
