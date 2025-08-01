@@ -188,7 +188,7 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
         String identityServerBaseUrl = propertiesMap.get(
                 WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL);
         String tenantAdmin = propertiesMap.get(
-                WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.USERNAME);
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER);
         String tenantPathPrefix = "t/";
 
         KeyManagerConfigurationDTO keyManagerConfigurationDTO = new KeyManagerConfigurationDTO();

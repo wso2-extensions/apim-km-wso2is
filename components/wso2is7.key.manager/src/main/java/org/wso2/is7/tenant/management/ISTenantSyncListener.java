@@ -174,7 +174,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         connectorPropertiesMap.put(APIConstants.TENANT_DOMAIN, tenantInfoBean.getTenantDomain());
         connectorPropertiesMap.put(WSO2IS7KeyManagerConstants.IS7TenantSharingConfigs.IDENTITY_SERVER_BASE_URL,
                 identityServerBaseUrl);
-        connectorPropertiesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME,
+        connectorPropertiesMap.put(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.IDENTITY_USER,
                 tenantInfoBean.getAdmin());
         WSO2IS7ConnectorConfiguration wso2IS7ConnectorConfiguration = new WSO2IS7ConnectorConfiguration();
         wso2IS7ConnectorConfiguration.configureDefaultKeyManager(connectorPropertiesMap);
@@ -293,7 +293,8 @@ public class ISTenantSyncListener implements TenantMgtListener {
             log.info("Tenant de-activated successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
-                log.debug("Tenant sharing is not enabled in API Manager, skipping tenant de-activation in Identity Server for " +
+                log.debug("Tenant sharing is not enabled in API Manager, " +
+                        "skipping tenant de-activation in Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }
