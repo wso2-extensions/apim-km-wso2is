@@ -37,6 +37,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.wso2.carbon.apimgt.impl.utils.APIUtil.handleException;
+import static org.wso2.is7.client.WSO2ISConstants.SCIM2_CORE_SCHEMA;
+import static org.wso2.is7.client.WSO2ISConstants.SCIM2_ENTERPRISE_SCHEMA;
+import static org.wso2.is7.client.WSO2ISConstants.SCIM2_USER_SCHEMA;
 
 /**
  * This class is used to read claim mappings from the claim-config.xml file.
@@ -50,9 +53,6 @@ public class ClaimMappingReader {
     private static final String CLAIM_XML_TAG_NAME = "Claim";
     private static final String CLAIM_URI_XML_TAG_NAME = "ClaimURI";
     private static final String MAPPED_LOCAL_CLAIM_XML_TAG_NAME = "MappedLocalClaim";
-    private static final String SCIM2_CORE_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0";
-    private static final String SCIM2_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User";
-    private static final String SCIM2_ENTERPRISE_SCHEMA = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
 
     /**
      * Loads claim mappings from the claim-config.xml file.

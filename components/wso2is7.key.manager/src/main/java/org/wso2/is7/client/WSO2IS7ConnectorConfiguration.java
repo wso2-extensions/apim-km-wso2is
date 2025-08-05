@@ -79,6 +79,10 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 "Create roles in WSO2 Identity Server 7", "checkbox",
                 "Create roles in WSO2 Identity Server 7, corresponding to the roles used in WSO2 API Manager.",
                 "Enable", false, false, Collections.singletonList("Enable"), false));
+        configurationDtoList.add(new ConfigurationDto("user_schema_cache_enabled",
+                "Enable User Schema Caching", "checkbox",
+                "Enable user schema caching, corresponding to the user schemas defined in IS 7.x",
+                "Enable", false, false, Collections.singletonList("Enable"), false));
         return configurationDtoList;
     }
 

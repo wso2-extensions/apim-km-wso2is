@@ -65,6 +65,7 @@ import org.wso2.carbon.apimgt.impl.kmclient.model.TokenInfo;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.utils.CertificateMgtUtils;
 import org.wso2.carbon.base.ServerConfiguration;
+import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
@@ -81,6 +82,7 @@ import org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo;
 import org.wso2.is7.client.model.WSO2IS7RoleInfo;
 import org.wso2.is7.client.model.WSO2IS7SCIMMeClient;
 import org.wso2.is7.client.model.WSO2IS7SCIMRolesClient;
+import org.wso2.is7.client.model.WSO2IS7SCIMSchemasClient;
 import org.wso2.is7.client.utils.AttributeMapper;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 
@@ -140,6 +142,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private static final String CLAIM_MAPPINGS_CONFIG_PARAMETER = "claim_mappings";
     private static final String REMOTE_CLAIM = "remoteClaim";
     private static final String LOCAL_CLAIM = "localClaim";
+    private static final long USER_SCHEMA_CACHE_EXPIRY = 3600L;
 
     // Name of the default API Resource of WSO2 IS7 - which is used to contain scopes.
     private static final String DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER = "User-defined-oauth2-resource";
@@ -163,6 +166,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private WSO2IS7APIResourceManagementClient wso2IS7APIResourceManagementClient;
     private WSO2IS7SCIMRolesClient wso2IS7SCIMRolesClient;
     private WSO2IS7SCIMMeClient wso2IS7SCIMMeClient;
+    private WSO2IS7SCIMSchemasClient wso2IS7SCIMSchemasClient;
     private Map<String, String> claimMappings;
     private CertificateMgtUtils certificateMgtUtils = CertificateMgtUtils.getInstance();
     private static String certificateType = "X.509";
@@ -842,6 +846,11 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                             (APIConstants.KeyManager.KEY_MANAGER_OPERATIONS_USERINFO_ENDPOINT);
         }
 
+        String schemasEndpoint = null;
+        if (StringUtils.lowerCase(userInfoEndpoint).endsWith("/me")) {
+            schemasEndpoint = userInfoEndpoint.replaceAll("(?i)/me$", "/Schemas");
+        }
+
         String apiResourceManagementEndpoint;
         if (configuration.getParameter(API_RESOURCE_MANAGEMENT_ENDPOINT) != null) {
             apiResourceManagementEndpoint = (String) configuration.getParameter(API_RESOURCE_MANAGEMENT_ENDPOINT);
@@ -937,6 +946,14 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new FormEncoder())
                     .target(IntrospectionClient.class, introspectionEndpoint);
 
+            wso2IS7SCIMSchemasClient = schemasEndpoint != null ? Feign.builder()
+                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(schemasEndpoint)))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(WSO2IS7SCIMSchemasClient.class, schemasEndpoint) : null;
+
             wso2IS7APIResourceManagementClient = Feign.builder()
                     .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(apiResourceManagementEndpoint)))
                     .encoder(new GsonEncoder())
@@ -973,6 +990,25 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
+
+        if (configuration.getParameter(WSO2ISConstants.ENABLE_SCHEMA_CACHE) instanceof Boolean && Boolean.parseBoolean
+                (configuration.getParameter(WSO2ISConstants.ENABLE_SCHEMA_CACHE).toString())) {
+            boolean isTenantFlowStarted = false;
+            try {
+                PrivilegedCarbonContext.startTenantFlow();
+                PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(tenantDomain, true);
+                isTenantFlowStarted = true;
+                APIUtil.getCache(APIConstants.API_MANAGER_CACHE_MANAGER, WSO2ISConstants.USER_SCHEMA_CACHE,
+                        USER_SCHEMA_CACHE_EXPIRY, USER_SCHEMA_CACHE_EXPIRY);
+            } catch (Exception e) {
+                throw new APIManagementException("Error occurred while initializing WSO2 IS7 Key Manager: User " +
+                        "Schema Cache initialization failed.", e);
+            } finally {
+                if (isTenantFlowStarted) {
+                    PrivilegedCarbonContext.endTenantFlow();
+                }
+            }
+        }
     }
 
     public static HttpClient getMutualTLSHttpClient(KeyStore trustStore) throws APIManagementException {
@@ -1756,11 +1792,12 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             String accessToken = properties.get(APIConstants.KeyManager.ACCESS_TOKEN).toString();
             try {
                 JsonObject scimUserObjectString = wso2IS7SCIMMeClient.getMe(accessToken);
-                Map<String, String> claims = AttributeMapper.getUserClaims(scimUserObjectString.toString());
+                Map<String, String> claims = AttributeMapper.getUserClaims(scimUserObjectString.toString(),
+                        wso2IS7SCIMSchemasClient, accessToken, configuration, tenantDomain);
                 Map<String, String> claimMappings = getClaimMappings();
                 userClaims = getMappedAttributes(claims, claimMappings);
             } catch (KeyManagerClientException e) {
-                handleException("Error while getting user info", e);
+                throw new APIManagementException("Error while getting user info for user: " + username, e);
             }
         }
         return userClaims;
