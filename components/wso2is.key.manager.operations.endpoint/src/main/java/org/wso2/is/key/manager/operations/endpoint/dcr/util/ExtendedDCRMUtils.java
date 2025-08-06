@@ -73,6 +73,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setPkceMandatory(registrationRequestDTO.isPkceMandatory());
         appRegistrationRequest.setPkceSupportPlain(registrationRequestDTO.isPkceSupportPlain());
         appRegistrationRequest.setBypassClientCredentials(registrationRequestDTO.isBypassClientCredentials());
+        appRegistrationRequest.setApplicationScopes(registrationRequestDTO.getApplicationScopes());
         return appRegistrationRequest;
 
     }
@@ -94,6 +95,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationUpdateRequest.setPkceMandatory(updateRequestDTO.isPkceMandatory());
         applicationUpdateRequest.setPkceSupportPlain(updateRequestDTO.isPkceSupportPlain());
         applicationUpdateRequest.setBypassClientCredentials(updateRequestDTO.isBypassClientCredentials());
+        applicationUpdateRequest.setApplicationScopes(updateRequestDTO.getApplicationScopes());
         return applicationUpdateRequest;
 
     }
@@ -199,6 +201,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setPkceSupportPlain(application.getPkceSupportPlain());
         applicationDTO.setBypassClientCredentials(application.getBypassClientCredentials());
         applicationDTO.setTokenTypeExtension(application.getTokenType());
+        applicationDTO.setApplicationScopes(application.getApplicationScopes());
         return applicationDTO;
     }
 

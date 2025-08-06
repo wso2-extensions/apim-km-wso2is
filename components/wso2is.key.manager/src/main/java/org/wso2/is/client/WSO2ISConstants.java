@@ -30,6 +30,9 @@ public class WSO2ISConstants {
     public static final String KM_ADMIN_AS_APP_OWNER_LABEL =
             "Enable admin user as the owner of created OAuth applications";
     public static final String KM_ADMIN_AS_APP_OWNER_VALUE = "Use as OAuth Application Owner";
+    public static final String ENABLE_APPLICATION_SCOPE_NAME = "enable_application_scopes";
+    public static final String ENABLE_APPLICATION_SCOPE_LABEL = "Enable application scopes for Oauth applications";
+    public static final String ENABLE_APPLICATION_SCOPE_VALUE = "Enable Application Scopes";
 
     WSO2ISConstants() {
 

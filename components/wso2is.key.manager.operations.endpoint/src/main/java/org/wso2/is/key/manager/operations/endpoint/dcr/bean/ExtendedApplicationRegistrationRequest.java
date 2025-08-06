@@ -21,6 +21,8 @@ package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
 import org.wso2.carbon.identity.oauth.dcr.bean.ApplicationRegistrationRequest;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This object contains the context related to OAuth application registration request.
@@ -38,6 +40,8 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private Boolean pkceMandatory = false;
     private Boolean pkceSupportPlain = false;
     private Boolean bypassClientCredentials = false;
+    // List of scopes that can be requested in client credentials grant type
+    private List<String> applicationScopes = new ArrayList<String>();
 
     public Long getApplicationAccessTokenLifeTime() {
 
@@ -130,4 +134,19 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     public void setBypassClientCredentials(Boolean bypassClientCredentials) {
         this.bypassClientCredentials = bypassClientCredentials;
     }
+
+    /**
+     *
+     * @return applicationScopes
+     */
+    public List<String> getApplicationScopes() {
+
+        return applicationScopes;
+    }
+
+    public void setApplicationScopes(List<String> applicationScopes) {
+
+        this.applicationScopes = applicationScopes;
+    }
+
 }

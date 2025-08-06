@@ -43,6 +43,7 @@ public class RegistrationRequestDTO   {
     private Boolean pkceMandatory = null;
     private Boolean pkceSupportPlain = null;
     private Boolean bypassClientCredentials = null;
+    private List<String> applicationScopes = new ArrayList<>();
 
   /**
    **/
@@ -505,6 +506,23 @@ public class RegistrationRequestDTO   {
     this.bypassClientCredentials = bypassClientCredentials;
   }
 
+  /**
+   **/
+  public RegistrationRequestDTO applicationScopes(List<String> applicationScopes) {
+    this.applicationScopes = applicationScopes;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("application_scopes")
+  public List<String> getApplicationScopes() {
+    return applicationScopes;
+  }
+  public void setApplicationScopes(List<String> applicationScopes) {
+    this.applicationScopes = applicationScopes;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -541,12 +559,13 @@ public class RegistrationRequestDTO   {
         Objects.equals(backchannelLogoutSessionRequired, registrationRequest.backchannelLogoutSessionRequired) &&
         Objects.equals(pkceMandatory, registrationRequest.pkceMandatory) &&
         Objects.equals(pkceSupportPlain, registrationRequest.pkceSupportPlain) &&
-        Objects.equals(bypassClientCredentials, registrationRequest.bypassClientCredentials);
+        Objects.equals(bypassClientCredentials, registrationRequest.bypassClientCredentials) &&
+        Objects.equals(applicationScopes, registrationRequest.applicationScopes);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain, bypassClientCredentials);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain, bypassClientCredentials, applicationScopes);
   }
 
   @Override
@@ -581,6 +600,7 @@ public class RegistrationRequestDTO   {
     sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
+    sb.append("    applicationScopes: ").append(toIndentedString(applicationScopes)).append("\n");
     sb.append("}");
     return sb.toString();
   }

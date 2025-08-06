@@ -36,6 +36,7 @@ public class ServiceReferenceHolder {
     private static ConfigurationContextService contextService;
     private static boolean restrictUnassignedScopes;
     private static boolean restrictApimRestApiScopes;
+    private static boolean mergeApplicationScopes;
 
     private ServiceReferenceHolder() {
 
@@ -94,5 +95,13 @@ public class ServiceReferenceHolder {
 
     public static void setRestrictApimRestApiScopes(boolean restrictProductRestApiScopes) {
         ServiceReferenceHolder.restrictApimRestApiScopes = restrictProductRestApiScopes;
+    }
+
+    public static boolean isMergeApplicationScopes() {
+        return mergeApplicationScopes;
+    }
+
+    public static void setMergeApplicationScopes(boolean mergeApplicationScopes) {
+        ServiceReferenceHolder.mergeApplicationScopes = mergeApplicationScopes;
     }
 }

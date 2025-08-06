@@ -553,6 +553,10 @@ definitions:
         type: boolean
       bypassClientCredentials:
         type: boolean
+      application_scopes:
+        type: array
+        items:
+          type: string
 
     #-----------------------------------------------------
     # The Application Update Request Object
@@ -602,6 +606,10 @@ definitions:
           type: boolean
         bypassClientCredentials:
           type: boolean
+        application_scopes:
+          type: array
+          items:
+            type: string
     #-----------------------------------------------------
     # The OAuth2 Application Object
     #-----------------------------------------------------
@@ -646,3 +654,7 @@ definitions:
           type: boolean
         token_type_extension:
           type: string
+        application_scopes:
+          type: array
+          items:
+            type: string

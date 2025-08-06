@@ -41,6 +41,7 @@ public class ExtendedApplication extends Application implements Serializable {
     private Boolean pkceSupportPlain = false;
     private Boolean bypassClientCredentials = false;
     private String tokenType;
+    private List<String> applicationScopes = null;
 
     public long getApplicationAccessTokenLifeTime() {
 
@@ -131,4 +132,13 @@ public class ExtendedApplication extends Application implements Serializable {
     public void setTokenType(String tokenType) {
         this.tokenType = tokenType;
     }
+
+    public List<String> getApplicationScopes() {
+        return this.applicationScopes;
+    }
+
+    public void setApplicationScopes(List<String> applicationScopes) {
+        this.applicationScopes = applicationScopes;
+    }
+
 }

@@ -53,6 +53,7 @@ public class KeyManagerCoreServiceComponent {
     private static final Log log = LogFactory.getLog(KeyManagerCoreServiceComponent.class);
     private static final String RESTRICT_UNASSIGNED_SCOPES = "restrict.unassigned.scopes";
     private static final String RESTRICT_APIM_REST_API_SCOPES = "restrict.apim.restapi.scopes";
+    private static final String MERGE_APPLICATION_SCOPES = "merge.application.scopes";
 
     @Activate
     protected void activate(ComponentContext cxt) {
@@ -74,6 +75,16 @@ public class KeyManagerCoreServiceComponent {
             boolean restrictApimRestApiScopes = Boolean.parseBoolean(System.getProperty(
                     RESTRICT_APIM_REST_API_SCOPES));
             ServiceReferenceHolder.setRestrictApimRestApiScopes(restrictApimRestApiScopes);
+
+            // When this property is enabled, application scopes will be merged with final authorized scopes in client
+            // credential grant type. Otherwise, only application scopes will be returned. By default, this is set to
+            // true.
+            if (System.getProperty(MERGE_APPLICATION_SCOPES) == null) {
+                ServiceReferenceHolder.setMergeApplicationScopes(true);
+            } else {
+                boolean mergeApplicationScopes = Boolean.parseBoolean(System.getProperty(MERGE_APPLICATION_SCOPES));
+                ServiceReferenceHolder.setMergeApplicationScopes(mergeApplicationScopes);
+            }
 
         } catch (Throwable e) {
             log.error(e.getMessage(), e);
