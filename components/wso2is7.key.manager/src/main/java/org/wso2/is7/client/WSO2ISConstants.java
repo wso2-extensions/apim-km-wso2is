@@ -30,6 +30,24 @@ public class WSO2ISConstants {
     public static final String KM_ADMIN_AS_APP_OWNER_LABEL =
             "Enable admin user as the owner of created OAuth applications";
     public static final String KM_ADMIN_AS_APP_OWNER_VALUE = "Use as OAuth Application Owner";
+    public static final String SCIM2_CORE_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0";
+    public static final String SCIM2_USER_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:User";
+    public static final String SCIM2_ENTERPRISE_SCHEMA = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
+    public static final String SCIM2_SYSTEM_SCHEMA_URI = "urn:scim:wso2:schema";
+    public static final String SCIM2_CUSTOM_SCHEMA_URI = "urn:scim:schemas:extension:custom:User";
+    public static final String MULTIVALUED_ATTRIBUTE_SEPARATOR = ",";
+    public static final String USER_SCHEMA_CACHE = "userSchemaCache";
+    public static final String ENABLE_SCHEMA_CACHE = "user_schema_cache_enabled";
+
+    // Attribute Schema Related Constants
+    public static final String CASE_EXACT =  "caseExact";
+    public static final String MULTI_VALUED = "multiValued";
+    public static final String REQUIRED = "required";
+    public static final String MUTABILITY = "mutability";
+    public static final String RETURNED = "returned";
+    public static final String UNIQUENESS = "uniqueness";
+    public static final String CANONICAL_VALUES = "canonicalValues";
+    public static final String REFERENCE_TYPES = "referenceTypes";
 
     WSO2ISConstants() {
 

@@ -76,22 +76,18 @@
             </resource>
         </resources>
     </build>
-    <properties>
-        <carbon.commons.version>4.9.11</carbon.commons.version>
-        <carbon.tenant.mgt.version>4.9.34</carbon.tenant.mgt.version>
-        <identity.organization.management.version>1.0.99</identity.organization.management.version>
-        <carbon.apimgt.version>9.31.164-SNAPSHOT</carbon.apimgt.version>
-        <carbon.identity.version>5.25.724</carbon.identity.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.impl</artifactId>
-            <version>${carbon.apimgt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.notification</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.utils</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.openfeign</groupId>
@@ -116,22 +112,18 @@
         <dependency>
             <groupId>org.wso2.carbon.apimgt</groupId>
             <artifactId>org.wso2.carbon.apimgt.api</artifactId>
-            <version>${carbon.apimgt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.commons</groupId>
             <artifactId>org.wso2.carbon.tenant.common</artifactId>
-            <version>${carbon.commons.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.claim.metadata.mgt</artifactId>
-            <version>${carbon.identity.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.multitenancy</groupId>
             <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
-            <version>${carbon.tenant.mgt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2.wso2</groupId>

@@ -219,6 +219,11 @@
                 <artifactId>org.wso2.carbon.user.core</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon</groupId>
+                <artifactId>org.wso2.carbon.utils</artifactId>
+                <version>${carbon.kernel.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.wso2.carbon.identity.datapublisher.authentication</groupId>
@@ -342,6 +347,26 @@
                 <artifactId>axis2</artifactId>
                 <version>${orbit.version.axis2}</version>
             </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.apimgt</groupId>
+                <artifactId>org.wso2.carbon.apimgt.api</artifactId>
+                <version>${carbon.apimgt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.commons</groupId>
+                <artifactId>org.wso2.carbon.tenant.common</artifactId>
+                <version>${carbon.commons.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.multitenancy</groupId>
+                <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
+                <version>${carbon.tenant.mgt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.framework</groupId>
+                <artifactId>org.wso2.carbon.identity.claim.metadata.mgt</artifactId>
+                <version>${carbon.identity.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -434,7 +459,9 @@
     </scm>
     <properties>
         <common.codec.version>1.15</common.codec.version>
-        <carbon.apimgt.version>9.29.35</carbon.apimgt.version>
+        <carbon.apimgt.version>9.31.168</carbon.apimgt.version>
+        <carbon.commons.version>4.9.11</carbon.commons.version>
+        <carbon.tenant.mgt.version>4.9.34</carbon.tenant.mgt.version>
         <carbon.identity.version>7.0.78</carbon.identity.version>
         <carbon.identity-oauth2-grant-jwt.version>2.0.4</carbon.identity-oauth2-grant-jwt.version>
         <json.simple.version>1.1</json.simple.version>
