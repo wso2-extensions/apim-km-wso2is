@@ -32,7 +32,7 @@
                         </Bundle-SymbolicName>
 
                         <Private-Package>
-                            org.wso2.is.notification.internal.*
+                            org.wso2.is.notification.internal.*;
                         </Private-Package>
                         <Import-Package>
                             org.apache.commons.codec.*,
@@ -44,6 +44,7 @@
                         </Import-Package>
                         <Export-Package>
                             org.wso2.is.notification.*;
+                            org.wso2.is.tenant.management.*;
                         </Export-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
@@ -51,6 +52,13 @@
             </plugin>
         </plugins>
     </build>
+    <properties>
+        <carbon.commons.version>4.10.19</carbon.commons.version>
+        <carbon.tenant.mgt.version>4.11.39</carbon.tenant.mgt.version>
+        <carbon.tenant.mgt.stub.version>4.9.34</carbon.tenant.mgt.stub.version>
+        <identity.organization.management.version>1.1.24</identity.organization.management.version>
+        <carbon.identity.version>7.8.23.33-SNAPSHOT</carbon.identity.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.wso2.carbon.identity.inbound.auth.oauth2</groupId>
@@ -63,6 +71,45 @@
         <dependency>
             <groupId>org.wso2.orbit.org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.commons</groupId>
+            <artifactId>org.wso2.carbon.tenant.common</artifactId>
+            <version>${carbon.commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.user.core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.multitenancy</groupId>
+            <artifactId>org.wso2.carbon.tenant.mgt</artifactId>
+            <version>${carbon.tenant.mgt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.multitenancy</groupId>
+            <artifactId>org.wso2.carbon.tenant.mgt.stub</artifactId>
+            <version>${carbon.tenant.mgt.stub.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2.wso2</groupId>
+            <artifactId>axis2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.claim.metadata.mgt</artifactId>
+            <version>${carbon.identity.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
+            <artifactId>org.wso2.carbon.identity.organization.management.service</artifactId>
+            <version>${identity.organization.management.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.core</artifactId>
+            <version>${carbon.identity.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
