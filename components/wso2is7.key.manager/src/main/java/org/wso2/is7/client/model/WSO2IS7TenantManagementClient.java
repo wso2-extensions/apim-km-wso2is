@@ -21,7 +21,6 @@ package org.wso2.is7.client.model;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
-import org.wso2.carbon.stratos.common.exception.StratosException;
 
 import java.util.List;
 
@@ -34,25 +33,26 @@ public interface WSO2IS7TenantManagementClient {
 
     @RequestLine("POST /tenants")
     @Headers("Content-Type: application/json")
-    String createTenant(TenantInfo tenantInfo) throws StratosException;
+    String createTenant(TenantInfo tenantInfo) throws TenantManagementClientException;
 
     @RequestLine("GET /tenants/domain/{tenant-domain}")
     @Headers("Content-Type: application/json")
-    TenantResponse getTenantByDomain(@Param("tenant-domain") String tenantDomain) throws StratosException;
+    TenantResponse getTenantByDomain(@Param("tenant-domain") String tenantDomain) throws
+            TenantManagementClientException;
 
     @RequestLine("GET /tenants/{tenant-id}/owners")
     @Headers("Content-Type: application/json")
     List<TenantOwnerResponse> getTenantOwners(@Param("tenant-id") String tenantId)
-            throws StratosException;
+            throws TenantManagementClientException;
 
     @RequestLine("PUT /tenants/{tenant-id}/owners/{owner-id}")
     @Headers("Content-Type: application/json")
     void updateTenantOwner(@Param("tenant-id") String tenantId, @Param("owner-id") String ownerId,
-                                 TenantOwnerUpdateInfo tenantOwner) throws StratosException;
+                                 TenantOwnerUpdateInfo tenantOwner) throws TenantManagementClientException;
 
     @RequestLine("PUT /tenants/{tenant-id}/lifecycle-status")
     @Headers("Content-Type: application/json")
     String updateTenantStatus(@Param("tenant-id") String tenantId, TenantStatusUpdateInfo tenantStatusUpdateInfo)
-            throws StratosException;
+            throws TenantManagementClientException;
 
 }
