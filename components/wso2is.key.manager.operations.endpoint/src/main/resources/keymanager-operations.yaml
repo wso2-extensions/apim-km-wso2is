@@ -412,7 +412,96 @@ paths:
           description: Server Error
           schema:
             $ref: '#/definitions/Error'
-
+  /dcr/register/{clientId}/secrets:
+    post:
+      description: |
+        This operation is used to create a new OAuth client secret
+      x-wso2-request: |
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+                "Content-Type: application/json"
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets"
+      x-wso2-response: |
+        "HTTP/1.1 201 OK"
+      summary: Create new OAuth client secret
+      operationId: createClientSecret
+      parameters:
+        - name: clientId
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        - name: clientSecretCreateRequest
+          in: body
+          description: Request payload containing details for creating a new client secret
+          required: true
+          schema:
+            $ref: '#/definitions/ClientSecretCreateRequest'
+      tags:
+        - OAuth2 DCR
+      responses:
+        '201':
+          description: Secret successfully created
+          schema:
+            $ref: '#/definitions/Secret'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+  /dcr/register/{clientId}/secrets/{secretId}:
+    delete:
+      description: |
+        This operation is used to delete an OAuth client secret
+      x-wso2-request: |
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4="
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets/t36sqkRdhB"
+      x-wso2-response: |
+        "HTTP/1.1 204 No Content"
+      summary: Delete an OAuth client secret
+      operationId: deleteClientSecret
+      parameters:
+        - name: clientId
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        - name: secretId
+          type: string
+          in: path
+          description: Unique identifier of the secret to delete
+          required: true
+      tags:
+        - OAuth2 DCR
+      responses:
+        '204':
+          description: Secret revoked successfully
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   Claim:
     type: object
@@ -658,3 +747,43 @@ definitions:
           type: array
           items:
             type: string
+
+  #-----------------------------------------------------
+  # Client Secret Object
+  #-----------------------------------------------------
+  Secret:
+    type: object
+    properties:
+      secretId:
+        type: string
+        description: Unique identifier for the secret
+        example: sec_123456
+      description:
+        type: string
+        description: Human-readable label for the secret
+        example: pizza application secret
+      clientId:
+        type: string
+        description: Client identifier of the application that owns this secret
+      secretValue:
+        type: string
+        description: The actual secret string (only returned at creation time)
+        example: s3cr3tV@lu3
+      expiresAt:
+        type: integer
+        description: expiry timestamp in seconds since epoch
+        example: 1755756933
+  #-----------------------------------------------------
+  # Client Secret Request Object
+  #-----------------------------------------------------
+  ClientSecretCreateRequest:
+    type: object
+    properties:
+      expiryTime:
+        type: integer
+        description: Expiry time in milli-seconds
+        example: 86400
+      description:
+        type: string
+        description: A human-readable label for this secret
+        example: pizza application secret

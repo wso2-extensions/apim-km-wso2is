@@ -27,6 +27,7 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationR
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreateRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
@@ -58,6 +59,12 @@ public class DcrApiServiceImpl implements DcrApiService {
     }
 
     @Override
+    public Response createClientSecret(String clientId, ClientSecretCreateRequestDTO clientSecretCreateRequest,
+                                       MessageContext messageContext) {
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+    @Override
     public Response deleteApplication(String clientId, MessageContext messageContext) {
         try {
             clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
@@ -71,6 +78,11 @@ public class DcrApiServiceImpl implements DcrApiService {
             ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
                     true, LOG);
         }
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    @Override
+    public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
