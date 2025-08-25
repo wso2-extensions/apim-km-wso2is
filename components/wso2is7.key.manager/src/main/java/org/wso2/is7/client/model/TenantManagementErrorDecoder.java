@@ -21,6 +21,8 @@ package org.wso2.is7.client.model;
 import feign.Response;
 import feign.Util;
 import feign.codec.ErrorDecoder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class TenantManagementErrorDecoder implements ErrorDecoder {
 
+    private static final Log log = LogFactory.getLog(TenantManagementErrorDecoder.class);
     private final ErrorDecoder defaultDecoder = new Default();
 
     @Override
@@ -62,6 +65,7 @@ public class TenantManagementErrorDecoder implements ErrorDecoder {
             }
         } catch (IOException e) {
             // Ignore
+            log.error("Error occurred when reading response body", e);
         }
         return "Error occurred for request. Status: " + response.status() + ", Reason: " + response.reason();
     }
