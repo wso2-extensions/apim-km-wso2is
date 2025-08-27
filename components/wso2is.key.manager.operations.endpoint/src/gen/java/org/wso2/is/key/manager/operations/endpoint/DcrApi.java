@@ -1,10 +1,10 @@
 package org.wso2.is.key.manager.operations.endpoint;
 
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreateRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.SecretDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
 import org.wso2.is.key.manager.operations.endpoint.impl.DcrApiServiceImpl;
@@ -56,13 +56,13 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "create new oauth client secret", notes = "This operation is used to create a new oauth client secret ", response = SecretDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Create new OAuth client secret", notes = "This operation is used to create a new OAuth client secret ", response = ClientSecretDTO.class, tags={ "OAuth2 DCR",  })
     @ApiResponses(value = { 
-        @ApiResponse(code = 201, message = "Secret successfully created", response = SecretDTO.class),
+        @ApiResponse(code = 201, message = "Secret successfully created", response = ClientSecretDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
         @ApiResponse(code = 409, message = "Conflict", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
-    public Response createClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Request payload containing details for creating a new client secret" ,required=true) ClientSecretCreateRequestDTO clientSecretCreateRequest){
+    public Response createClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Request payload containing details for creating a new client secret" ,required=true) ClientSecretCreationRequestDTO clientSecretCreateRequest){
         return delegate.createClientSecret(clientId, clientSecretCreateRequest, securityContext);
     }
 
@@ -83,7 +83,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets/{secretId}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "delete an oauth client secret", notes = "This operation is used to delete an oauth client secret ", response = Void.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Delete an OAuth client secret", notes = "This operation is used to delete an OAuth client secret ", response = Void.class, tags={ "OAuth2 DCR",  })
     @ApiResponses(value = { 
         @ApiResponse(code = 204, message = "Secret revoked successfully", response = Void.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),

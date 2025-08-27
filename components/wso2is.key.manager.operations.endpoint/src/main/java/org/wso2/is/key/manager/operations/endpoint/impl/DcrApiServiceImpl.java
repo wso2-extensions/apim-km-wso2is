@@ -22,12 +22,15 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMClientException;
 import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreateRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
@@ -59,9 +62,25 @@ public class DcrApiServiceImpl implements DcrApiService {
     }
 
     @Override
-    public Response createClientSecret(String clientId, ClientSecretCreateRequestDTO clientSecretCreateRequest,
+    public Response createClientSecret(String clientId, ClientSecretCreationRequestDTO clientSecretCreateRequest,
                                        MessageContext messageContext) {
-        return Response.status(Response.Status.CREATED).build();
+        clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+        ClientSecretDTO clientSecretDTO = null;
+        try {
+            ClientSecretCreationRequest request = ExtendedDCRMUtils.
+                    getClientSecretCreationRequest(clientId, clientSecretCreateRequest);
+            ClientSecret clientSecret = service.createClientSecret(request);
+            clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client error while creating new client secret\n" + clientSecretCreateRequest, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.CREATED).entity(clientSecretDTO).build();
     }
 
     @Override

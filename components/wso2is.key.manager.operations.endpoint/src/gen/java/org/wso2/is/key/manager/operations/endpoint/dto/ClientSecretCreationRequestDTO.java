@@ -12,21 +12,21 @@ import javax.xml.bind.annotation.*;
 
 
 
-public class ClientSecretCreateRequestDTO   {
+public class ClientSecretCreationRequestDTO   {
   
     private Integer expiryTime = null;
     private String description = null;
 
   /**
-   * Expiry time in seconds (relative to now).
+   * Expiry time in milli-seconds
    **/
-  public ClientSecretCreateRequestDTO expiryTime(Integer expiryTime) {
+  public ClientSecretCreationRequestDTO expiryTime(Integer expiryTime) {
     this.expiryTime = expiryTime;
     return this;
   }
 
   
-  @ApiModelProperty(value = "Expiry time in seconds (relative to now).")
+  @ApiModelProperty(example = "86400", value = "Expiry time in milli-seconds")
   @JsonProperty("expiryTime")
   public Integer getExpiryTime() {
     return expiryTime;
@@ -36,15 +36,15 @@ public class ClientSecretCreateRequestDTO   {
   }
 
   /**
-   * A human-readable label for this secret.
+   * A human-readable label for this secret
    **/
-  public ClientSecretCreateRequestDTO description(String description) {
+  public ClientSecretCreationRequestDTO description(String description) {
     this.description = description;
     return this;
   }
 
   
-  @ApiModelProperty(value = "A human-readable label for this secret.")
+  @ApiModelProperty(example = "pizza application secret", value = "A human-readable label for this secret")
   @JsonProperty("description")
   public String getDescription() {
     return description;
@@ -62,9 +62,9 @@ public class ClientSecretCreateRequestDTO   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ClientSecretCreateRequestDTO clientSecretCreateRequest = (ClientSecretCreateRequestDTO) o;
-    return Objects.equals(expiryTime, clientSecretCreateRequest.expiryTime) &&
-        Objects.equals(description, clientSecretCreateRequest.description);
+    ClientSecretCreationRequestDTO clientSecretCreationRequest = (ClientSecretCreationRequestDTO) o;
+    return Objects.equals(expiryTime, clientSecretCreationRequest.expiryTime) &&
+        Objects.equals(description, clientSecretCreationRequest.description);
   }
 
   @Override
@@ -75,7 +75,7 @@ public class ClientSecretCreateRequestDTO   {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ClientSecretCreateRequestDTO {\n");
+    sb.append("class ClientSecretCreationRequestDTO {\n");
     
     sb.append("    expiryTime: ").append(toIndentedString(expiryTime)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
