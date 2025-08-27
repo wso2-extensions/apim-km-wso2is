@@ -45,7 +45,10 @@ import org.wso2.carbon.identity.oauth.dcr.util.DCRConstants;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.identity.oauth.dcr.util.ErrorCodes;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
+import org.wso2.carbon.identity.oauth.dto.OAuthConsumerSecretDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
@@ -1004,5 +1007,34 @@ public class DCRMService {
         }
 
         return buildResponse(getApplicationById(clientId), getApplicationScopesFromSP(sp));
+    }
+
+    public ClientSecret createClientSecret(ClientSecretCreationRequest clientSecretCreationRequest)
+            throws DCRMException {
+
+        OAuthConsumerSecretDTO oAuthConsumerSecretDTO = new OAuthConsumerSecretDTO();
+        oAuthConsumerSecretDTO.setClientId(clientSecretCreationRequest.getClientId());
+        oAuthConsumerSecretDTO.setDescription(clientSecretCreationRequest.getDescription());
+        oAuthConsumerSecretDTO.setExpiryTime(clientSecretCreationRequest.getExpiryTime());
+        OAuthConsumerSecretDTO createdSecret;
+        try {
+            createdSecret = oAuthAdminService.createClientSecret(oAuthConsumerSecretDTO);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
+        }
+
+        return buildClientSecretResponse(createdSecret);
+    }
+
+    private ClientSecret buildClientSecretResponse(OAuthConsumerSecretDTO createdSecret) {
+
+        ClientSecret clientSecret = new ClientSecret();
+        clientSecret.setClientId(createdSecret.getClientId());
+        clientSecret.setDescription(createdSecret.getDescription());
+        clientSecret.setExpiryTime(createdSecret.getExpiryTime());
+        clientSecret.setSecretId(createdSecret.getSecretId());
+        clientSecret.setSecretValue(createdSecret.getSecretValue());
+        return clientSecret;
     }
 }

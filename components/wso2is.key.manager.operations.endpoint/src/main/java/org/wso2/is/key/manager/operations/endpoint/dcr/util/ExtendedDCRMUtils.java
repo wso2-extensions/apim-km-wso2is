@@ -26,11 +26,15 @@ import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
@@ -245,4 +249,30 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         ServiceProvider clonedServiceProvider = gson.fromJson(gson.toJson(serviceProvider), ServiceProvider.class);
         return clonedServiceProvider;
     }
+
+    public static ClientSecretCreationRequest getClientSecretCreationRequest(String clientId,
+                                                                             ClientSecretCreationRequestDTO clientSecretCreationRequest) {
+
+        ClientSecretCreationRequest request = new ClientSecretCreationRequest();
+        request.setClientId(clientId);
+        request.setDescription(clientSecretCreationRequest.getDescription());
+        request.setExpiryTime(clientSecretCreationRequest.getExpiryTime());
+        return request;
+    }
+
+    public static ClientSecretDTO getClientSecretDTOFromClientSecret(ClientSecret clientSecret) {
+        if (clientSecret == null) {
+            return null;
+        }
+
+        ClientSecretDTO clientSecretDTO = new ClientSecretDTO();
+        clientSecretDTO.setSecretId(clientSecret.getSecretId());
+        clientSecretDTO.setDescription(clientSecret.getDescription());
+        clientSecretDTO.setClientId(clientSecret.getClientId());
+        clientSecretDTO.setSecretValue(clientSecret.getSecretValue());
+        clientSecretDTO.setExpiresAt(clientSecret.getExpiryTime());
+        return clientSecretDTO;
+    }
+
+
 }

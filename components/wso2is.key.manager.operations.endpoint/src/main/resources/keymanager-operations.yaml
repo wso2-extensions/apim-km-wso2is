@@ -435,14 +435,14 @@ paths:
           description: Request payload containing details for creating a new client secret
           required: true
           schema:
-            $ref: '#/definitions/ClientSecretCreateRequest'
+            $ref: '#/definitions/ClientSecretCreationRequest'
       tags:
         - OAuth2 DCR
       responses:
         '201':
           description: Secret successfully created
           schema:
-            $ref: '#/definitions/Secret'
+            $ref: '#/definitions/ClientSecret'
         '400':
           description: Bad Request
           schema:
@@ -751,7 +751,7 @@ definitions:
   #-----------------------------------------------------
   # Client Secret Object
   #-----------------------------------------------------
-  Secret:
+  ClientSecret:
     type: object
     properties:
       secretId:
@@ -771,12 +771,13 @@ definitions:
         example: s3cr3tV@lu3
       expiresAt:
         type: integer
+        format: int64
         description: expiry timestamp in seconds since epoch
         example: 1755756933
   #-----------------------------------------------------
   # Client Secret Request Object
   #-----------------------------------------------------
-  ClientSecretCreateRequest:
+  ClientSecretCreationRequest:
     type: object
     properties:
       expiryTime:
