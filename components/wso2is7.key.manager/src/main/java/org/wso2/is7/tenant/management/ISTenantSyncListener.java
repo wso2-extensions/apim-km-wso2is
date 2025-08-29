@@ -30,18 +30,21 @@ import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dto.TenantSharingConfigurationDTO;
 import org.wso2.carbon.apimgt.impl.kmclient.ApacheFeignHttpClient;
-import org.wso2.carbon.apimgt.impl.kmclient.KMClientErrorDecoder;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.stratos.common.beans.TenantInfoBean;
 import org.wso2.carbon.stratos.common.exception.StratosException;
 import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 import org.wso2.carbon.tenant.mgt.internal.TenantMgtServiceComponent;
+import org.wso2.carbon.tenant.mgt.util.TenantMgtUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.is7.client.WSO2IS7ConnectorConfiguration;
 import org.wso2.is7.client.WSO2IS7KeyManagerConstants;
+import org.wso2.is7.client.exceptions.TenantBadRequestException;
+import org.wso2.is7.client.exceptions.TenantNotFoundException;
 import org.wso2.is7.client.internal.ServiceReferenceHolder;
 import org.wso2.is7.client.model.TenantInfo;
+import org.wso2.is7.client.model.TenantManagementErrorDecoder;
 import org.wso2.is7.client.model.TenantOwnerInfo;
 import org.wso2.is7.client.model.TenantOwnerResponse;
 import org.wso2.is7.client.model.TenantOwnerUpdateInfo;
@@ -110,7 +113,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
                             .logger(new Slf4jLogger())
                             .requestInterceptor(new BasicAuthRequestInterceptor(identityServerAdminUsername,
                                     identityServerAdminPassword))
-                            .errorDecoder(new KMClientErrorDecoder())
+                            .errorDecoder(new TenantManagementErrorDecoder())
                             .target(WSO2IS7TenantManagementClient.class, tenantManagementEndpoint);
                 } catch (Exception e) {
                     log.error("Error initializing Feign client for tenant management: " + e.getMessage(), e);
@@ -131,8 +134,9 @@ public class ISTenantSyncListener implements TenantMgtListener {
     @Override
     public void onTenantCreate(TenantInfoBean tenantInfoBean) throws StratosException {
         String tenantDomain = tenantInfoBean.getTenantDomain();
-        log.info("Tenant created in API Manager: " + tenantDomain);
-
+        if (log.isDebugEnabled()) {
+            log.debug("Tenant created in API Manager: " + tenantDomain);
+        }
         if (isTenantSyncEnabled) {
             TenantInfo tenantInfo = new TenantInfo();
             TenantOwnerInfo tenantOwner = new TenantOwnerInfo(
@@ -146,12 +150,18 @@ public class ISTenantSyncListener implements TenantMgtListener {
             );
             tenantInfo.setDomain(tenantDomain);
             tenantInfo.setOwners(Collections.singletonList(tenantOwner));
-            wso2IS7TenantManagementClient.createTenant(tenantInfo);
-            log.info("Tenant created successfully in IS: " + tenantDomain);
+            try {
+                wso2IS7TenantManagementClient.createTenant(tenantInfo);
+                if (log.isDebugEnabled()) {
+                    log.debug("Tenant created successfully in WSO2 Identity Server: " + tenantDomain);
+                }
+            } catch (Exception e) {
+                log.error("Error while creating tenant in WSO2 Identity Server: " + e.getMessage(), e);
+            }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant creation in Identity Server for tenant: "
+                        "skipping tenant creation in WSO2 Identity Server for tenant: "
                         + tenantDomain);
             }
         }
@@ -163,7 +173,6 @@ public class ISTenantSyncListener implements TenantMgtListener {
             }
         } catch (APIManagementException e) {
             log.error("Error while creating Key Manager in API Manager for tenant: " + tenantDomain, e);
-            throw new StratosException(e);
         }
     }
 
@@ -182,32 +191,60 @@ public class ISTenantSyncListener implements TenantMgtListener {
 
     @Override
     public void onTenantUpdate(TenantInfoBean tenantInfoBean) throws StratosException {
-        String tenantDomain = tenantInfoBean.getTenantDomain();
-        log.info("Tenant updated in API Manager: " + tenantDomain);
 
+        String tenantDomain = tenantInfoBean.getTenantDomain();
+        if (log.isDebugEnabled()) {
+            log.debug("Tenant updated in API Manager: " + tenantDomain);
+        }
         if (isTenantSyncEnabled) {
             // To get Tenant Id, Status, Owner from IS
-            TenantResponse tenantInfoByDomain = wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
+            try {
+                TenantResponse tenantInfoByDomain = wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
 
-            // since owner id is intermittently dropped from above response
-            //TODO:remove this API call after IS fixes https://github.com/wso2-enterprise/wso2-iam-internal/issues/3992
-            TenantOwnerResponse ownersResponse =
-                    wso2IS7TenantManagementClient.getTenantOwners(tenantInfoByDomain.getId()).get(0);
+                // since owner id is intermittently dropped from above response
+                //TODO:remove this API call after IS fixes
+                // https://github.com/wso2-enterprise/wso2-iam-internal/issues/3992
+                TenantOwnerResponse ownersResponse =
+                        wso2IS7TenantManagementClient.getTenantOwners(tenantInfoByDomain.getId()).get(0);
 
-            TenantOwnerUpdateInfo tenantOwner = new TenantOwnerUpdateInfo(
-                    tenantInfoBean.getEmail(),
-                    tenantInfoBean.getAdminPassword(),
-                    tenantInfoBean.getFirstname(),
-                    tenantInfoBean.getLastname(),
-                    null
-            );
-            wso2IS7TenantManagementClient.updateTenantOwner(tenantInfoByDomain.getId(), ownersResponse.getId(),
-                    tenantOwner);
-            log.info("Tenant updated successfully in IS: " + tenantDomain);
+                TenantOwnerUpdateInfo tenantOwner = new TenantOwnerUpdateInfo(
+                        tenantInfoBean.getEmail(),
+                        tenantInfoBean.getAdminPassword(),
+                        tenantInfoBean.getFirstname(),
+                        tenantInfoBean.getLastname(),
+                        null
+                );
+                wso2IS7TenantManagementClient.updateTenantOwner(tenantInfoByDomain.getId(), ownersResponse.getId(),
+                        tenantOwner);
+                if (log.isDebugEnabled()) {
+                    log.debug("Tenant updated successfully in WSO2 Identity Server: " + tenantDomain);
+                }
+            } catch (TenantNotFoundException | TenantBadRequestException e) {
+                // Tenant does not exist. Create the tenant in IS side
+                TenantInfo tenantInfo = new TenantInfo();
+                TenantOwnerInfo tenantOwner = new TenantOwnerInfo(
+                        tenantInfoBean.getAdmin(),
+                        tenantInfoBean.getAdminPassword(),
+                        tenantInfoBean.getEmail(),
+                        tenantInfoBean.getFirstname(),
+                        tenantInfoBean.getLastname(),
+                        null,
+                        null
+                );
+                tenantInfo.setDomain(tenantDomain);
+                tenantInfo.setOwners(Collections.singletonList(tenantOwner));
+                try {
+                    wso2IS7TenantManagementClient.createTenant(tenantInfo);
+                } catch (Exception ex) {
+                    log.error("Error while creating missing tenant in WSO2 Identity Server: " + ex.getMessage(), ex);
+                }
+            } catch (Exception e) {
+                log.error("Error while updating tenant in WSO2 Identity Server: " + tenantDomain, e);
+            }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant update in Identity Server for tenant: "
+                        "skipping tenant update in WSO2 Identity Server for tenant: "
                         + tenantDomain);
             }
         }
@@ -223,16 +260,44 @@ public class ISTenantSyncListener implements TenantMgtListener {
 
     }
 
+    /**
+     * Check whether tenant is created in IS side and if it is not created, deactivate tenant in APIM side
+     * @param tenantId
+     * @throws StratosException
+     */
     @Override
-    public void onTenantInitialActivation(int i) throws StratosException {
+    public void onTenantInitialActivation(int tenantId) throws StratosException {
 
+        if (isTenantSyncEnabled) {
+            TenantManager tenantManager = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager();
+            try {
+                String tenantDomain = tenantManager.getDomain(tenantId);
+                try {
+                    // Check whether we can call IS endpoint. If there is a connection issue, an exception will
+                    // be thrown.
+                    wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
+                } catch (Exception e) {
+                    // Exception throws when tenant is not created or due to any connection issue.
+                    // We assume that tenant is not created in IS side due to this.
+                    // Deactivate the tenant in APIM.
+                    TenantMgtUtil.deactivateTenant(tenantDomain, tenantManager, tenantId);
+                    log.warn("Deactivating tenant " + tenantDomain +
+                            " in API Manager due to missing tenant in WSO2 Identity Server");
+                }
+            } catch (Exception e) {
+                log.error("Error while retrieving tenant domain for tenantId " + tenantId, e);
+            }
+        }
     }
 
     @Override
     public void onTenantActivation(int tenantId) throws StratosException {
+
         //should get tenant domain for the corresponding ID as the ID is not the same for IS side
         TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
-        log.info("Tenant activated in API Manager: " + tenantId);
+        if (log.isDebugEnabled()) {
+            log.debug("Tenant activated in API Manager: " + tenantId);
+        }
 
         if (isTenantSyncEnabled) {
             String tenantDomain;
@@ -243,22 +308,36 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 throw new StratosException(e);
             }
             // To get Tenant Id, Status, Owner from IS
-            TenantResponse tenantInfoByDomain = wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
+            TenantResponse tenantInfoByDomain = null;
+            try {
+                tenantInfoByDomain = wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
 
-            if (tenantInfoByDomain.getLifecycleStatus().getActivated()) {
-                log.info("Tenant is already activated in IS: " + tenantDomain);
-                return;
+                if (tenantInfoByDomain.getLifecycleStatus().getActivated()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Tenant is already activated in IS: " + tenantDomain);
+                    }
+                    return;
+                }
+                TenantStatusUpdateInfo tenantStatusUpdateInfo = new TenantStatusUpdateInfo(true);
+                wso2IS7TenantManagementClient.updateTenantStatus(tenantInfoByDomain.getId(), tenantStatusUpdateInfo);
+                if (log.isDebugEnabled()) {
+                    log.debug("Tenant activated successfully in IS: " + tenantDomain);
+                }
+            } catch (Exception e) {
+                log.error("Error while activating tenant in IS: " + tenantDomain, e);
+                try {
+                    // Rollback to deactivate state
+                    TenantMgtUtil.deactivateTenant(tenantDomain, tenantManager, tenantId);
+                    log.info("Rollback tenant activation for tenant " + tenantDomain);
+                } catch (Exception ex) {
+                    log.error("Error while rolling back tenant activation for tenant " + tenantDomain, ex);
+                    throw new StratosException(ex);
+                }
             }
-            TenantStatusUpdateInfo tenantStatusUpdateInfo = new TenantStatusUpdateInfo(true);
-            wso2IS7TenantManagementClient.updateTenantStatus(
-                    tenantInfoByDomain.getId(),
-                    tenantStatusUpdateInfo
-            );
-            log.info("Tenant activated successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant activation in Identity Server for " +
+                        "skipping tenant activation in WSO2 Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }
@@ -266,9 +345,12 @@ public class ISTenantSyncListener implements TenantMgtListener {
 
     @Override
     public void onTenantDeactivation(int tenantId) throws StratosException {
+
         //should get tenant domain for the corresponding ID as the ID is not the same for IS side
         TenantManager tenantManager = TenantMgtServiceComponent.getTenantManager();
-        log.info("Tenant activated in API Manager: " + tenantId);
+        if (log.isDebugEnabled()) {
+            log.debug("Tenant activated in API Manager: " + tenantId);
+        }
 
         if (isTenantSyncEnabled) {
             String tenantDomain;
@@ -279,22 +361,35 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 throw new StratosException(e);
             }
             // To get Tenant Id, Status, Owner from IS
-            TenantResponse tenantInfoByDomain = wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
-
-            if (!tenantInfoByDomain.getLifecycleStatus().getActivated()) {
-                log.info("Tenant is already de-activated in IS: " + tenantDomain);
-                return;
+            TenantResponse tenantInfoByDomain = null;
+            try {
+                tenantInfoByDomain = wso2IS7TenantManagementClient.getTenantByDomain(tenantDomain);
+                if (!tenantInfoByDomain.getLifecycleStatus().getActivated()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Tenant is already de-activated in IS: " + tenantDomain);
+                    }
+                    return;
+                }
+                TenantStatusUpdateInfo tenantStatusUpdateInfo = new TenantStatusUpdateInfo(false);
+                wso2IS7TenantManagementClient.updateTenantStatus(tenantInfoByDomain.getId(), tenantStatusUpdateInfo);
+                if (log.isDebugEnabled()) {
+                    log.debug("Tenant de-activated successfully in IS: " + tenantDomain);
+                }
+            } catch (Exception e) {
+                log.error("Error while deactivating tenant in IS: " + tenantDomain, e);
+                try {
+                    // Rollback to activate state
+                    TenantMgtUtil.activateTenant(tenantDomain, tenantManager, tenantId);
+                    log.info("Rollback tenant deactivation for tenant " + tenantDomain);
+                } catch (Exception ex) {
+                    log.error("Error while rolling back tenant deactivation for tenant " + tenantDomain, ex);
+                    throw new StratosException(ex);
+                }
             }
-            TenantStatusUpdateInfo tenantStatusUpdateInfo = new TenantStatusUpdateInfo(false);
-            wso2IS7TenantManagementClient.updateTenantStatus(
-                    tenantInfoByDomain.getId(),
-                    tenantStatusUpdateInfo
-            );
-            log.info("Tenant de-activated successfully in IS: " + tenantDomain);
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant de-activation in Identity Server for " +
+                        "skipping tenant de-activation in WSO2 Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }
