@@ -21,6 +21,7 @@ package org.wso2.is7.client.model;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
+import org.wso2.is7.client.exceptions.TenantManagementClientException;
 
 import java.util.List;
 

@@ -40,11 +40,11 @@ import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 import org.wso2.is7.client.WSO2IS7ConnectorConfiguration;
 import org.wso2.is7.client.WSO2IS7KeyManagerConstants;
+import org.wso2.is7.client.exceptions.TenantBadRequestException;
+import org.wso2.is7.client.exceptions.TenantNotFoundException;
 import org.wso2.is7.client.internal.ServiceReferenceHolder;
-import org.wso2.is7.client.model.TenantBadRequestException;
 import org.wso2.is7.client.model.TenantInfo;
 import org.wso2.is7.client.model.TenantManagementErrorDecoder;
-import org.wso2.is7.client.model.TenantNotFoundException;
 import org.wso2.is7.client.model.TenantOwnerInfo;
 import org.wso2.is7.client.model.TenantOwnerResponse;
 import org.wso2.is7.client.model.TenantOwnerUpdateInfo;
@@ -153,15 +153,15 @@ public class ISTenantSyncListener implements TenantMgtListener {
             try {
                 wso2IS7TenantManagementClient.createTenant(tenantInfo);
                 if (log.isDebugEnabled()) {
-                    log.debug("Tenant created successfully in IS: " + tenantDomain);
+                    log.debug("Tenant created successfully in WSO2 Identity Server: " + tenantDomain);
                 }
             } catch (Exception e) {
-                log.error("Error while creating tenant in Identity server: " + e.getMessage(), e);
+                log.error("Error while creating tenant in WSO2 Identity Server: " + e.getMessage(), e);
             }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant creation in Identity Server for tenant: "
+                        "skipping tenant creation in WSO2 Identity Server for tenant: "
                         + tenantDomain);
             }
         }
@@ -217,36 +217,34 @@ public class ISTenantSyncListener implements TenantMgtListener {
                 wso2IS7TenantManagementClient.updateTenantOwner(tenantInfoByDomain.getId(), ownersResponse.getId(),
                         tenantOwner);
                 if (log.isDebugEnabled()) {
-                    log.debug("Tenant updated successfully in IS: " + tenantDomain);
+                    log.debug("Tenant updated successfully in WSO2 Identity Server: " + tenantDomain);
+                }
+            } catch (TenantNotFoundException | TenantBadRequestException e) {
+                // Tenant does not exist. Create the tenant in IS side
+                TenantInfo tenantInfo = new TenantInfo();
+                TenantOwnerInfo tenantOwner = new TenantOwnerInfo(
+                        tenantInfoBean.getAdmin(),
+                        tenantInfoBean.getAdminPassword(),
+                        tenantInfoBean.getEmail(),
+                        tenantInfoBean.getFirstname(),
+                        tenantInfoBean.getLastname(),
+                        null,
+                        null
+                );
+                tenantInfo.setDomain(tenantDomain);
+                tenantInfo.setOwners(Collections.singletonList(tenantOwner));
+                try {
+                    wso2IS7TenantManagementClient.createTenant(tenantInfo);
+                } catch (Exception ex) {
+                    log.error("Error while creating missing tenant in WSO2 Identity Server: " + ex.getMessage(), ex);
                 }
             } catch (Exception e) {
-                if (e instanceof TenantNotFoundException || e instanceof TenantBadRequestException) {
-                    // Tenant does not exist. Create the tenant in IS side
-                    TenantInfo tenantInfo = new TenantInfo();
-                    TenantOwnerInfo tenantOwner = new TenantOwnerInfo(
-                            tenantInfoBean.getAdmin(),
-                            tenantInfoBean.getAdminPassword(),
-                            tenantInfoBean.getEmail(),
-                            tenantInfoBean.getFirstname(),
-                            tenantInfoBean.getLastname(),
-                            null,
-                            null
-                    );
-                    tenantInfo.setDomain(tenantDomain);
-                    tenantInfo.setOwners(Collections.singletonList(tenantOwner));
-                    try {
-                        wso2IS7TenantManagementClient.createTenant(tenantInfo);
-                    } catch (Exception ex) {
-                        log.error("Error while creating missing tenant in Identity server: " + ex.getMessage(), ex);
-                    }
-                } else {
-                    log.error("Error while updating tenant in IS: " + tenantDomain, e);
-                }
+                log.error("Error while updating tenant in WSO2 Identity Server: " + tenantDomain, e);
             }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant update in Identity Server for tenant: "
+                        "skipping tenant update in WSO2 Identity Server for tenant: "
                         + tenantDomain);
             }
         }
@@ -284,7 +282,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
                     // Deactivate the tenant in APIM.
                     TenantMgtUtil.deactivateTenant(tenantDomain, tenantManager, tenantId);
                     log.warn("Deactivating tenant " + tenantDomain +
-                            " in API Manager due to missing tenant in Identity Server");
+                            " in API Manager due to missing tenant in WSO2 Identity Server");
                 }
             } catch (Exception e) {
                 log.error("Error while retrieving tenant domain for tenantId " + tenantId, e);
@@ -339,7 +337,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant activation in Identity Server for " +
+                        "skipping tenant activation in WSO2 Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }
@@ -391,7 +389,7 @@ public class ISTenantSyncListener implements TenantMgtListener {
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Tenant sharing is not enabled in API Manager, " +
-                        "skipping tenant de-activation in Identity Server for " +
+                        "skipping tenant de-activation in WSO2 Identity Server for " +
                         "APIM tenant ID: " + tenantId);
             }
         }

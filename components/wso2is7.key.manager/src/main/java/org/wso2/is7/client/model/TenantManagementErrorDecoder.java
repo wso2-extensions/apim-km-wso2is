@@ -23,6 +23,8 @@ import feign.Util;
 import feign.codec.ErrorDecoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.is7.client.exceptions.TenantBadRequestException;
+import org.wso2.is7.client.exceptions.TenantNotFoundException;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -16,14 +16,14 @@
  * under the License.
  */
 
-package org.wso2.is7.client.model;
+package org.wso2.is7.client.exceptions;
 
 /**
- * Tenant management client related exception.
+ * A specific exception for HTTP 400 Bad Request errors.
  */
-public class TenantManagementClientException extends Exception {
+public class TenantBadRequestException extends TenantManagementClientException {
 
-    public TenantManagementClientException(String message) {
+    public TenantBadRequestException(String message) {
 
         super(message);
     }

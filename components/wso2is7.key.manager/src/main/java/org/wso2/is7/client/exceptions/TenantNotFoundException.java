@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.is7.client.model;
+package org.wso2.is7.client.exceptions;
 
 /**
  * A specific exception for HTTP 404 Not Found errors.
