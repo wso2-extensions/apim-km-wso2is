@@ -1027,6 +1027,17 @@ public class DCRMService {
         return buildClientSecretResponse(createdSecret);
     }
 
+    public void deleteClientSecret(String secretId)
+            throws DCRMException {
+
+        try {
+            oAuthAdminService.removeClientSecret(secretId);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
+        }
+    }
+
     private ClientSecret buildClientSecretResponse(OAuthConsumerSecretDTO createdSecret) {
 
         ClientSecret clientSecret = new ClientSecret();
