@@ -102,6 +102,19 @@ public class DcrApiServiceImpl implements DcrApiService {
 
     @Override
     public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
+        try {
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+            secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
+            service.deleteClientSecret(secretId);
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client error while deleting  application with client key:" + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
