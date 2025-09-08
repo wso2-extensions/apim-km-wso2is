@@ -10,7 +10,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Multipart;
 
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;

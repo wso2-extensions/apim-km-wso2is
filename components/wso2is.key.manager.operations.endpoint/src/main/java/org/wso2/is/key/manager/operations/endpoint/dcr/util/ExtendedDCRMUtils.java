@@ -34,7 +34,7 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationU
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
@@ -256,23 +256,25 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         ClientSecretCreationRequest request = new ClientSecretCreationRequest();
         request.setClientId(clientId);
         request.setDescription(clientSecretCreationRequest.getDescription());
-        request.setExpiryTime(clientSecretCreationRequest.getExpiryTime());
+        request.setExpiresAt(calculateExpiresAt(clientSecretCreationRequest.getExpiresIn()));
         return request;
     }
 
-    public static ClientSecretDTO getClientSecretDTOFromClientSecret(ClientSecret clientSecret) {
+    public static ClientSecretResponseDTO getClientSecretDTOFromClientSecret(ClientSecret clientSecret) {
         if (clientSecret == null) {
             return null;
         }
 
-        ClientSecretDTO clientSecretDTO = new ClientSecretDTO();
+        ClientSecretResponseDTO clientSecretDTO = new ClientSecretResponseDTO();
         clientSecretDTO.setSecretId(clientSecret.getSecretId());
         clientSecretDTO.setDescription(clientSecret.getDescription());
         clientSecretDTO.setClientId(clientSecret.getClientId());
-        clientSecretDTO.setSecretValue(clientSecret.getSecretValue());
-        clientSecretDTO.setExpiresAt(clientSecret.getExpiryTime());
+        clientSecretDTO.setClientSecret(clientSecret.getClientSecret());
+        clientSecretDTO.setClientSecretExpiresAt(clientSecret.getExpiryTime());
         return clientSecretDTO;
     }
 
-
+    private static long calculateExpiresAt(int expiresIn) {
+        return System.currentTimeMillis() + (expiresIn * 1000L);
+    }
 }

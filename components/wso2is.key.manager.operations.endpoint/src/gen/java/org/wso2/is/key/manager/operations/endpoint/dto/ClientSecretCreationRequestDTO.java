@@ -14,25 +14,25 @@ import javax.xml.bind.annotation.*;
 
 public class ClientSecretCreationRequestDTO   {
   
-    private Integer expiryTime = null;
+    private Integer expiresIn = null;
     private String description = null;
 
   /**
-   * Expiry time in milli-seconds
+   * Expiry time in seconds
    **/
-  public ClientSecretCreationRequestDTO expiryTime(Integer expiryTime) {
-    this.expiryTime = expiryTime;
+  public ClientSecretCreationRequestDTO expiresIn(Integer expiresIn) {
+    this.expiresIn = expiresIn;
     return this;
   }
 
   
-  @ApiModelProperty(example = "86400", value = "Expiry time in milli-seconds")
-  @JsonProperty("expiryTime")
-  public Integer getExpiryTime() {
-    return expiryTime;
+  @ApiModelProperty(example = "86400", value = "Expiry time in seconds")
+  @JsonProperty("expires_in")
+  public Integer getExpiresIn() {
+    return expiresIn;
   }
-  public void setExpiryTime(Integer expiryTime) {
-    this.expiryTime = expiryTime;
+  public void setExpiresIn(Integer expiresIn) {
+    this.expiresIn = expiresIn;
   }
 
   /**
@@ -63,13 +63,13 @@ public class ClientSecretCreationRequestDTO   {
       return false;
     }
     ClientSecretCreationRequestDTO clientSecretCreationRequest = (ClientSecretCreationRequestDTO) o;
-    return Objects.equals(expiryTime, clientSecretCreationRequest.expiryTime) &&
+    return Objects.equals(expiresIn, clientSecretCreationRequest.expiresIn) &&
         Objects.equals(description, clientSecretCreationRequest.description);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(expiryTime, description);
+    return Objects.hash(expiresIn, description);
   }
 
   @Override
@@ -77,7 +77,7 @@ public class ClientSecretCreationRequestDTO   {
     StringBuilder sb = new StringBuilder();
     sb.append("class ClientSecretCreationRequestDTO {\n");
     
-    sb.append("    expiryTime: ").append(toIndentedString(expiryTime)).append("\n");
+    sb.append("    expiresIn: ").append(toIndentedString(expiresIn)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("}");
     return sb.toString();

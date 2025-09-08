@@ -12,25 +12,25 @@ import javax.xml.bind.annotation.*;
 
 
 
-public class ClientSecretDTO   {
+public class ClientSecretResponseDTO   {
   
     private String secretId = null;
     private String description = null;
     private String clientId = null;
-    private String secretValue = null;
-    private Long expiresAt = null;
+    private String clientSecret = null;
+    private Long clientSecretExpiresAt = null;
 
   /**
    * Unique identifier for the secret
    **/
-  public ClientSecretDTO secretId(String secretId) {
+  public ClientSecretResponseDTO secretId(String secretId) {
     this.secretId = secretId;
     return this;
   }
 
   
   @ApiModelProperty(example = "sec_123456", value = "Unique identifier for the secret")
-  @JsonProperty("secretId")
+  @JsonProperty("secret_id")
   public String getSecretId() {
     return secretId;
   }
@@ -41,7 +41,7 @@ public class ClientSecretDTO   {
   /**
    * Human-readable label for the secret
    **/
-  public ClientSecretDTO description(String description) {
+  public ClientSecretResponseDTO description(String description) {
     this.description = description;
     return this;
   }
@@ -59,14 +59,14 @@ public class ClientSecretDTO   {
   /**
    * Client identifier of the application that owns this secret
    **/
-  public ClientSecretDTO clientId(String clientId) {
+  public ClientSecretResponseDTO clientId(String clientId) {
     this.clientId = clientId;
     return this;
   }
 
   
   @ApiModelProperty(value = "Client identifier of the application that owns this secret")
-  @JsonProperty("clientId")
+  @JsonProperty("client_id")
   public String getClientId() {
     return clientId;
   }
@@ -75,39 +75,39 @@ public class ClientSecretDTO   {
   }
 
   /**
-   * The actual secret string (only returned at creation time)
+   * The actual secret string
    **/
-  public ClientSecretDTO secretValue(String secretValue) {
-    this.secretValue = secretValue;
+  public ClientSecretResponseDTO clientSecret(String clientSecret) {
+    this.clientSecret = clientSecret;
     return this;
   }
 
   
-  @ApiModelProperty(example = "s3cr3tV@lu3", value = "The actual secret string (only returned at creation time)")
-  @JsonProperty("secretValue")
-  public String getSecretValue() {
-    return secretValue;
+  @ApiModelProperty(example = "s3cr3tV@lu3", value = "The actual secret string")
+  @JsonProperty("client_secret")
+  public String getClientSecret() {
+    return clientSecret;
   }
-  public void setSecretValue(String secretValue) {
-    this.secretValue = secretValue;
+  public void setClientSecret(String clientSecret) {
+    this.clientSecret = clientSecret;
   }
 
   /**
    * expiry timestamp in seconds since epoch
    **/
-  public ClientSecretDTO expiresAt(Long expiresAt) {
-    this.expiresAt = expiresAt;
+  public ClientSecretResponseDTO clientSecretExpiresAt(Long clientSecretExpiresAt) {
+    this.clientSecretExpiresAt = clientSecretExpiresAt;
     return this;
   }
 
   
   @ApiModelProperty(example = "1755756933", value = "expiry timestamp in seconds since epoch")
-  @JsonProperty("expiresAt")
-  public Long getExpiresAt() {
-    return expiresAt;
+  @JsonProperty("client_secret_expires_at")
+  public Long getClientSecretExpiresAt() {
+    return clientSecretExpiresAt;
   }
-  public void setExpiresAt(Long expiresAt) {
-    this.expiresAt = expiresAt;
+  public void setClientSecretExpiresAt(Long clientSecretExpiresAt) {
+    this.clientSecretExpiresAt = clientSecretExpiresAt;
   }
 
 
@@ -119,29 +119,29 @@ public class ClientSecretDTO   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ClientSecretDTO clientSecret = (ClientSecretDTO) o;
-    return Objects.equals(secretId, clientSecret.secretId) &&
-        Objects.equals(description, clientSecret.description) &&
-        Objects.equals(clientId, clientSecret.clientId) &&
-        Objects.equals(secretValue, clientSecret.secretValue) &&
-        Objects.equals(expiresAt, clientSecret.expiresAt);
+    ClientSecretResponseDTO clientSecretResponse = (ClientSecretResponseDTO) o;
+    return Objects.equals(secretId, clientSecretResponse.secretId) &&
+        Objects.equals(description, clientSecretResponse.description) &&
+        Objects.equals(clientId, clientSecretResponse.clientId) &&
+        Objects.equals(clientSecret, clientSecretResponse.clientSecret) &&
+        Objects.equals(clientSecretExpiresAt, clientSecretResponse.clientSecretExpiresAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(secretId, description, clientId, secretValue, expiresAt);
+    return Objects.hash(secretId, description, clientId, clientSecret, clientSecretExpiresAt);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ClientSecretDTO {\n");
+    sb.append("class ClientSecretResponseDTO {\n");
     
     sb.append("    secretId: ").append(toIndentedString(secretId)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("    clientId: ").append(toIndentedString(clientId)).append("\n");
-    sb.append("    secretValue: ").append(toIndentedString(secretValue)).append("\n");
-    sb.append("    expiresAt: ").append(toIndentedString(expiresAt)).append("\n");
+    sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
+    sb.append("    clientSecretExpiresAt: ").append(toIndentedString(clientSecretExpiresAt)).append("\n");
     sb.append("}");
     return sb.toString();
   }
