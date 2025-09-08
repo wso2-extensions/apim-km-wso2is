@@ -1015,7 +1015,7 @@ public class DCRMService {
         OAuthConsumerSecretDTO oAuthConsumerSecretDTO = new OAuthConsumerSecretDTO();
         oAuthConsumerSecretDTO.setClientId(clientSecretCreationRequest.getClientId());
         oAuthConsumerSecretDTO.setDescription(clientSecretCreationRequest.getDescription());
-        oAuthConsumerSecretDTO.setExpiryTime(clientSecretCreationRequest.getExpiryTime());
+        oAuthConsumerSecretDTO.setExpiresAt(clientSecretCreationRequest.getExpiryAt());
         OAuthConsumerSecretDTO createdSecret;
         try {
             createdSecret = oAuthAdminService.createClientSecret(oAuthConsumerSecretDTO);
@@ -1043,9 +1043,9 @@ public class DCRMService {
         ClientSecret clientSecret = new ClientSecret();
         clientSecret.setClientId(createdSecret.getClientId());
         clientSecret.setDescription(createdSecret.getDescription());
-        clientSecret.setExpiryTime(createdSecret.getExpiryTime());
+        clientSecret.setExpiryTime(createdSecret.getExpiresAt());
         clientSecret.setSecretId(createdSecret.getSecretId());
-        clientSecret.setSecretValue(createdSecret.getSecretValue());
+        clientSecret.setClientSecret(createdSecret.getClientSecret());
         return clientSecret;
     }
 }

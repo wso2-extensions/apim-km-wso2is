@@ -442,7 +442,7 @@ paths:
         '201':
           description: Secret successfully created
           schema:
-            $ref: '#/definitions/ClientSecret'
+            $ref: '#/definitions/ClientSecretResponse'
         '400':
           description: Bad Request
           schema:
@@ -751,10 +751,10 @@ definitions:
   #-----------------------------------------------------
   # Client Secret Object
   #-----------------------------------------------------
-  ClientSecret:
+  ClientSecretResponse:
     type: object
     properties:
-      secretId:
+      secret_id:
         type: string
         description: Unique identifier for the secret
         example: sec_123456
@@ -762,14 +762,14 @@ definitions:
         type: string
         description: Human-readable label for the secret
         example: pizza application secret
-      clientId:
+      client_id:
         type: string
         description: Client identifier of the application that owns this secret
-      secretValue:
+      client_secret:
         type: string
-        description: The actual secret string (only returned at creation time)
+        description: The actual secret string
         example: s3cr3tV@lu3
-      expiresAt:
+      client_secret_expires_at:
         type: integer
         format: int64
         description: expiry timestamp in seconds since epoch
@@ -780,9 +780,9 @@ definitions:
   ClientSecretCreationRequest:
     type: object
     properties:
-      expiryTime:
+      expires_in:
         type: integer
-        description: Expiry time in milli-seconds
+        description: Expiry time in seconds
         example: 86400
       description:
         type: string

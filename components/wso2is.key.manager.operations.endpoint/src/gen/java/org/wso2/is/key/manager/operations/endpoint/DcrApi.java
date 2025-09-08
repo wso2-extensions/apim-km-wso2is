@@ -2,7 +2,7 @@ package org.wso2.is.key.manager.operations.endpoint;
 
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
@@ -56,9 +56,9 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "Create new OAuth client secret", notes = "This operation is used to create a new OAuth client secret ", response = ClientSecretDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Create new OAuth client secret", notes = "This operation is used to create a new OAuth client secret ", response = ClientSecretResponseDTO.class, tags={ "OAuth2 DCR",  })
     @ApiResponses(value = { 
-        @ApiResponse(code = 201, message = "Secret successfully created", response = ClientSecretDTO.class),
+        @ApiResponse(code = 201, message = "Secret successfully created", response = ClientSecretResponseDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
         @ApiResponse(code = 409, message = "Conflict", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })

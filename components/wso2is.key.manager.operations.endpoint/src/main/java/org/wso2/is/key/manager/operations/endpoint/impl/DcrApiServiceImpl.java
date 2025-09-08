@@ -30,7 +30,7 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
@@ -65,7 +65,7 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response createClientSecret(String clientId, ClientSecretCreationRequestDTO clientSecretCreateRequest,
                                        MessageContext messageContext) {
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
-        ClientSecretDTO clientSecretDTO = null;
+        ClientSecretResponseDTO clientSecretDTO = null;
         try {
             ClientSecretCreationRequest request = ExtendedDCRMUtils.
                     getClientSecretCreationRequest(clientId, clientSecretCreateRequest);

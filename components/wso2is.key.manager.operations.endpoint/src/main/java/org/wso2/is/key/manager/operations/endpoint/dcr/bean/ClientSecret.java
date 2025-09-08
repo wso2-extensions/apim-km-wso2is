@@ -21,8 +21,8 @@ public class ClientSecret {
     private String secretId;
     private String description;
     private String clientId;
-    private String secretValue;
-    private long expiryTime;
+    private String clientSecret;
+    private long clientSecretExpiresAt;
 
     public String getSecretId() {
         return secretId;
@@ -48,19 +48,19 @@ public class ClientSecret {
         this.clientId = clientId;
     }
 
-    public String getSecretValue() {
-        return secretValue;
+    public String getClientSecret() {
+        return clientSecret;
     }
 
-    public void setSecretValue(String secretValue) {
-        this.secretValue = secretValue;
+    public void setClientSecret(String secretValue) {
+        this.clientSecret = secretValue;
     }
 
     public long getExpiryTime() {
-        return expiryTime;
+        return clientSecretExpiresAt;
     }
 
     public void setExpiryTime(long expiryTime) {
-        this.expiryTime = expiryTime;
+        this.clientSecretExpiresAt = expiryTime;
     }
 }
