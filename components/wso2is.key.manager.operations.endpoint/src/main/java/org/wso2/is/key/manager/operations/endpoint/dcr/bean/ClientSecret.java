@@ -22,7 +22,7 @@ public class ClientSecret {
     private String description;
     private String clientId;
     private String clientSecret;
-    private long clientSecretExpiresAt;
+    private Long clientSecretExpiresAt;
 
     public String getSecretId() {
         return secretId;
@@ -56,11 +56,11 @@ public class ClientSecret {
         this.clientSecret = secretValue;
     }
 
-    public long getExpiryTime() {
+    public Long getExpiryTime() {
         return clientSecretExpiresAt;
     }
 
-    public void setExpiryTime(long expiryTime) {
+    public void setExpiryTime(Long expiryTime) {
         this.clientSecretExpiresAt = expiryTime;
     }
 }

@@ -255,8 +255,12 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
 
         ClientSecretCreationRequest request = new ClientSecretCreationRequest();
         request.setClientId(clientId);
-        request.setDescription(clientSecretCreationRequest.getDescription());
-        request.setExpiresAt(calculateExpiresAt(clientSecretCreationRequest.getExpiresIn()));
+        if (clientSecretCreationRequest != null) {
+            request.setDescription(clientSecretCreationRequest.getDescription());
+            if (clientSecretCreationRequest.getExpiresIn() != null) {
+                request.setExpiresAt(calculateExpiresAt(clientSecretCreationRequest.getExpiresIn()));
+            }
+        }
         return request;
     }
 

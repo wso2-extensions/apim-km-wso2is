@@ -19,14 +19,14 @@ package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
 
 public class ClientSecretCreationRequest {
     private String clientId;
-    private long expiresAt;
+    private Long expiresAt;
     private String description;
 
-    public long getExpiryAt() {
+    public Long getExpiryAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(long expiryTime) {
+    public void setExpiresAt(Long expiryTime) {
         this.expiresAt = expiryTime;
     }
 
