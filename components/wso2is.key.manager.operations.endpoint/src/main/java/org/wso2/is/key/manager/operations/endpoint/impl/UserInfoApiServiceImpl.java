@@ -134,8 +134,8 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                         .getError(Response.Status.INTERNAL_SERVER_ERROR.toString(), "Internal server error",
                                 "Error while retrieving the authenticated " + "userinfo")).build();
             } catch (IllegalArgumentException e) {
-                log.warn(
-                        "Error while retrieving authenticated userinfo from token identifier. " + "Token is invalid or inactive.");
+                log.warn("Error while retrieving authenticated userinfo from token identifier. "
+                        + "Token is invalid or inactive.");
             }
         }
 
