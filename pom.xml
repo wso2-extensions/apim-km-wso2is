@@ -460,7 +460,7 @@
         <json-simple.wso2.version>1.1.wso2v1</json-simple.wso2.version>
         <cxf.version>3.3.6</cxf.version>
         <spring-web.version>5.1.13.RELEASE</spring-web.version>
-        <json.orbit.version>3.0.0.wso2v1</json.orbit.version>
+        <json.orbit.version>3.0.0.wso2v7</json.orbit.version>
         <swagger-jaxrs.version>1.6.1</swagger-jaxrs.version>
         <javax.validation-api>2.0.1.Final</javax.validation-api>
         <javax.ws.rs.version>2.1.1</javax.ws.rs.version>
