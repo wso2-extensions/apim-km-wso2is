@@ -32,16 +32,13 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
-import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.*;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
@@ -278,7 +275,24 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         return clientSecretDTO;
     }
 
+    public static ClientSecretListDTO getClientSecretListDTOFromClientSecretList(List<ClientSecret> clientSecrets) {
+        if (clientSecrets == null || clientSecrets.isEmpty()) {
+            return null;
+        }
+
+        ClientSecretListDTO clientSecretListDTO = new ClientSecretListDTO();
+        List<ClientSecretResponseDTO> clientSectetList = new ArrayList<>();
+
+        clientSecretListDTO.setCount(clientSecrets.size());
+        for (ClientSecret clientSecret : clientSecrets) {
+            ClientSecretResponseDTO clientSecretDTO = getClientSecretDTOFromClientSecret(clientSecret);
+            clientSectetList.add(clientSecretDTO);
+        }
+        clientSecretListDTO.setList(clientSectetList);
+        return clientSecretListDTO;
+    }
+
     private static long calculateExpiresAt(int expiresIn) {
-        return System.currentTimeMillis() + (expiresIn * 1000L);
+        return Instant.now().plusSeconds(expiresIn).toEpochMilli();
     }
 }
