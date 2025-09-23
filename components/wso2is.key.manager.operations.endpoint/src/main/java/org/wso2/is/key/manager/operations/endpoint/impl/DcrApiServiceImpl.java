@@ -30,12 +30,14 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import javax.ws.rs.core.Response;
 
 /**
@@ -135,6 +137,30 @@ public class DcrApiServiceImpl implements DcrApiService {
                     true, LOG);
         }
         return Response.status(Response.Status.OK).entity(applicationDTO).build();
+    }
+
+    @Override
+    public Response getClientSecret(String clientId, String secretId, MessageContext messageContext) {
+        return Response.status(Response.Status.METHOD_NOT_ALLOWED).entity("Not Implemented").build();
+    }
+
+    @Override
+    public Response getClientSecrets(String clientId, MessageContext messageContext) {
+        clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+        ClientSecretListDTO clientSecretListDTO = null;
+        try {
+            List<ClientSecret> clientSecretList = service.getClientSecrets(clientId);
+            clientSecretListDTO = ExtendedDCRMUtils.getClientSecretListDTOFromClientSecretList(clientSecretList);
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Client error client secrets of client " + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.OK).entity(clientSecretListDTO).build();
     }
 
     @Override

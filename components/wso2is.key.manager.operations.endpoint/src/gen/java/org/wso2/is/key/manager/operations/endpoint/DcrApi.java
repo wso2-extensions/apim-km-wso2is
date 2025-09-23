@@ -2,6 +2,7 @@ package org.wso2.is.key.manager.operations.endpoint;
 
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
@@ -106,6 +107,34 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
     public Response getApplication(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("client_id") String clientId){
         return delegate.getApplication(clientId, securityContext);
+    }
+
+    @GET
+    @Path("/register/{clientId}/secrets/{secretId}")
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get a client secret", notes = "This operation is used to get a secret of an OAuth2 client ", response = ClientSecretResponseDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Requested secret response is returned.", response = ClientSecretResponseDTO.class),
+        @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
+        @ApiResponse(code = 404, message = "Secret not found", response = ErrorDTO.class),
+        @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
+    public Response getClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Unique identifier of the secret to delete",required=true) @PathParam("secretId") String secretId){
+        return delegate.getClientSecret(clientId, secretId, securityContext);
+    }
+
+    @GET
+    @Path("/register/{clientId}/secrets")
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get client secrets", notes = "This operation is used to get the secrets of an OAuth2 client ", response = ClientSecretListDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Secrets returned.", response = ClientSecretListDTO.class),
+        @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
+        @ApiResponse(code = 404, message = "Client not found", response = ErrorDTO.class),
+        @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
+    public Response getClientSecrets(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId){
+        return delegate.getClientSecrets(clientId, securityContext);
     }
 
     @POST

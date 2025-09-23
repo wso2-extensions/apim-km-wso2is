@@ -1029,8 +1029,7 @@ public class DCRMService {
         return buildClientSecretResponse(createdSecret);
     }
 
-    public void deleteClientSecret(String secretId)
-            throws DCRMException {
+    public void deleteClientSecret(String secretId) throws DCRMException {
 
         try {
             oAuthAdminService.removeClientSecret(secretId);
@@ -1038,6 +1037,18 @@ public class DCRMService {
             throw DCRMUtils.generateServerException(
                     ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
         }
+    }
+
+    public List<ClientSecret> getClientSecrets(String clientId) throws DCRMException {
+
+        List<OAuthConsumerSecretDTO> consumerSecretDTOList;
+        try {
+            consumerSecretDTOList = oAuthAdminService.getClientSecrets(clientId);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
+        }
+        return buildClientSecretListResponse(consumerSecretDTOList);
     }
 
     private ClientSecret buildClientSecretResponse(OAuthConsumerSecretDTO createdSecret) {
@@ -1053,5 +1064,14 @@ public class DCRMService {
         clientSecret.setSecretId(createdSecret.getSecretId());
         clientSecret.setClientSecret(createdSecret.getClientSecret());
         return clientSecret;
+    }
+
+    private List<ClientSecret> buildClientSecretListResponse(List<OAuthConsumerSecretDTO> clientSecrets) {
+
+        List<ClientSecret> clientSecretList = new ArrayList<>();
+        for (OAuthConsumerSecretDTO secretDTO : clientSecrets) {
+            clientSecretList.add(buildClientSecretResponse(secretDTO));
+        }
+        return clientSecretList;
     }
 }
