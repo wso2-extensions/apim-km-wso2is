@@ -63,6 +63,14 @@ public class DcrApiServiceImpl implements DcrApiService {
         return Response.status(Response.Status.OK).entity(applicationDTO).build();
     }
 
+    /**
+     * Create a new client secret for the OAuth application identified by the given client ID.
+     *
+     * @param clientId                  The client ID of the OAuth application.
+     * @param clientSecretCreateRequest The request object containing details for the new client secret.
+     * @param messageContext            The message context.
+     * @return A Response object containing the created client secret details or an error response.
+     */
     @Override
     public Response createClientSecret(String clientId, ClientSecretCreationRequestDTO clientSecretCreateRequest,
                                        MessageContext messageContext) {
@@ -102,6 +110,14 @@ public class DcrApiServiceImpl implements DcrApiService {
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
+    /**
+     * Delete a specific client secret associated with the OAuth application identified by the given client ID.
+     *
+     * @param clientId      The client ID of the OAuth application.
+     * @param secretId      The ID of the client secret to be deleted.
+     * @param messageContext The message context.
+     * @return A Response object indicating the result of the delete operation.
+     */
     @Override
     public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
         try {
@@ -144,6 +160,13 @@ public class DcrApiServiceImpl implements DcrApiService {
         return Response.status(Response.Status.METHOD_NOT_ALLOWED).entity("Not Implemented").build();
     }
 
+    /**
+     * Retrieve all client secrets associated with the OAuth application identified by the given client ID.
+     *
+     * @param clientId      The client ID of the OAuth application.
+     * @param messageContext The message context.
+     * @return A Response object containing a list of client secrets or an error response.
+     */
     @Override
     public Response getClientSecrets(String clientId, MessageContext messageContext) {
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);

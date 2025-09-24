@@ -247,6 +247,13 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         return clonedServiceProvider;
     }
 
+    /**
+     * Convert a ClientSecretCreationRequestDTO object to a ClientSecretCreationRequest object.
+     *
+     * @param clientId                    Client ID.
+     * @param clientSecretCreationRequest ClientSecretCreationRequestDTO object.
+     * @return ClientSecretCreationRequest object.
+     */
     public static ClientSecretCreationRequest getClientSecretCreationRequest(String clientId,
                                                                              ClientSecretCreationRequestDTO clientSecretCreationRequest) {
 
@@ -261,6 +268,12 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         return request;
     }
 
+    /**
+     * Convert a ClientSecret object to a ClientSecretResponseDTO object.
+     *
+     * @param clientSecret ClientSecret object.
+     * @return ClientSecretResponseDTO object.
+     */
     public static ClientSecretResponseDTO getClientSecretDTOFromClientSecret(ClientSecret clientSecret) {
         if (clientSecret == null) {
             return null;
@@ -275,23 +288,36 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         return clientSecretDTO;
     }
 
+    /**
+     * Convert a list of ClientSecret objects to a ClientSecretListDTO object.
+     *
+     * @param clientSecrets List of ClientSecret objects.
+     * @return ClientSecretListDTO object containing the list of ClientSecretResponseDTOs.
+     */
     public static ClientSecretListDTO getClientSecretListDTOFromClientSecretList(List<ClientSecret> clientSecrets) {
         if (clientSecrets == null || clientSecrets.isEmpty()) {
             return null;
         }
 
         ClientSecretListDTO clientSecretListDTO = new ClientSecretListDTO();
-        List<ClientSecretResponseDTO> clientSectetList = new ArrayList<>();
+        List<ClientSecretResponseDTO> clientSecretList = new ArrayList<>();
 
         clientSecretListDTO.setCount(clientSecrets.size());
         for (ClientSecret clientSecret : clientSecrets) {
             ClientSecretResponseDTO clientSecretDTO = getClientSecretDTOFromClientSecret(clientSecret);
-            clientSectetList.add(clientSecretDTO);
+            clientSecretList.add(clientSecretDTO);
         }
-        clientSecretListDTO.setList(clientSectetList);
+        clientSecretListDTO.setList(clientSecretList);
         return clientSecretListDTO;
     }
 
+    /**
+     * Calculate the expiry time in milliseconds since the epoch based on the current time and the
+     * given expiresIn value.
+     *
+     * @param expiresIn The number of seconds until expiration.
+     * @return The calculated expiry time in milliseconds since the epoch.
+     */
     private static long calculateExpiresAt(int expiresIn) {
         return Instant.now().plusSeconds(expiresIn).toEpochMilli();
     }

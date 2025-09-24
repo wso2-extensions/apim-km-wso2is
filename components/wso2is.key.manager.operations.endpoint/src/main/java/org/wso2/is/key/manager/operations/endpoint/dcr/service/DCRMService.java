@@ -1009,11 +1009,20 @@ public class DCRMService {
         return buildResponse(getApplicationById(clientId), getApplicationScopesFromSP(sp));
     }
 
+    /**
+     * Creates a new client secret using the provided data.
+     *
+     * @param clientSecretCreationRequest the request containing client ID, optional description,
+     *                                    and optional expiry time
+     * @return the created {@link ClientSecret} object containing the generated secret details
+     * @throws DCRMException if secret creation fails due to internal errors
+     */
     public ClientSecret createClientSecret(ClientSecretCreationRequest clientSecretCreationRequest)
             throws DCRMException {
 
         OAuthConsumerSecretDTO oAuthConsumerSecretDTO = new OAuthConsumerSecretDTO();
-        oAuthConsumerSecretDTO.setClientId(clientSecretCreationRequest.getClientId());
+        String clientId = clientSecretCreationRequest.getClientId();
+        oAuthConsumerSecretDTO.setClientId(clientId);
         oAuthConsumerSecretDTO.setDescription(clientSecretCreationRequest.getDescription());
         if (clientSecretCreationRequest.getExpiryAt() != null) {
             oAuthConsumerSecretDTO.setExpiresAt(clientSecretCreationRequest.getExpiryAt());
@@ -1023,22 +1032,35 @@ public class DCRMService {
             createdSecret = oAuthAdminService.createClientSecret(oAuthConsumerSecretDTO);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
-                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
+                    ErrorMessages.FAILED_TO_CREATE_CLIENT_SECRET, clientId, e);
         }
 
         return buildClientSecretResponse(createdSecret);
     }
 
+    /**
+     * Deletes an existing client secret.
+     *
+     * @param secretId the unique identifier of the client secret to be deleted
+     * @throws DCRMException if secret deletion fails due to internal errors
+     */
     public void deleteClientSecret(String secretId) throws DCRMException {
 
         try {
             oAuthAdminService.removeClientSecret(secretId);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
-                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
+                    ErrorMessages.FAILED_TO_DELETE_CLIENT_SECRET, null, e);
         }
     }
 
+    /**
+     * Retrieves all secrets associated with the given client application.
+     *
+     * @param clientId the unique identifier of the client application
+     * @return a list of {@link ClientSecret} objects for the specified client
+     * @throws DCRMException if retrieving client secrets fails due to internal errors
+     */
     public List<ClientSecret> getClientSecrets(String clientId) throws DCRMException {
 
         List<OAuthConsumerSecretDTO> consumerSecretDTOList;
@@ -1046,11 +1068,18 @@ public class DCRMService {
             consumerSecretDTOList = oAuthAdminService.getClientSecrets(clientId);
         } catch (IdentityOAuthAdminException e) {
             throw DCRMUtils.generateServerException(
-                    ErrorMessages.FAILED_TO_UPDATE_APPLICATION, null, e);
+                    ErrorMessages.FAILED_TO_GET_CLIENT_SECRETS, clientId, e);
         }
         return buildClientSecretListResponse(consumerSecretDTOList);
     }
 
+    /**
+     * Builds a {@link ClientSecret} response object from the given
+     * {@link OAuthConsumerSecretDTO}.
+     *
+     * @param createdSecret the {@link OAuthConsumerSecretDTO} containing secret details
+     * @return a populated {@link ClientSecret} object
+     */
     private ClientSecret buildClientSecretResponse(OAuthConsumerSecretDTO createdSecret) {
 
         ClientSecret clientSecret = new ClientSecret();
@@ -1066,6 +1095,13 @@ public class DCRMService {
         return clientSecret;
     }
 
+    /**
+     * Builds a list of {@link ClientSecret} response objects from a list of
+     * {@link OAuthConsumerSecretDTO}.
+     *
+     * @param clientSecrets the list of {@link OAuthConsumerSecretDTO} objects
+     * @return a list of {@link ClientSecret} response objects
+     */
     private List<ClientSecret> buildClientSecretListResponse(List<OAuthConsumerSecretDTO> clientSecrets) {
 
         List<ClientSecret> clientSecretList = new ArrayList<>();
