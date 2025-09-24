@@ -57,7 +57,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "Create new OAuth client secret", notes = "This operation is used to create a new OAuth client secret ", response = ClientSecretResponseDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Create new OAuth client secret", notes = "This operation is used to create a new OAuth client secret ", response = ClientSecretResponseDTO.class, tags={ "OAuth2 Client Secrets",  })
     @ApiResponses(value = { 
         @ApiResponse(code = 201, message = "Secret successfully created", response = ClientSecretResponseDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
@@ -84,7 +84,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets/{secretId}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "Delete an OAuth client secret", notes = "This operation is used to delete an OAuth client secret ", response = Void.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Delete an OAuth client secret", notes = "This operation is used to delete an OAuth client secret ", response = Void.class, tags={ "OAuth2 Client Secrets",  })
     @ApiResponses(value = { 
         @ApiResponse(code = 204, message = "Secret revoked successfully", response = Void.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
@@ -113,7 +113,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets/{secretId}")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "Get a client secret", notes = "This operation is used to get a secret of an OAuth2 client ", response = ClientSecretResponseDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Get a client secret", notes = "This operation is used to get a secret of an OAuth2 client ", response = ClientSecretResponseDTO.class, tags={ "OAuth2 Client Secrets",  })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Requested secret response is returned.", response = ClientSecretResponseDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
@@ -127,7 +127,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
     @Path("/register/{clientId}/secrets")
     @Consumes({ "application/json" })
     @Produces({ "application/json" })
-    @ApiOperation(value = "Get client secrets", notes = "This operation is used to get the secrets of an OAuth2 client ", response = ClientSecretListDTO.class, tags={ "OAuth2 DCR",  })
+    @ApiOperation(value = "Get client secrets", notes = "This operation is used to get the secrets of an OAuth2 client ", response = ClientSecretListDTO.class, tags={ "OAuth2 Client Secrets",  })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Secrets returned.", response = ClientSecretListDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
