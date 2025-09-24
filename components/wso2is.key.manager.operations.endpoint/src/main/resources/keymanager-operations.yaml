@@ -438,7 +438,7 @@ paths:
           schema:
             $ref: '#/definitions/ClientSecretCreationRequest'
       tags:
-        - OAuth2 DCR
+        - OAuth2 Client Secrets
       responses:
         '201':
           description: Secret successfully created
@@ -474,7 +474,7 @@ paths:
           description: Unique identifier of the OAuth2 client application.
           required: true
       tags:
-        - OAuth2 DCR
+        - OAuth2 Client Secrets
       responses:
         200:
           description: Secrets returned.
@@ -516,7 +516,7 @@ paths:
           description: Unique identifier of the secret to delete
           required: true
       tags:
-        - OAuth2 DCR
+        - OAuth2 Client Secrets
       responses:
         200:
           description: Requested secret response is returned.
@@ -556,7 +556,7 @@ paths:
           description: Unique identifier of the secret to delete
           required: true
       tags:
-        - OAuth2 DCR
+        - OAuth2 Client Secrets
       responses:
         '204':
           description: Secret revoked successfully
