@@ -65,7 +65,7 @@ public class ClientSecretResponseDTO   {
   }
 
   
-  @ApiModelProperty(value = "Client identifier of the application that owns this secret")
+  @ApiModelProperty(example = "client_123456", value = "Client identifier of the application that owns this secret")
   @JsonProperty("client_id")
   public String getClientId() {
     return clientId;
