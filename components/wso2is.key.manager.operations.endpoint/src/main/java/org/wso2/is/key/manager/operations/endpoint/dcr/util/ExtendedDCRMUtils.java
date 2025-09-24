@@ -32,13 +32,18 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
-import org.wso2.is.key.manager.operations.endpoint.dto.*;
+import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
@@ -248,11 +253,11 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     }
 
     /**
-     * Convert a ClientSecretCreationRequestDTO object to a ClientSecretCreationRequest object.
+     * Converts the input data transfer object into a ClientSecretCreationRequest for creating a new client secret.
      *
-     * @param clientId                    Client ID.
-     * @param clientSecretCreationRequest ClientSecretCreationRequestDTO object.
-     * @return ClientSecretCreationRequest object.
+     * @param clientId the client identifier for which the secret is being created
+     * @param clientSecretCreationRequest the DTO containing optional description and expiry information; may be null
+     * @return a fully populated {@link ClientSecretCreationRequest} object ready for client secret creation
      */
     public static ClientSecretCreationRequest getClientSecretCreationRequest(String clientId,
                                                                              ClientSecretCreationRequestDTO clientSecretCreationRequest) {
@@ -269,10 +274,10 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     }
 
     /**
-     * Convert a ClientSecret object to a ClientSecretResponseDTO object.
+     * Converts a {@link ClientSecret} entity into a {@link ClientSecretResponseDTO}
      *
-     * @param clientSecret ClientSecret object.
-     * @return ClientSecretResponseDTO object.
+     * @param clientSecret the client secret entity to convert; may be null
+     * @return a {@link ClientSecretResponseDTO} populated from the input entity, or null if input is null
      */
     public static ClientSecretResponseDTO getClientSecretDTOFromClientSecret(ClientSecret clientSecret) {
         if (clientSecret == null) {
@@ -289,10 +294,12 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     }
 
     /**
-     * Convert a list of ClientSecret objects to a ClientSecretListDTO object.
+     * Converts a list of {@link ClientSecret} entities into a {@link ClientSecretListDTO} containing
+     * {@link ClientSecretResponseDTO} objects.
      *
-     * @param clientSecrets List of ClientSecret objects.
-     * @return ClientSecretListDTO object containing the list of ClientSecretResponseDTOs.
+     * @param clientSecrets the list of client secret entities; may be null or empty
+     * @return a {@link ClientSecretListDTO} containing the converted client secrets and their count,
+     *         or null if the input list is null or empty
      */
     public static ClientSecretListDTO getClientSecretListDTOFromClientSecretList(List<ClientSecret> clientSecrets) {
         if (clientSecrets == null || clientSecrets.isEmpty()) {
