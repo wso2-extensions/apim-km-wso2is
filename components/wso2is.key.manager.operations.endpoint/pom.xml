@@ -179,7 +179,6 @@
         <dependency>
             <groupId>org.wso2.carbon.identity.inbound.auth.oauth2</groupId>
             <artifactId>org.wso2.carbon.identity.oauth.dcr</artifactId>
-            <version>6.4.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
