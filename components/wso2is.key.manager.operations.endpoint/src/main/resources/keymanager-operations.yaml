@@ -848,7 +848,7 @@ definitions:
   ClientSecretResponse:
     type: object
     properties:
-      secret_id:
+      id:
         type: string
         description: Unique identifier for the secret
         example: sec_123456
@@ -856,10 +856,6 @@ definitions:
         type: string
         description: Human-readable label for the secret
         example: pizza application secret
-      client_id:
-        type: string
-        description: Client identifier of the application that owns this secret
-        example: client_123456
       client_secret:
         type: string
         description: The actual secret string

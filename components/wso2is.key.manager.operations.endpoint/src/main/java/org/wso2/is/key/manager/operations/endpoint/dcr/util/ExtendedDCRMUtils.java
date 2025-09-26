@@ -285,9 +285,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         }
 
         ClientSecretResponseDTO clientSecretDTO = new ClientSecretResponseDTO();
-        clientSecretDTO.setSecretId(clientSecret.getSecretId());
+        clientSecretDTO.setId(clientSecret.getSecretId());
         clientSecretDTO.setDescription(clientSecret.getDescription());
-        clientSecretDTO.setClientId(clientSecret.getClientId());
         clientSecretDTO.setClientSecret(clientSecret.getClientSecret());
         clientSecretDTO.setClientSecretExpiresAt(clientSecret.getExpiryTime());
         return clientSecretDTO;

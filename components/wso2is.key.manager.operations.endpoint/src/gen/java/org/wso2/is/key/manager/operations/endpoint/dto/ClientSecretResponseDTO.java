@@ -14,28 +14,27 @@ import javax.xml.bind.annotation.*;
 
 public class ClientSecretResponseDTO   {
   
-    private String secretId = null;
+    private String id = null;
     private String description = null;
-    private String clientId = null;
     private String clientSecret = null;
     private Long clientSecretExpiresAt = null;
 
   /**
    * Unique identifier for the secret
    **/
-  public ClientSecretResponseDTO secretId(String secretId) {
-    this.secretId = secretId;
+  public ClientSecretResponseDTO id(String id) {
+    this.id = id;
     return this;
   }
 
   
   @ApiModelProperty(example = "sec_123456", value = "Unique identifier for the secret")
-  @JsonProperty("secret_id")
-  public String getSecretId() {
-    return secretId;
+  @JsonProperty("id")
+  public String getId() {
+    return id;
   }
-  public void setSecretId(String secretId) {
-    this.secretId = secretId;
+  public void setId(String id) {
+    this.id = id;
   }
 
   /**
@@ -54,24 +53,6 @@ public class ClientSecretResponseDTO   {
   }
   public void setDescription(String description) {
     this.description = description;
-  }
-
-  /**
-   * Client identifier of the application that owns this secret
-   **/
-  public ClientSecretResponseDTO clientId(String clientId) {
-    this.clientId = clientId;
-    return this;
-  }
-
-  
-  @ApiModelProperty(example = "client_123456", value = "Client identifier of the application that owns this secret")
-  @JsonProperty("client_id")
-  public String getClientId() {
-    return clientId;
-  }
-  public void setClientId(String clientId) {
-    this.clientId = clientId;
   }
 
   /**
@@ -120,16 +101,15 @@ public class ClientSecretResponseDTO   {
       return false;
     }
     ClientSecretResponseDTO clientSecretResponse = (ClientSecretResponseDTO) o;
-    return Objects.equals(secretId, clientSecretResponse.secretId) &&
+    return Objects.equals(id, clientSecretResponse.id) &&
         Objects.equals(description, clientSecretResponse.description) &&
-        Objects.equals(clientId, clientSecretResponse.clientId) &&
         Objects.equals(clientSecret, clientSecretResponse.clientSecret) &&
         Objects.equals(clientSecretExpiresAt, clientSecretResponse.clientSecretExpiresAt);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(secretId, description, clientId, clientSecret, clientSecretExpiresAt);
+    return Objects.hash(id, description, clientSecret, clientSecretExpiresAt);
   }
 
   @Override
@@ -137,9 +117,8 @@ public class ClientSecretResponseDTO   {
     StringBuilder sb = new StringBuilder();
     sb.append("class ClientSecretResponseDTO {\n");
     
-    sb.append("    secretId: ").append(toIndentedString(secretId)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
-    sb.append("    clientId: ").append(toIndentedString(clientId)).append("\n");
     sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("    clientSecretExpiresAt: ").append(toIndentedString(clientSecretExpiresAt)).append("\n");
     sb.append("}");
