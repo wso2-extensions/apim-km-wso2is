@@ -1049,8 +1049,7 @@ public class DCRMService {
         try {
             oAuthAdminService.removeClientSecret(secretId);
         } catch (IdentityOAuthAdminException e) {
-            throw DCRMUtils.generateServerException(
-                    ErrorMessages.FAILED_TO_DELETE_CLIENT_SECRET, null, e);
+            throw DCRMUtils.generateServerException(ErrorMessages.FAILED_TO_DELETE_CLIENT_SECRET, null, e);
         }
     }
 

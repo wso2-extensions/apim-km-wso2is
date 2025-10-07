@@ -26,12 +26,14 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
@@ -74,6 +76,14 @@ public class DcrApiServiceImpl implements DcrApiService {
     @Override
     public Response createClientSecret(String clientId, ClientSecretCreationRequestDTO clientSecretCreateRequest,
                                        MessageContext messageContext) {
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+        }
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         ClientSecretResponseDTO clientSecretDTO = null;
         try {
@@ -83,7 +93,7 @@ public class DcrApiServiceImpl implements DcrApiService {
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Client error while creating new client secret\n" + clientSecretCreateRequest, e);
+                LOG.debug("Client error while creating new client secret " + clientSecretCreateRequest, e);
             }
             ExtendedDCRMUtils.handleErrorResponse(e, LOG);
         } catch (Throwable throwable) {
@@ -120,6 +130,14 @@ public class DcrApiServiceImpl implements DcrApiService {
      */
     @Override
     public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+        }
         try {
             clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
             secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
@@ -169,6 +187,14 @@ public class DcrApiServiceImpl implements DcrApiService {
      */
     @Override
     public Response getClientSecrets(String clientId, MessageContext messageContext) {
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+        }
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         ClientSecretListDTO clientSecretListDTO = null;
         try {
@@ -188,6 +214,14 @@ public class DcrApiServiceImpl implements DcrApiService {
 
     @Override
     public Response regenerateConsumerSecret(String clientId, MessageContext messageContext) {
+        if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+                    ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getDescription()
+            );
+            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+        }
         ApplicationDTO applicationDTO = null;
         try {
             clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
