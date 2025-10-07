@@ -48,7 +48,7 @@ import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerSecretDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
-import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
@@ -1017,15 +1017,15 @@ public class DCRMService {
      * @return the created {@link ClientSecret} object containing the generated secret details
      * @throws DCRMException if secret creation fails due to internal errors
      */
-    public ClientSecret createClientSecret(ClientSecretCreationRequest clientSecretCreationRequest)
+    public ClientSecret createClientSecret(ClientSecretGenerationRequest clientSecretGenerationRequest)
             throws DCRMException {
 
         OAuthConsumerSecretDTO oAuthConsumerSecretDTO = new OAuthConsumerSecretDTO();
-        String clientId = clientSecretCreationRequest.getClientId();
+        String clientId = clientSecretGenerationRequest.getClientId();
         oAuthConsumerSecretDTO.setClientId(clientId);
-        oAuthConsumerSecretDTO.setDescription(clientSecretCreationRequest.getDescription());
-        if (clientSecretCreationRequest.getExpiryAt() != null) {
-            oAuthConsumerSecretDTO.setExpiresAt(clientSecretCreationRequest.getExpiryAt());
+        oAuthConsumerSecretDTO.setDescription(clientSecretGenerationRequest.getDescription());
+        if (clientSecretGenerationRequest.getExpiryAt() != null) {
+            oAuthConsumerSecretDTO.setExpiresAt(clientSecretGenerationRequest.getExpiryAt());
         }
         OAuthConsumerSecretDTO createdSecret;
         try {

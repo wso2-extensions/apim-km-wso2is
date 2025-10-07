@@ -23,14 +23,13 @@ import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMClientException;
 import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
-import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
-import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
@@ -74,7 +73,7 @@ public class DcrApiServiceImpl implements DcrApiService {
      * @return A Response object containing the created client secret details or an error response.
      */
     @Override
-    public Response createClientSecret(String clientId, ClientSecretCreationRequestDTO clientSecretCreateRequest,
+    public Response generateClientSecret(String clientId, ClientSecretGenerationRequestDTO clientSecretCreateRequest,
                                        MessageContext messageContext) {
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
@@ -87,7 +86,7 @@ public class DcrApiServiceImpl implements DcrApiService {
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         ClientSecretResponseDTO clientSecretDTO = null;
         try {
-            ClientSecretCreationRequest request = ExtendedDCRMUtils.
+            ClientSecretGenerationRequest request = ExtendedDCRMUtils.
                     getClientSecretCreationRequest(clientId, clientSecretCreateRequest);
             ClientSecret clientSecret = service.createClientSecret(request);
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
