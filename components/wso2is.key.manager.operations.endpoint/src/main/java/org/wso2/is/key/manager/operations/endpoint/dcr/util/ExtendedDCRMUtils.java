@@ -28,13 +28,13 @@ import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
-import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretCreationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretCreationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
@@ -262,23 +262,22 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         ServiceProvider clonedServiceProvider = gson.fromJson(gson.toJson(serviceProvider), ServiceProvider.class);
         return clonedServiceProvider;
     }
-
     /**
      * Converts the input data transfer object into a ClientSecretCreationRequest for creating a new client secret.
      *
      * @param clientId the client identifier for which the secret is being created
-     * @param clientSecretCreationRequest the DTO containing optional description and expiry information; may be null
-     * @return a fully populated {@link ClientSecretCreationRequest} object ready for client secret creation
+     * @param clientSecretGenerationRequest the DTO containing optional description and expiry information; may be null
+     * @return a fully populated {@link ClientSecretGenerationRequest} object ready for client secret creation
      */
-    public static ClientSecretCreationRequest getClientSecretCreationRequest(String clientId,
-                                                                             ClientSecretCreationRequestDTO clientSecretCreationRequest) {
+    public static ClientSecretGenerationRequest getClientSecretCreationRequest(String clientId,
+                                                                               ClientSecretGenerationRequestDTO clientSecretGenerationRequest) {
 
-        ClientSecretCreationRequest request = new ClientSecretCreationRequest();
+        ClientSecretGenerationRequest request = new ClientSecretGenerationRequest();
         request.setClientId(clientId);
-        if (clientSecretCreationRequest != null) {
-            request.setDescription(clientSecretCreationRequest.getDescription());
-            if (clientSecretCreationRequest.getExpiresIn() != null) {
-                request.setExpiresAt(calculateExpiresAt(clientSecretCreationRequest.getExpiresIn()));
+        if (clientSecretGenerationRequest != null) {
+            request.setDescription(clientSecretGenerationRequest.getDescription());
+            if (clientSecretGenerationRequest.getExpiresIn() != null) {
+                request.setExpiresAt(calculateExpiresAt(clientSecretGenerationRequest.getExpiresIn()));
             }
         }
         return request;

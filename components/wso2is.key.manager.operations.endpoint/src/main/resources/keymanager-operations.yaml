@@ -416,20 +416,20 @@ paths:
   ######################################################
   # The client secrets of the oauth application
   ######################################################
-  # Resource to create a new OAuth client secret
-  /dcr/register/{clientId}/secrets:
+  # Resource to generate a new OAuth client secret
+  /dcr/register/{clientId}/generate-secret:
     post:
       description: |
-        This operation is used to create a new OAuth2 client secret
+        This operation is used to generate a new OAuth2 client secret
       x-wso2-request: |
         curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
                 "Content-Type: application/json"
                 -d '{ "expires_in": 3600, "description": "Secret for mobile app"}'
-                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets"
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/generate-secret"
       x-wso2-response: |
         "HTTP/1.1 201 OK"
-      summary: Create new OAuth2 client secret
-      operationId: createClientSecret
+      summary: Generate new OAuth2 client secret
+      operationId: generateClientSecret
       parameters:
         - name: clientId
           type: string
@@ -438,15 +438,15 @@ paths:
           required: true
         - name: clientSecretCreateRequest
           in: body
-          description: Request payload containing details for creating a new client secret
+          description: Request payload containing details for generating a new client secret
           required: true
           schema:
-            $ref: '#/definitions/ClientSecretCreationRequest'
+            $ref: '#/definitions/ClientSecretGenerationRequest'
       tags:
         - OAuth2 Client Secrets
       responses:
         '201':
-          description: Secret successfully created
+          description: Secret generated successfully
           schema:
             $ref: '#/definitions/ClientSecretResponse'
         '400':
@@ -466,6 +466,7 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     # Resource to get the secrets of an OAuth2 client
+  /dcr/register/{clientId}/secrets:
     get:
       description: |
         This operation is used to get the secrets of an OAuth2 client
@@ -475,7 +476,7 @@ paths:
                 "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets"
       x-wso2-response: |
         "HTTP/1.1 200 OK"
-      summary: Get client secrets of an OAuth2 client
+      summary: Get secrets of an OAuth2 client
       operationId: getClientSecrets
       parameters:
         - name: clientId
@@ -517,7 +518,7 @@ paths:
                 "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets/t36sqkRdhB"
       x-wso2-response: |
         "HTTP/1.1 200 OK"
-      summary: Get a client secret of an OAuth2 client
+      summary: Get a secret of an OAuth2 client
       operationId: getClientSecret
       parameters:
         - name: clientId
@@ -866,9 +867,9 @@ definitions:
         description: expiry timestamp in seconds since epoch
         example: 1755756933
   #-----------------------------------------------------
-  # Client Secret Request Object
+  # Client Secret Generation Request Object
   #-----------------------------------------------------
-  ClientSecretCreationRequest:
+  ClientSecretGenerationRequest:
     type: object
     properties:
       expires_in:
