@@ -68,13 +68,14 @@ public class DcrApiServiceImpl implements DcrApiService {
      * Create a new client secret for the OAuth application identified by the given client ID.
      *
      * @param clientId                  The client ID of the OAuth application.
-     * @param clientSecretCreateRequest The request object containing details for the new client secret.
+     * @param clientSecretGenerationRequest The request object containing details for the new client secret.
      * @param messageContext            The message context.
      * @return A Response object containing the created client secret details or an error response.
      */
     @Override
-    public Response generateClientSecret(String clientId, ClientSecretGenerationRequestDTO clientSecretCreateRequest,
-                                       MessageContext messageContext) {
+    public Response generateClientSecret(String clientId,
+                                         ClientSecretGenerationRequestDTO clientSecretGenerationRequest,
+                                         MessageContext messageContext) {
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
@@ -87,12 +88,12 @@ public class DcrApiServiceImpl implements DcrApiService {
         ClientSecretResponseDTO clientSecretDTO = null;
         try {
             ClientSecretGenerationRequest request = ExtendedDCRMUtils.
-                    getClientSecretCreationRequest(clientId, clientSecretCreateRequest);
+                    getClientSecretCreationRequest(clientId, clientSecretGenerationRequest);
             ClientSecret clientSecret = service.createClientSecret(request);
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Client error while creating new client secret " + clientSecretCreateRequest, e);
+                LOG.debug("Error occurred while generating new client secret " + clientSecretGenerationRequest, e);
             }
             ExtendedDCRMUtils.handleErrorResponse(e, LOG);
         } catch (Throwable throwable) {
@@ -143,7 +144,7 @@ public class DcrApiServiceImpl implements DcrApiService {
             service.deleteClientSecret(secretId);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Client error while deleting  application with client key:" + clientId, e);
+                LOG.debug("Error occurred while deleting client secret of client: " + clientId, e);
             }
             ExtendedDCRMUtils.handleErrorResponse(e, LOG);
         } catch (Throwable throwable) {
@@ -172,15 +173,46 @@ public class DcrApiServiceImpl implements DcrApiService {
         return Response.status(Response.Status.OK).entity(applicationDTO).build();
     }
 
+    /**
+     * Retrieve a specific client secret associated with the OAuth application identified by the given client ID.
+     *
+     * @param clientId      The client ID of the OAuth application.
+     * @param secretId      The ID of the client secret to be retrieved.
+     * @param messageContext The message context.
+     * @return A Response object containing the client secret details or an error response.
+     */
     @Override
     public Response getClientSecret(String clientId, String secretId, MessageContext messageContext) {
-        return Response.status(Response.Status.METHOD_NOT_ALLOWED).entity("Not Implemented").build();
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+        }
+        clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+        secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
+        ClientSecretResponseDTO clientSecretDTO = null;
+        try {
+            ClientSecret clientSecret = service.getClientSecret(secretId);
+            clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error occurred while retrieving secret: " + secretId + " of client: " + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.OK).entity(clientSecretDTO).build();
     }
 
     /**
      * Retrieve all client secrets associated with the OAuth application identified by the given client ID.
      *
-     * @param clientId      The client ID of the OAuth application.
+     * @param clientId       The client ID of the OAuth application.
      * @param messageContext The message context.
      * @return A Response object containing a list of client secrets or an error response.
      */
@@ -201,7 +233,7 @@ public class DcrApiServiceImpl implements DcrApiService {
             clientSecretListDTO = ExtendedDCRMUtils.getClientSecretListDTOFromClientSecretList(clientSecretList);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Client error client secrets of client " + clientId, e);
+                LOG.debug("Error occurred while retrieving secrets of client: " + clientId, e);
             }
             ExtendedDCRMUtils.handleErrorResponse(e, LOG);
         } catch (Throwable throwable) {
