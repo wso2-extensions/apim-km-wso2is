@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.oauth.OAuthAdminService;
 import org.wso2.carbon.identity.oauth.dcr.DCRMConstants;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
@@ -56,6 +57,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     private static final String BAD_REQUEST_STATUS = "BAD_REQUEST_";
     private static final String NOT_FOUND_STATUS = "NOT_FOUND_";
     private static final String FORBIDDEN_STATUS = "FORBIDDEN_";
+    private static final String MULTIPLE_CLIENT_SECRETS_ENABLED = "OAuth.MultipleClientSecrets.Enable";
 
     public static ExtendedApplicationRegistrationRequest getApplicationRegistrationRequest(
             RegistrationRequestDTO registrationRequestDTO) {
@@ -154,6 +156,15 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         }
         throw buildDCRMEndpointException(status, errorCode, throwable == null ? "" : throwable.getMessage(),
                 isServerException);
+    }
+
+    public static ErrorDTO getError(String code, String message, String description) {
+
+        ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setCode(code);
+        errorDTO.setMessage(message);
+        errorDTO.setDescription(description);
+        return errorDTO;
     }
 
     /**
@@ -326,5 +337,41 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      */
     private static long calculateExpiresAt(int expiresIn) {
         return Instant.now().plusSeconds(expiresIn).toEpochMilli();
+    }
+
+    public enum MultipleClientSecretsError {
+
+        DISABLED("60100",
+                "The requested operation is not available",
+                "Multiple client secret support is disabled by server configuration."),
+
+        ENABLED("60101",
+                "The requested operation is not available",
+                "Multiple client secret support is enabled by server configuration. Use the client secret " +
+                        "creation API (POST /dcr/register/{clientId}/secrets) to generate new client secrets.");
+
+        private final String code;
+        private final String message;
+        private final String description;
+
+        MultipleClientSecretsError(String code, String message, String description) {
+            this.code = code;
+            this.message = message;
+            this.description = description;
+        }
+
+        public String getCode() { return code; }
+        public String getMessage() { return message; }
+        public String getDescription() { return description; }
+    }
+
+    /**
+     * Check whether multiple client secrets feature is enabled.
+     *
+     * @return true if multiple client secrets feature is enabled, false otherwise.
+     */
+    public static boolean isMultipleClientSecretsEnabled() {
+        return IdentityUtil.getProperty(MULTIPLE_CLIENT_SECRETS_ENABLED) != null &&
+                Boolean.parseBoolean(IdentityUtil.getProperty(MULTIPLE_CLIENT_SECRETS_ENABLED));
     }
 }
