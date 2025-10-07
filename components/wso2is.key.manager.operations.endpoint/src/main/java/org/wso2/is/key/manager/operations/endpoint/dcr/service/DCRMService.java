@@ -1073,6 +1073,25 @@ public class DCRMService {
     }
 
     /**
+     * Retrieves a specific client secret by its unique identifier.
+     *
+     * @param secretId the unique identifier of the client secret to be retrieved
+     * @return the {@link ClientSecret} object containing the secret details
+     * @throws DCRMException if retrieving the client secret fails due to internal errors
+     */
+    public ClientSecret getClientSecret(String secretId) throws DCRMException {
+
+        OAuthConsumerSecretDTO consumerSecretDTO;
+        try {
+            consumerSecretDTO = oAuthAdminService.getClientSecret(secretId);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_GET_CLIENT_SECRET, secretId, e);
+        }
+        return buildClientSecretResponse(consumerSecretDTO);
+    }
+
+    /**
      * Builds a {@link ClientSecret} response object from the given
      * {@link OAuthConsumerSecretDTO}.
      *
