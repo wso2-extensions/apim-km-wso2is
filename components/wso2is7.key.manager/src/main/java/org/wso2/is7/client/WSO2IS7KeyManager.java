@@ -37,6 +37,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClients;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
 import org.wso2.carbon.apimgt.api.model.API;
@@ -52,16 +53,20 @@ import org.wso2.carbon.apimgt.api.model.URITemplate;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.AbstractKeyManager;
 import org.wso2.carbon.apimgt.impl.certificatemgt.TrustStoreUtils;
+import org.wso2.carbon.apimgt.impl.dto.UserInfoDTO;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.kmclient.ApacheFeignHttpClient;
 import org.wso2.carbon.apimgt.impl.kmclient.FormEncoder;
 import org.wso2.carbon.apimgt.impl.kmclient.KMClientErrorDecoder;
 import org.wso2.carbon.apimgt.impl.kmclient.KeyManagerClientException;
 import org.wso2.carbon.apimgt.impl.kmclient.model.AuthClient;
+import org.wso2.carbon.apimgt.impl.kmclient.model.Claim;
+import org.wso2.carbon.apimgt.impl.kmclient.model.ClaimsList;
 import org.wso2.carbon.apimgt.impl.kmclient.model.IntrospectInfo;
 import org.wso2.carbon.apimgt.impl.kmclient.model.IntrospectionClient;
 import org.wso2.carbon.apimgt.impl.kmclient.model.TenantHeaderInterceptor;
 import org.wso2.carbon.apimgt.impl.kmclient.model.TokenInfo;
+import org.wso2.carbon.apimgt.impl.kmclient.model.UserClient;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.impl.utils.CertificateMgtUtils;
 import org.wso2.carbon.base.ServerConfiguration;
@@ -170,6 +175,11 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private Map<String, String> claimMappings;
     private CertificateMgtUtils certificateMgtUtils = CertificateMgtUtils.getInstance();
     private static String certificateType = "X.509";
+
+    /* Use scim me endpoint to fetch user info only if explicitly specified as the userInfoEndpoint.
+    Otherwise, use the keymanager-operations user-info endpoint. */
+    private boolean isUserInfoEndpointScimMe;
+    private UserClient userClient;
 
 
     /* Copied from AMDefaultKeyManagerImpl. WSO2IS7ClientInfo is used instead of ClientInfo. */
@@ -849,6 +859,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         String schemasEndpoint = null;
         if (StringUtils.lowerCase(userInfoEndpoint).endsWith("/me")) {
             schemasEndpoint = userInfoEndpoint.replaceAll("(?i)/me$", "/Schemas");
+            isUserInfoEndpointScimMe = true;
         }
 
         String apiResourceManagementEndpoint;
@@ -981,13 +992,24 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .encoder(new FormEncoder())
                 .target(AuthClient.class, tokenEndpoint);
 
-        wso2IS7SCIMMeClient = Feign.builder()
-                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
-                .encoder(new GsonEncoder())
-                .decoder(new GsonDecoder())
-                .logger(new Slf4jLogger())
-                .errorDecoder(new KMClientErrorDecoder())
-                .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
+        if (isUserInfoEndpointScimMe) {
+            wso2IS7SCIMMeClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
+        } else {
+            userClient = Feign.builder()
+                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
+                    .encoder(new GsonEncoder())
+                    .decoder(new GsonDecoder())
+                    .logger(new Slf4jLogger())
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                    .errorDecoder(new KMClientErrorDecoder())
+                    .target(UserClient.class, userInfoEndpoint);
+        }
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
 
@@ -1786,6 +1808,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     @Override
     public Map<String, String> getUserClaims(String username, Map<String, Object> properties)
             throws APIManagementException {
+        if (!isUserInfoEndpointScimMe) {
+            return getUserClaimsUsingUserInfoEndpoint(username, properties);
+        }
 
         Map<String, String> userClaims = new HashMap<>();
         if (properties.containsKey(APIConstants.KeyManager.ACCESS_TOKEN)) {
@@ -1816,6 +1841,41 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
 
         return claimMappings;
+    }
+
+    /* Copied from AMDefaultKeyManagerImpl#getUserClaims. */
+    private Map<String, String> getUserClaimsUsingUserInfoEndpoint(String username, Map<String, Object> properties)
+            throws APIManagementException {
+
+        Map<String, String> map = new HashMap<String, String>();
+        String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(username);
+        UserInfoDTO userinfo = new UserInfoDTO();
+        userinfo.setUsername(tenantAwareUserName);
+        if (tenantAwareUserName.contains(CarbonConstants.DOMAIN_SEPARATOR)) {
+            userinfo.setDomain(tenantAwareUserName.split(CarbonConstants.DOMAIN_SEPARATOR)[0]);
+        }
+        if (properties.containsKey(APIConstants.KeyManager.ACCESS_TOKEN)) {
+            userinfo.setAccessToken(properties.get(APIConstants.KeyManager.ACCESS_TOKEN).toString());
+        }
+        if (properties.containsKey(APIConstants.KeyManager.CLAIM_DIALECT)) {
+            userinfo.setDialectURI(properties.get(APIConstants.KeyManager.CLAIM_DIALECT).toString());
+        }
+        if (properties.containsKey(APIConstants.KeyManager.BINDING_FEDERATED_USER_CLAIMS)) {
+            userinfo.setBindFederatedUserClaims(Boolean.valueOf(properties.
+                    get(APIConstants.KeyManager.BINDING_FEDERATED_USER_CLAIMS).toString()));
+        }
+
+        try {
+            ClaimsList claims = userClient.generateClaims(userinfo);
+            if (claims != null && claims.getList() != null) {
+                for (Claim claim : claims.getList()) {
+                    map.put(claim.getUri(), claim.getValue());
+                }
+            }
+        } catch (KeyManagerClientException e) {
+            handleException("Error while getting user info", e);
+        }
+        return map;
     }
 
     private Map<String, String> getMappedAttributes(Map<String, String> claims, Map<String, String> claimMappings) {
