@@ -1031,7 +1031,7 @@ public class DCRMService {
         try {
             createdSecret = oAuthAdminService.createClientSecret(oAuthConsumerSecretDTO);
         } catch (IdentityOAuthAdminException e) {
-            throw DCRMUtils.generateServerException(
+            throw DCRMUtils.generateClientException(
                     ErrorMessages.FAILED_TO_CREATE_CLIENT_SECRET, clientId, e);
         }
 

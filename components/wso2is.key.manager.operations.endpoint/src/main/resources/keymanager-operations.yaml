@@ -457,6 +457,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
         '409':
           description: Conflict
           schema:
@@ -497,6 +501,10 @@ paths:
             $ref: '#/definitions/Error'
         '401':
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error'
         '404':
@@ -546,6 +554,10 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
         '404':
           description: Secret not found
           schema:
@@ -587,6 +599,10 @@ paths:
             $ref: '#/definitions/Error'
         '401':
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
           schema:
             $ref: '#/definitions/Error'
         '404':
