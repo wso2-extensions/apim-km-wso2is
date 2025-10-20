@@ -77,12 +77,11 @@ public class DcrApiServiceImpl implements DcrApiService {
                                          ClientSecretGenerationRequestDTO clientSecretGenerationRequest,
                                          MessageContext messageContext) {
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
-            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.FORBIDDEN,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
             );
-            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
         }
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         ClientSecretResponseDTO clientSecretDTO = null;
@@ -131,12 +130,11 @@ public class DcrApiServiceImpl implements DcrApiService {
     @Override
     public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
-            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.FORBIDDEN,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
             );
-            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
         }
         try {
             clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
@@ -184,12 +182,11 @@ public class DcrApiServiceImpl implements DcrApiService {
     @Override
     public Response getClientSecret(String clientId, String secretId, MessageContext messageContext) {
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
-            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.FORBIDDEN,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
             );
-            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
         }
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
@@ -219,12 +216,11 @@ public class DcrApiServiceImpl implements DcrApiService {
     @Override
     public Response getClientSecrets(String clientId, MessageContext messageContext) {
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
-            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.FORBIDDEN,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
             );
-            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
         }
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         ClientSecretListDTO clientSecretListDTO = null;
@@ -246,12 +242,11 @@ public class DcrApiServiceImpl implements DcrApiService {
     @Override
     public Response regenerateConsumerSecret(String clientId, MessageContext messageContext) {
         if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
-            ErrorDTO errorDTO = ExtendedDCRMUtils.getError(
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.FORBIDDEN,
                     ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getCode(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getMessage(),
                     ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getDescription()
             );
-            return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
         }
         ApplicationDTO applicationDTO = null;
         try {

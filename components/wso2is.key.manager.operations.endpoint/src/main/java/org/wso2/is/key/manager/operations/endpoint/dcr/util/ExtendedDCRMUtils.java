@@ -158,13 +158,10 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
                 isServerException);
     }
 
-    public static ErrorDTO getError(String code, String message, String description) {
+    public static void handleErrorResponse(Response.Status status, String code, String message, String description)
+            throws DCRMEndpointException {
 
-        ErrorDTO errorDTO = new ErrorDTO();
-        errorDTO.setCode(code);
-        errorDTO.setMessage(message);
-        errorDTO.setDescription(description);
-        return errorDTO;
+        throw buildDCRMEndpointException(status, code, message, description);
     }
 
     /**
@@ -247,6 +244,16 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
             errorDTO.setDescription(description);
             return new DCRMEndpointException(status, errorDTO);
         }
+    }
+
+    private static DCRMEndpointException buildDCRMEndpointException(Response.Status status, String code,
+                                                                    String message, String description) {
+
+        ErrorDTO errorDTO = new ErrorDTO();
+        errorDTO.setCode(code);
+        errorDTO.setMessage(message);
+        errorDTO.setDescription(description);
+        return new DCRMEndpointException(status, errorDTO);
     }
 
 

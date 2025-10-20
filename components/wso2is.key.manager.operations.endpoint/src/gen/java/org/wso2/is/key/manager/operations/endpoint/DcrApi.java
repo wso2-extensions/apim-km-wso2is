@@ -75,6 +75,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 204, message = "Secret revoked successfully", response = Void.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
         @ApiResponse(code = 401, message = "Unauthorized", response = ErrorDTO.class),
+        @ApiResponse(code = 403, message = "Forbidden", response = ErrorDTO.class),
         @ApiResponse(code = 404, message = "Not Found", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
     public Response deleteClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Unique identifier of the secret to delete",required=true) @PathParam("secretId") String secretId){
@@ -90,6 +91,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 201, message = "Secret generated successfully", response = ClientSecretResponseDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
         @ApiResponse(code = 401, message = "Unauthorized", response = ErrorDTO.class),
+        @ApiResponse(code = 403, message = "Forbidden", response = ErrorDTO.class),
         @ApiResponse(code = 409, message = "Conflict", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
     public Response generateClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Request payload containing details for generating a new client secret" ,required=true) ClientSecretGenerationRequestDTO clientSecretCreateRequest){
@@ -118,6 +120,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 200, message = "Requested secret of the client is returned.", response = ClientSecretResponseDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
         @ApiResponse(code = 401, message = "Unauthorized", response = ErrorDTO.class),
+        @ApiResponse(code = 403, message = "Forbidden", response = ErrorDTO.class),
         @ApiResponse(code = 404, message = "Secret not found", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
     public Response getClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Unique identifier of the secret to retrieve",required=true) @PathParam("secretId") String secretId){
@@ -133,6 +136,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 200, message = "Secrets of the client is returned.", response = ClientSecretListDTO.class),
         @ApiResponse(code = 400, message = "Bad Request", response = ErrorDTO.class),
         @ApiResponse(code = 401, message = "Unauthorized", response = ErrorDTO.class),
+        @ApiResponse(code = 403, message = "Forbidden", response = ErrorDTO.class),
         @ApiResponse(code = 404, message = "Client not found", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
     public Response getClientSecrets(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId){
