@@ -855,11 +855,13 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .concat(getTenantAwareContext().trim()).concat
                             (APIConstants.KeyManager.KEY_MANAGER_OPERATIONS_USERINFO_ENDPOINT);
         }
+        if (StringUtils.lowerCase(userInfoEndpoint).endsWith("scim2/me")) {
+            isUserInfoEndpointScimMe = true;
+        }
 
         String schemasEndpoint = null;
         if (StringUtils.lowerCase(userInfoEndpoint).endsWith("/me")) {
             schemasEndpoint = userInfoEndpoint.replaceAll("(?i)/me$", "/Schemas");
-            isUserInfoEndpointScimMe = true;
         }
 
         String apiResourceManagementEndpoint;
