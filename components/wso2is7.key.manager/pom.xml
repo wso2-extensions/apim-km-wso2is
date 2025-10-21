@@ -50,7 +50,6 @@
                             org.wso2.carbon.apimgt.api.*;version="${carbon.apimgt.imp.pkg.version}",
                             org.wso2.carbon.apimgt.impl.*;version="${carbon.apimgt.imp.pkg.version}",
                             org.wso2.carbon.apimgt.notification.*;version="${carbon.apimgt.imp.pkg.version}",
-                            org.wso2.carbon.utils.*;version="${carbon.utils.imp.pkg.version}",
                             org.apache.commons.codec.*,
                             org.slf4j,
                             org.osgi.framework.*;version="${imp.package.version.osgi.framework}",
