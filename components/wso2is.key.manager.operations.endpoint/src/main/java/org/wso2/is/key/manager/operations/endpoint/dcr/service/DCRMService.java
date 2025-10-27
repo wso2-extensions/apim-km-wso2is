@@ -1103,6 +1103,8 @@ public class DCRMService {
         ClientSecret clientSecret = new ClientSecret();
         clientSecret.setClientId(createdSecret.getClientId());
         clientSecret.setDescription(createdSecret.getDescription());
+        // Set expiry time to 0 if the secret does not have an expiry indicating a never expiring secret according to
+        // the OAuth specification.
         if (createdSecret.getExpiresAt() == null) {
             clientSecret.setExpiryTime(0L);
         } else {

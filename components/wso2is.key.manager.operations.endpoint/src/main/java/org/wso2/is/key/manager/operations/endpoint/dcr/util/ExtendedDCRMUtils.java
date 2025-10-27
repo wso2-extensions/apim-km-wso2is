@@ -277,14 +277,14 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * @return a fully populated {@link ClientSecretGenerationRequest} object ready for client secret creation
      */
     public static ClientSecretGenerationRequest getClientSecretCreationRequest(String clientId,
-                                                                               ClientSecretGenerationRequestDTO clientSecretGenerationRequest) {
+                                                                               ClientSecretGenerationRequestDTO clientSecretGenerationRequestDTO) {
 
         ClientSecretGenerationRequest request = new ClientSecretGenerationRequest();
         request.setClientId(clientId);
-        if (clientSecretGenerationRequest != null) {
-            request.setDescription(clientSecretGenerationRequest.getDescription());
-            if (clientSecretGenerationRequest.getExpiresIn() != null) {
-                request.setExpiresAt(calculateExpiresAt(clientSecretGenerationRequest.getExpiresIn()));
+        if (clientSecretGenerationRequestDTO != null) {
+            request.setDescription(clientSecretGenerationRequestDTO.getDescription());
+            if (clientSecretGenerationRequestDTO.getExpiresIn() != null) {
+                request.setExpiresAt(calculateExpiresAt(clientSecretGenerationRequestDTO.getExpiresIn()));
             }
         }
         return request;
