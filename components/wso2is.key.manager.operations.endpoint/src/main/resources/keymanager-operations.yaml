@@ -469,7 +469,7 @@ paths:
           description: Server Error
           schema:
             $ref: '#/definitions/Error'
-    # Resource to get the secrets of an OAuth2 client
+  # Resource to get the secrets of an OAuth2 client
   /dcr/register/{clientId}/secrets:
     get:
       description: |
