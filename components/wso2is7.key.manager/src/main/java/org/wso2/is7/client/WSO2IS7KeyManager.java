@@ -934,6 +934,25 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER_HEADER, identityUser))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
+
+            if (isUserInfoEndpointScimMe) {
+                wso2IS7SCIMMeClient = Feign.builder()
+                        .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
+                        .encoder(new GsonEncoder())
+                        .decoder(new GsonDecoder())
+                        .logger(new Slf4jLogger())
+                        .errorDecoder(new KMClientErrorDecoder())
+                        .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
+            } else {
+                userClient = Feign.builder()
+                        .client(new ApacheFeignHttpClient(getMutualTLSHttpClient(trustStore)))
+                        .encoder(new GsonEncoder())
+                        .decoder(new GsonDecoder())
+                        .logger(new Slf4jLogger())
+                        .requestInterceptor(template -> template.header(WSO2_IDENTITY_USER_HEADER, identityUser))
+                        .errorDecoder(new KMClientErrorDecoder())
+                        .target(UserClient.class, userInfoEndpoint);
+            }
         } else {
             String username = (String) configuration
                     .getParameter(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.USERNAME);
@@ -984,6 +1003,25 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
+
+            if (isUserInfoEndpointScimMe) {
+                wso2IS7SCIMMeClient = Feign.builder()
+                        .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
+                        .encoder(new GsonEncoder())
+                        .decoder(new GsonDecoder())
+                        .logger(new Slf4jLogger())
+                        .errorDecoder(new KMClientErrorDecoder())
+                        .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
+            } else {
+                userClient = Feign.builder()
+                        .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
+                        .encoder(new GsonEncoder())
+                        .decoder(new GsonDecoder())
+                        .logger(new Slf4jLogger())
+                        .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
+                        .errorDecoder(new KMClientErrorDecoder())
+                        .target(UserClient.class, userInfoEndpoint);
+            }
         }
         authClient = Feign.builder()
                 .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(tokenEndpoint)))
@@ -993,25 +1031,6 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .errorDecoder(new KMClientErrorDecoder())
                 .encoder(new FormEncoder())
                 .target(AuthClient.class, tokenEndpoint);
-
-        if (isUserInfoEndpointScimMe) {
-            wso2IS7SCIMMeClient = Feign.builder()
-                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
-                    .encoder(new GsonEncoder())
-                    .decoder(new GsonDecoder())
-                    .logger(new Slf4jLogger())
-                    .errorDecoder(new KMClientErrorDecoder())
-                    .target(WSO2IS7SCIMMeClient.class, userInfoEndpoint);
-        } else {
-            userClient = Feign.builder()
-                    .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(userInfoEndpoint)))
-                    .encoder(new GsonEncoder())
-                    .decoder(new GsonDecoder())
-                    .logger(new Slf4jLogger())
-                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password))
-                    .errorDecoder(new KMClientErrorDecoder())
-                    .target(UserClient.class, userInfoEndpoint);
-        }
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
 
