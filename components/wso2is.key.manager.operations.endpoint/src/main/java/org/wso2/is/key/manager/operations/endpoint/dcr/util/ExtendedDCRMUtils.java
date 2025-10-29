@@ -198,6 +198,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setPkceMandatory(application.getPkceMandatory());
         applicationDTO.setPkceSupportPlain(application.getPkceSupportPlain());
         applicationDTO.setBypassClientCredentials(application.getBypassClientCredentials());
+        applicationDTO.setTokenTypeExtension(application.getTokenType());
         return applicationDTO;
     }
 

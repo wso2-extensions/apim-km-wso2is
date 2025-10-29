@@ -464,6 +464,7 @@ public class DCRMService {
         application.setPkceMandatory(createdApp.getPkceMandatory());
         application.setPkceSupportPlain(createdApp.getPkceSupportPlain());
         application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
+        application.setTokenType(createdApp.getTokenType());
         return application;
     }
 
@@ -923,21 +924,10 @@ public class DCRMService {
         ServiceProvider sp = getServiceProvider(appDTO.getApplicationName(), tenantDomain);
         sp.setOwner(User.getUserFromUserName(applicationOwner));
 
-        String previousOwner = MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()).replaceAll("@", "-AT-");
         updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(appDTO.getUsername()));
         appDTO.setUsername(applicationOwner);
 
-        String newApplicationName = "";
-        if (!StringUtils.equals(previousOwner, applicationOwner)) {
-            String keyType = appDTO.getApplicationName().substring(appDTO.getApplicationName().lastIndexOf("_") + 1);
-            String appName = StringUtils.substringBetween(appDTO.getApplicationName(),
-                    previousOwner.replace("@", "-AT-").replace("/", "_"), keyType);
-            newApplicationName = MultitenantUtils.getTenantAwareUsername(applicationOwner.replace("/", "_").
-                    replaceAll("@", "-AT-")) + appName + keyType;
-            sp.setApplicationName(newApplicationName);
-        }
         updateServiceProvider(sp, tenantDomain, MultitenantUtils.getTenantAwareUsername(applicationOwner));
-        appDTO.setApplicationName(newApplicationName);
 
         // Update application
         try {

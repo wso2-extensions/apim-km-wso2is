@@ -40,6 +40,7 @@ public class ExtendedApplication extends Application implements Serializable {
     private Boolean pkceMandatory = false;
     private Boolean pkceSupportPlain = false;
     private Boolean bypassClientCredentials = false;
+    private String tokenType;
 
     public long getApplicationAccessTokenLifeTime() {
 
@@ -123,4 +124,11 @@ public class ExtendedApplication extends Application implements Serializable {
         this.bypassClientCredentials = bypassClientCredentials;
     }
 
+    public String getTokenType() {
+        return tokenType;
+    }
+
+    public void setTokenType(String tokenType) {
+        this.tokenType = tokenType;
+    }
 }
