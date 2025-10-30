@@ -57,7 +57,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     private static final String BAD_REQUEST_STATUS = "BAD_REQUEST_";
     private static final String NOT_FOUND_STATUS = "NOT_FOUND_";
     private static final String FORBIDDEN_STATUS = "FORBIDDEN_";
-    private static final String CLIENT_SECRET_COUNT = "OAuth.ClientSecretCount";
+    private static final String MULTIPLE_CLIENT_SECRETS_ENABLED = "OAuth.MultipleClientSecrets.Enable";
 
     public static ExtendedApplicationRegistrationRequest getApplicationRegistrationRequest(
             RegistrationRequestDTO registrationRequestDTO) {
@@ -348,11 +348,11 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     public enum MultipleClientSecretsError {
 
         DISABLED("60100",
-                "The requested operation is not available",
+                "The requested operation is not supported",
                 "Multiple client secret support is disabled by server configuration."),
 
         ENABLED("60101",
-                "The requested operation is not available",
+                "The requested operation is not supported",
                 "Multiple client secret support is enabled by server configuration. Use the client secret " +
                         "creation API (POST /dcr/register/{clientId}/secrets) to generate new client secrets.");
 
@@ -377,10 +377,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * @return true if multiple client secrets feature is enabled, false otherwise.
      */
     public static boolean isMultipleClientSecretsEnabled() {
-        if (IdentityUtil.getProperty(CLIENT_SECRET_COUNT) != null) {
-            int clientSecretCount = Integer.parseInt(IdentityUtil.getProperty(CLIENT_SECRET_COUNT));
-            return clientSecretCount > 1;
-        }
-        return false;
+        return IdentityUtil.getProperty(MULTIPLE_CLIENT_SECRETS_ENABLED) != null &&
+                Boolean.parseBoolean(IdentityUtil.getProperty(MULTIPLE_CLIENT_SECRETS_ENABLED));
     }
 }
