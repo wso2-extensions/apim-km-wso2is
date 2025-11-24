@@ -30,6 +30,7 @@ public class ApplicationDTO   {
     private Boolean pkceMandatory = null;
     private Boolean pkceSupportPlain = null;
     private Boolean bypassClientCredentials = null;
+    private String tokenTypeExtension = null;
 
   /**
    **/
@@ -269,6 +270,23 @@ public class ApplicationDTO   {
     this.bypassClientCredentials = bypassClientCredentials;
   }
 
+  /**
+   **/
+  public ApplicationDTO tokenTypeExtension(String tokenTypeExtension) {
+    this.tokenTypeExtension = tokenTypeExtension;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("token_type_extension")
+  public String getTokenTypeExtension() {
+    return tokenTypeExtension;
+  }
+  public void setTokenTypeExtension(String tokenTypeExtension) {
+    this.tokenTypeExtension = tokenTypeExtension;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -292,12 +310,13 @@ public class ApplicationDTO   {
         Objects.equals(extIdTokenLifetime, application.extIdTokenLifetime) &&
         Objects.equals(pkceMandatory, application.pkceMandatory) &&
         Objects.equals(pkceSupportPlain, application.pkceSupportPlain) &&
-        Objects.equals(bypassClientCredentials, application.bypassClientCredentials);
+        Objects.equals(bypassClientCredentials, application.bypassClientCredentials) &&
+        Objects.equals(tokenTypeExtension, application.tokenTypeExtension);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain, bypassClientCredentials);
+    return Objects.hash(clientId, clientSecret, clientSecretExpiresAt, redirectUris, clientName, grantTypes, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, pkceMandatory, pkceSupportPlain, bypassClientCredentials, tokenTypeExtension);
   }
 
   @Override
@@ -319,6 +338,7 @@ public class ApplicationDTO   {
     sb.append("    pkceMandatory: ").append(toIndentedString(pkceMandatory)).append("\n");
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
+    sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("}");
     return sb.toString();
   }

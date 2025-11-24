@@ -644,3 +644,5 @@ definitions:
           type: boolean
         bypassClientCredentials:
           type: boolean
+        token_type_extension:
+          type: string
