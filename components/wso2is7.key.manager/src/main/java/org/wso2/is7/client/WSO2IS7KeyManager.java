@@ -1830,7 +1830,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     public Map<String, String> getUserClaims(String username, Map<String, Object> properties)
             throws APIManagementException {
         if (!isUserInfoEndpointScimMe) {
-            return getUserClaimsUsingUserInfoEndpoint(username, properties);
+            Map<String, String> userInfoEndpointClaims = getUserClaimsUsingUserInfoEndpoint(username, properties);
+            Map<String, String> claimMappings = getClaimMappings();
+            return getMappedAttributes(userInfoEndpointClaims, claimMappings);
         }
 
         Map<String, String> userClaims = new HashMap<>();
