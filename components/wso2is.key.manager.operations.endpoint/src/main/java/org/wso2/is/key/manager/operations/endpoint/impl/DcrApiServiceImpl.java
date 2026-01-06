@@ -32,7 +32,6 @@ import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 

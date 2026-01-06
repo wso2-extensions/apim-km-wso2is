@@ -17,6 +17,9 @@
  */
 package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
 
+/**
+ * Client Secret Generation Request Model.
+ */
 public class ClientSecretGenerationRequest {
     private String clientId;
     private Long expiresAt;

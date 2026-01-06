@@ -17,6 +17,9 @@
  */
 package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
 
+/**
+ * Client Secret Model.
+ */
 public class ClientSecret {
     private String secretId;
     private String description;
