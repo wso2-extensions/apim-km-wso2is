@@ -1012,8 +1012,8 @@ public class DCRMService {
     /**
      * Creates a new client secret using the provided data.
      *
-     * @param clientSecretCreationRequest the request containing client ID, optional description,
-     *                                    and optional expiry time
+     * @param clientSecretGenerationRequest the request containing client ID, optional description,
+     *                                      and optional expiry time
      * @return the created {@link ClientSecret} object containing the generated secret details
      * @throws DCRMException if secret creation fails due to internal errors
      */

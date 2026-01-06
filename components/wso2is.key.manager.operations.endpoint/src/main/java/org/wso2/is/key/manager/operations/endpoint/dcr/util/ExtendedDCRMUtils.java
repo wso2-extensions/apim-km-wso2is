@@ -35,8 +35,8 @@ import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationU
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
@@ -273,7 +273,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * Converts the input data transfer object into a ClientSecretCreationRequest for creating a new client secret.
      *
      * @param clientId the client identifier for which the secret is being created
-     * @param clientSecretGenerationRequest the DTO containing optional description and expiry information; may be null
+     * @param clientSecretGenerationRequestDTO the DTO containing optional description and expiry information
      * @return a fully populated {@link ClientSecretGenerationRequest} object ready for client secret creation
      */
     public static ClientSecretGenerationRequest getClientSecretCreationRequest(String clientId,
@@ -345,6 +345,9 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         return Instant.now().plusSeconds(expiresIn).toEpochMilli();
     }
 
+    /**
+     * Enum representing error scenarios related to multiple client secrets errors.
+     */
     public enum MultipleClientSecretsError {
 
         DISABLED("60100",
@@ -366,9 +369,15 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
             this.description = description;
         }
 
-        public String getCode() { return code; }
-        public String getMessage() { return message; }
-        public String getDescription() { return description; }
+        public String getCode() {
+            return code;
+        }
+        public String getMessage() {
+            return message;
+        }
+        public String getDescription() {
+            return description;
+        }
     }
 
     /**
