@@ -165,6 +165,15 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
                 isServerException);
     }
 
+    /**
+     * Logs the error, builds a DCRMEndpointException with specified details and throws it.
+     *
+     * @param status      response status
+     * @param code        error code
+     * @param message     error message
+     * @param description error description
+     * @throws DCRMEndpointException DCRMEndpointException
+     */
     public static void handleErrorResponse(Response.Status status, String code, String message, String description)
             throws DCRMEndpointException {
 
@@ -253,6 +262,14 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         }
     }
 
+    /**
+     * build the DCRMEndpointException
+     * @param status status
+     * @param code code
+     * @param message message
+     * @param description description
+     * @return DCRMEndpointException
+     */
     private static DCRMEndpointException buildDCRMEndpointException(Response.Status status, String code,
                                                                     String message, String description) {
 
