@@ -82,6 +82,13 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         appRegistrationRequest.setPkceSupportPlain(registrationRequestDTO.isPkceSupportPlain());
         appRegistrationRequest.setBypassClientCredentials(registrationRequestDTO.isBypassClientCredentials());
         appRegistrationRequest.setApplicationScopes(registrationRequestDTO.getApplicationScopes());
+        if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            appRegistrationRequest.setSecretDescription(registrationRequestDTO.getExtClientSecretDescription());
+            if (registrationRequestDTO.getExtClientSecretExpiresIn() != null) {
+                appRegistrationRequest.setSecretExpiryTime(
+                        calculateExpiresAt(registrationRequestDTO.getExtClientSecretExpiresIn()));
+            }
+        }
         return appRegistrationRequest;
 
     }

@@ -757,6 +757,10 @@ definitions:
         type: array
         items:
           type: string
+      ext_client_secret_description:
+        type: string
+      ext_client_secret_expires_in:
+        type: integer
 
     #-----------------------------------------------------
     # The Application Update Request Object
