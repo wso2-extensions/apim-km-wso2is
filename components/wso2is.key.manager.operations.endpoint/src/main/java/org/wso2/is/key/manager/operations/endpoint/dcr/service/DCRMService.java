@@ -625,6 +625,12 @@ public class DCRMService {
         if (registrationRequest.getBypassClientCredentials() != null) {
             oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
         }
+        if (StringUtils.isNotEmpty(registrationRequest.getSecretDescription())) {
+            oAuthConsumerApp.setSecretDescription(registrationRequest.getSecretDescription());
+        }
+        if (registrationRequest.getSecretExpiryTime() != null) {
+            oAuthConsumerApp.setSecretExpiryTime(registrationRequest.getSecretExpiryTime());
+        }
         if (log.isDebugEnabled()) {
             log.debug("Creating OAuth Application: " + spName + " in tenant: " + tenantDomain);
         }
@@ -1071,7 +1077,6 @@ public class DCRMService {
         }
         return buildClientSecretListResponse(consumerSecretDTOList);
     }
-
     /**
      * Retrieves a specific client secret by its unique identifier.
      *
