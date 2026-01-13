@@ -86,7 +86,7 @@ public class DcrApiServiceImpl implements DcrApiService {
         ClientSecretResponseDTO clientSecretDTO = null;
         try {
             ClientSecretGenerationRequest request = ExtendedDCRMUtils.
-                    getSecretCreationRequest(clientId, clientSecretGenerationRequest);
+                    getClientSecretCreationRequest(clientId, clientSecretGenerationRequest);
             ClientSecret clientSecret = service.createClientSecret(request);
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
         } catch (DCRMClientException e) {
