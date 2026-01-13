@@ -297,18 +297,18 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * Converts the input data transfer object into a ClientSecretCreationRequest for creating a new client secret.
      *
      * @param clientId the client identifier for which the secret is being created
-     * @param requestDTO the DTO containing optional description and expiry information
+     * @param clientSecretGenerationRequestDTO the DTO containing optional description and expiry information
      * @return a fully populated {@link ClientSecretGenerationRequest} object ready for client secret creation
      */
-    public static ClientSecretGenerationRequest getSecretCreationRequest(String clientId,
-                                                                         ClientSecretGenerationRequestDTO requestDTO) {
+    public static ClientSecretGenerationRequest getClientSecretCreationRequest(
+            String clientId, ClientSecretGenerationRequestDTO clientSecretGenerationRequestDTO) {
 
         ClientSecretGenerationRequest request = new ClientSecretGenerationRequest();
         request.setClientId(clientId);
-        if (requestDTO != null) {
-            request.setDescription(requestDTO.getDescription());
-            if (requestDTO.getExpiresIn() != null) {
-                request.setExpiresAt(calculateExpiresAt(requestDTO.getExpiresIn()));
+        if (clientSecretGenerationRequestDTO != null) {
+            request.setDescription(clientSecretGenerationRequestDTO.getDescription());
+            if (clientSecretGenerationRequestDTO.getExpiresIn() != null) {
+                request.setExpiresAt(calculateExpiresAt(clientSecretGenerationRequestDTO.getExpiresIn()));
             }
         }
         return request;
