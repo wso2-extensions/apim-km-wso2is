@@ -74,7 +74,7 @@ public class ClientSecretResponseDTO   {
   }
 
   /**
-   * expiry timestamp in seconds since epoch
+   * Expiry timestamp in seconds since Unix epoch (0 means never expires)
    **/
   public ClientSecretResponseDTO clientSecretExpiresAt(Long clientSecretExpiresAt) {
     this.clientSecretExpiresAt = clientSecretExpiresAt;
@@ -82,7 +82,7 @@ public class ClientSecretResponseDTO   {
   }
 
   
-  @ApiModelProperty(example = "1755756933", value = "expiry timestamp in seconds since epoch")
+  @ApiModelProperty(example = "1755756933", value = "Expiry timestamp in seconds since Unix epoch (0 means never expires)")
   @JsonProperty("client_secret_expires_at")
   public Long getClientSecretExpiresAt() {
     return clientSecretExpiresAt;

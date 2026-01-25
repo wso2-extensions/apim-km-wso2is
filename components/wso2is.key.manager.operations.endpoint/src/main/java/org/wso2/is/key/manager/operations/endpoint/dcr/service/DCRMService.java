@@ -529,6 +529,16 @@ public class DCRMService {
         application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
         application.setTokenType(createdApp.getTokenType());
         application.setApplicationScopes(applicationScopes);
+        if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            application.setSecretDescription(createdApp.getSecretDescription());
+            // Set expiry time to 0 if the secret does not have an expiry indicating a never expiring secret according
+            // to the OAuth specification.
+            if (createdApp.getSecretExpiryTime() == null) {
+                application.setSecretExpiryTime(0L);
+            } else {
+                application.setSecretExpiryTime(createdApp.getSecretExpiryTime());
+            }
+        }
         return application;
     }
 
@@ -1030,8 +1040,8 @@ public class DCRMService {
         String clientId = clientSecretGenerationRequest.getClientId();
         oAuthConsumerSecretDTO.setClientId(clientId);
         oAuthConsumerSecretDTO.setDescription(clientSecretGenerationRequest.getDescription());
-        if (clientSecretGenerationRequest.getExpiryAt() != null) {
-            oAuthConsumerSecretDTO.setExpiresAt(clientSecretGenerationRequest.getExpiryAt());
+        if (clientSecretGenerationRequest.getExpiresAt() != null) {
+            oAuthConsumerSecretDTO.setExpiresAt(clientSecretGenerationRequest.getExpiresAt());
         }
         OAuthConsumerSecretDTO createdSecret;
         try {

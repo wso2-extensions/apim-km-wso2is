@@ -42,6 +42,8 @@ public class ExtendedApplication extends Application implements Serializable {
     private Boolean bypassClientCredentials = false;
     private String tokenType;
     private List<String> applicationScopes = null;
+    private String secretDescription;
+    private Long secretExpiryTime;
 
     public long getApplicationAccessTokenLifeTime() {
 
@@ -139,6 +141,22 @@ public class ExtendedApplication extends Application implements Serializable {
 
     public void setApplicationScopes(List<String> applicationScopes) {
         this.applicationScopes = applicationScopes;
+    }
+
+    public String getSecretDescription() {
+        return secretDescription;
+    }
+
+    public void setSecretDescription(String secretDescription) {
+        this.secretDescription = secretDescription;
+    }
+
+    public Long getSecretExpiryTime() {
+        return secretExpiryTime;
+    }
+
+    public void setSecretExpiryTime(Long secretExpiryTime) {
+        this.secretExpiryTime = secretExpiryTime;
     }
 
 }

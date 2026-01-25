@@ -25,7 +25,7 @@ public class ClientSecretGenerationRequest {
     private Long expiresAt;
     private String description;
 
-    public Long getExpiryAt() {
+    public Long getExpiresAt() {
         return expiresAt;
     }
 

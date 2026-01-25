@@ -862,6 +862,8 @@ definitions:
           type: array
           items:
             type: string
+        ext_client_secret_description:
+          type: string
 
   #-----------------------------------------------------
   # Client Secret Object
@@ -884,7 +886,7 @@ definitions:
       client_secret_expires_at:
         type: integer
         format: int64
-        description: expiry timestamp in seconds since epoch
+        description: Expiry timestamp in seconds since Unix epoch (0 means never expires)
         example: 1755756933
   #-----------------------------------------------------
   # Client Secret Generation Request Object

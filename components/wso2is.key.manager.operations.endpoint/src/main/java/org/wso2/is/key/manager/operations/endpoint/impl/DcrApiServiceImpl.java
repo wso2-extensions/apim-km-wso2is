@@ -91,7 +91,7 @@ public class DcrApiServiceImpl implements DcrApiService {
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Error occurred while generating new client secret " + clientSecretGenerationRequest, e);
+                LOG.debug("Error occurred while generating new client secret for clientId: " + clientId, e);
             }
             ExtendedDCRMUtils.handleErrorResponse(e, LOG);
         } catch (Throwable throwable) {

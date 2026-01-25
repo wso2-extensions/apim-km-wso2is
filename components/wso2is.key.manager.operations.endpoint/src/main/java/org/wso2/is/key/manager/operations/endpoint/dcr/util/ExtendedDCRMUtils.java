@@ -232,6 +232,12 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         applicationDTO.setBypassClientCredentials(application.getBypassClientCredentials());
         applicationDTO.setTokenTypeExtension(application.getTokenType());
         applicationDTO.setApplicationScopes(application.getApplicationScopes());
+        if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            applicationDTO.setExtClientSecretDescription(application.getSecretDescription());
+            if (application.getSecretExpiryTime() != null) {
+                applicationDTO.setClientSecretExpiresAt(String.valueOf(application.getSecretExpiryTime()));
+            }
+        }
         return applicationDTO;
     }
 
@@ -329,7 +335,8 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         clientSecretDTO.setId(clientSecret.getSecretId());
         clientSecretDTO.setDescription(clientSecret.getDescription());
         clientSecretDTO.setClientSecret(clientSecret.getClientSecret());
-        clientSecretDTO.setClientSecretExpiresAt(clientSecret.getExpiryTime());
+        // Convert milliseconds to seconds for API response
+        clientSecretDTO.setClientSecretExpiresAt(clientSecret.getExpiryTime() / 1000);
         return clientSecretDTO;
     }
 
@@ -338,23 +345,21 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * {@link ClientSecretResponseDTO} objects.
      *
      * @param clientSecrets the list of client secret entities; may be null or empty
-     * @return a {@link ClientSecretListDTO} containing the converted client secrets and their count,
-     *         or null if the input list is null or empty
+     * @return a {@link ClientSecretListDTO} containing the converted client secrets and their count
      */
     public static ClientSecretListDTO getClientSecretListDTOFromClientSecretList(List<ClientSecret> clientSecrets) {
-        if (clientSecrets == null || clientSecrets.isEmpty()) {
-            return null;
-        }
 
         ClientSecretListDTO clientSecretListDTO = new ClientSecretListDTO();
-        List<ClientSecretResponseDTO> clientSecretList = new ArrayList<>();
 
-        clientSecretListDTO.setCount(clientSecrets.size());
-        for (ClientSecret clientSecret : clientSecrets) {
-            ClientSecretResponseDTO clientSecretDTO = getClientSecretDTOFromClientSecret(clientSecret);
-            clientSecretList.add(clientSecretDTO);
+        List<ClientSecretResponseDTO> clientSecretList = new ArrayList<>();
+        if (clientSecrets != null) {
+            for (ClientSecret clientSecret : clientSecrets) {
+                clientSecretList.add(getClientSecretDTOFromClientSecret(clientSecret));
+            }
         }
+
         clientSecretListDTO.setList(clientSecretList);
+        clientSecretListDTO.setCount(clientSecretList.size());
         return clientSecretListDTO;
     }
 
