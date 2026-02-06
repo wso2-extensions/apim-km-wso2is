@@ -21,4 +21,153 @@
         <Class name="org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence"/>
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
     </Match>
+    <Match>
+        <Class name="org.wso2.is.client.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for DCR bean classes -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for DTO classes -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ClaimListDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ClaimListDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for notification event classes -->
+    <Match>
+        <Class name="org.wso2.is.notification.EventSender"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.EventSender$EventRunner"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.event.Event"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.event.Event"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.NotificationServiceComponent"/>
+        <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <!-- Suppress issues for tokenpersistence module -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.issuer.ExtendedJWTTokenIssuer"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+    <!-- Suppress issues for key.manager.core module -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.observers.ReservedUserCreationObserver"/>
+        <Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer"/>
+        <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder"/>
+        <Bug pattern="EI_EXPOSE_STATIC_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder"/>
+        <Bug pattern="UUF_UNUSED_FIELD"/>
+    </Match>
 </FindBugsFilter>

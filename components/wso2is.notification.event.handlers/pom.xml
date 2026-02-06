@@ -46,6 +46,9 @@
                         <Export-Package>
                             org.wso2.is.notification.*;
                         </Export-Package>
+                        <Provide-Capability>
+                            osgi.service;objectClass=org.wso2.is.notification.NotificationEventSenderService
+                        </Provide-Capability>
                         <DynamicImport-Package>*</DynamicImport-Package>
                     </instructions>
                 </configuration>
