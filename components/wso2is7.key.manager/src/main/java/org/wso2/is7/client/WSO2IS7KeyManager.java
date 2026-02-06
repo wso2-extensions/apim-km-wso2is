@@ -1535,7 +1535,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 Scope scope = new Scope();
                 scope.setKey(scopeName);
                 scope.setName(scopeJsonElement.getAsJsonObject().get("displayName").getAsString());
-                scope.setDescription(scopeJsonElement.getAsJsonObject().get("description").getAsString());
+                scope.setDescription(scopeJsonElement.getAsJsonObject().get("description") != null ?
+                        scopeJsonElement.getAsJsonObject().get("description").getAsString() :
+                        StringUtils.EMPTY);
                 scope.setRoles(String.join(",", getWSO2IS7RolesHavingScope(scopeName, allRoles)));
                 scopes.put(scopeName, scope);
             }
