@@ -89,8 +89,7 @@
                         <threshold>Low</threshold>
                         <xmlOutput>true</xmlOutput>
                         <spotbugsXmlOutputDirectory>${project.build.directory}/spotbugs</spotbugsXmlOutputDirectory>
-                        <!--Exclude sources-->
-                        <!--<excludeFilterFile>${maven.spotbugsplugin.exclude.file}</excludeFilterFile>-->
+                        <excludeFilterFile>${maven.spotbugsplugin.exclude.file}</excludeFilterFile>
                     </configuration>
                     <executions>
                         <execution>
@@ -490,7 +489,8 @@
         <import.package.version.commons.logging>[1.2.0,2.0.0)</import.package.version.commons.logging>
         <imp.package.version.osgi.util>[1.2.0,2.0.0)</imp.package.version.osgi.util>
         <imp.package.version.osgi.framework>[1.6.0, 2.0.0)</imp.package.version.osgi.framework>
-        <maven.spotbugsplugin.version>3.1.10</maven.spotbugsplugin.version>
+        <maven.spotbugsplugin.version>4.8.6.7</maven.spotbugsplugin.version>
+        <maven.spotbugsplugin.exclude.file>spotbugs-exclude.xml</maven.spotbugsplugin.exclude.file>
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <version.checkstyle>8.34</version.checkstyle>
         <io.swagger.codegen.version>2.4.11</io.swagger.codegen.version>

@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2024, WSO2 LL. (https://www.wso2.com).
+  ~
+  ~ WSO2 LLC. licenses this file to you under the Apache License,
+  ~ Version 2.0 (the "License"); you may not use this file except
+  ~ in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied. See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<FindBugsFilter>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.client.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for DCR bean classes -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for DTO classes -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ClaimListDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ClaimListDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for notification event classes -->
+    <Match>
+        <Class name="org.wso2.is.notification.EventSender"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.EventSender$EventRunner"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.event.Event"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.event.Event"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.NotificationServiceComponent"/>
+        <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.notification.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <!-- Suppress issues for tokenpersistence module -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.dao.DBInvalidTokenPersistence"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.tokenpersistence.issuer.ExtendedJWTTokenIssuer"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+    <!-- Suppress issues for key.manager.core module -->
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.observers.ReservedUserCreationObserver"/>
+        <Bug pattern="DMI_RANDOM_USED_ONLY_ONCE"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.issuers.RoleBasedScopesIssuer"/>
+        <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder"/>
+        <Bug pattern="EI_EXPOSE_STATIC_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.core.tokenmgt.util.TokenMgtDataHolder"/>
+        <Bug pattern="UUF_UNUSED_FIELD"/>
+    </Match>
+    <!-- Suppress issues for wso2is7.key.manager module -->
+    <Match>
+        <Class name="org.wso2.is7.client.WSO2IS7KeyManager"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.WSO2IS7KeyManager"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.WSO2IS7KeyManager"/>
+        <Bug pattern="URF_UNREAD_FIELD"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.internal.ServiceReferenceHolder"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.internal.ServiceReferenceHolder"/>
+        <Bug pattern="MS_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantOwnerInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantOwnerInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantOwnerUpdateInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantOwnerUpdateInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantResponse"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.TenantResponse"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7APIResourceInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7APIResourceInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7APIResourceInfo$AddedScopesInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7APIResourceInfo$AddedScopesInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7ClientInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7ClientInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo$Operation"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo$Operation"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo$Value"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7PatchRoleOperationInfo$Value"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7RoleInfo"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is7.client.model.WSO2IS7RoleInfo"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>
