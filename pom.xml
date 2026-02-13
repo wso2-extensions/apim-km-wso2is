@@ -120,6 +120,14 @@
                         </argLine>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -500,7 +508,7 @@
         <imp.package.version.osgi.util>[1.2.0,2.0.0)</imp.package.version.osgi.util>
         <imp.package.version.osgi.framework>[1.6.0, 2.0.0)</imp.package.version.osgi.framework>
         <commons-codec.wso2.osgi.version.range>[1.4.0,2.0.0)</commons-codec.wso2.osgi.version.range>
-        <maven.spotbugsplugin.version>4.8.3.1</maven.spotbugsplugin.version>
+        <maven.spotbugsplugin.version>4.8.6.7</maven.spotbugsplugin.version>
         <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <version.checkstyle>8.34</version.checkstyle>
         <io.swagger.codegen.version>2.4.11</io.swagger.codegen.version>
