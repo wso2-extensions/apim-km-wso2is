@@ -31,10 +31,10 @@ import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.identity.oauth.tokenprocessor.OAuth2RevocationProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.RefreshTokenGrantProcessor;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
-import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
+//import org.wso2.carbon.identity.oauth2.dao.AccessTokenDAO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.core.service.RealmService;
-import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
+//import org.wso2.is.key.manager.tokenpersistence.dao.ExtendedAccessTokenDAOImpl;
 import org.wso2.is.key.manager.tokenpersistence.listner.APIMOAuthApplicationMgtListener;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryOAuth2RevocationProcessor;
 import org.wso2.is.key.manager.tokenpersistence.processor.InMemoryRefreshTokenGrantProcessor;
@@ -58,7 +58,7 @@ public class TokenPersistenceServiceComponent {
         log.info("Activating TokenPersistenceServiceComponent...");
         if (!OAuth2Util.isTokenPersistenceEnabled()) {
             log.info("Token persistence is not enabled. Registering related services..");
-            cxt.getBundleContext().registerService(AccessTokenDAO.class, new ExtendedAccessTokenDAOImpl(), null);
+//            cxt.getBundleContext().registerService(AccessTokenDAO.class, new ExtendedAccessTokenDAOImpl(), null);
             cxt.getBundleContext().registerService(OAuth2RevocationProcessor.class,
                     new InMemoryOAuth2RevocationProcessor(), null);
             cxt.getBundleContext().registerService(RefreshTokenGrantProcessor.class,
