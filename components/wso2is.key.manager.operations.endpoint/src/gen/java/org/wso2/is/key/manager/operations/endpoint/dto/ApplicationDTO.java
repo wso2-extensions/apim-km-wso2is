@@ -296,7 +296,7 @@ public class ApplicationDTO   {
     return this;
   }
 
-
+  
   @ApiModelProperty(value = "")
   @JsonProperty("application_scopes")
   public List<String> getApplicationScopes() {
@@ -306,22 +306,22 @@ public class ApplicationDTO   {
     this.applicationScopes = applicationScopes;
   }
 
-    /**
-     **/
-    public ApplicationDTO extClientSecretDescription(String extClientSecretDescription) {
-        this.extClientSecretDescription = extClientSecretDescription;
-        return this;
-    }
+  /**
+   **/
+  public ApplicationDTO extClientSecretDescription(String extClientSecretDescription) {
+    this.extClientSecretDescription = extClientSecretDescription;
+    return this;
+  }
 
-
-    @ApiModelProperty(value = "")
-    @JsonProperty("ext_client_secret_description")
-    public String getExtClientSecretDescription() {
-        return extClientSecretDescription;
-    }
-    public void setExtClientSecretDescription(String extClientSecretDescription) {
-        this.extClientSecretDescription = extClientSecretDescription;
-    }
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_client_secret_description")
+  public String getExtClientSecretDescription() {
+    return extClientSecretDescription;
+  }
+  public void setExtClientSecretDescription(String extClientSecretDescription) {
+    this.extClientSecretDescription = extClientSecretDescription;
+  }
 
 
   @Override
@@ -348,8 +348,8 @@ public class ApplicationDTO   {
         Objects.equals(pkceSupportPlain, application.pkceSupportPlain) &&
         Objects.equals(bypassClientCredentials, application.bypassClientCredentials) &&
         Objects.equals(tokenTypeExtension, application.tokenTypeExtension) &&
-        Objects.equals(applicationScopes, application.applicationScopes);
-      Objects.equals(extClientSecretDescription, application.extClientSecretDescription);
+        Objects.equals(applicationScopes, application.applicationScopes) &&
+        Objects.equals(extClientSecretDescription, application.extClientSecretDescription);
   }
 
   @Override
@@ -378,7 +378,7 @@ public class ApplicationDTO   {
     sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
     sb.append("    tokenTypeExtension: ").append(toIndentedString(tokenTypeExtension)).append("\n");
     sb.append("    applicationScopes: ").append(toIndentedString(applicationScopes)).append("\n");
-      sb.append("    extClientSecretDescription: ").append(toIndentedString(extClientSecretDescription)).append("\n");
+    sb.append("    extClientSecretDescription: ").append(toIndentedString(extClientSecretDescription)).append("\n");
     sb.append("}");
     return sb.toString();
   }
