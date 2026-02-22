@@ -87,8 +87,14 @@ public class DcrApiServiceImpl implements DcrApiService {
         try {
             ClientSecretGenerationRequest request = ExtendedDCRMUtils.
                     getClientSecretCreationRequest(clientId, clientSecretGenerationRequest);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Generating new client secret for client: " + clientId));
+            }
             ClientSecret clientSecret = service.createClientSecret(request);
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Successfully generated new client secret for client: " + clientId);
+            }
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Error occurred while generating new client secret for clientId: " + clientId, e);
@@ -138,7 +144,13 @@ public class DcrApiServiceImpl implements DcrApiService {
         try {
             clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
             secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Deleting client secret: " + secretId + " for client: " + clientId);
+            }
             service.deleteClientSecret(secretId);
+            if (LOG.isDebugEnabled()) {
+                LOG.info("Successfully deleted client secret: " + secretId + " for client: " + clientId);
+            }
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Error occurred while deleting client secret of client: " + clientId, e);
