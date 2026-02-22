@@ -235,7 +235,9 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             applicationDTO.setExtClientSecretDescription(application.getSecretDescription());
             if (application.getSecretExpiryTime() != null) {
-                applicationDTO.setClientSecretExpiresAt(String.valueOf(application.getSecretExpiryTime()));
+                // Convert milliseconds to seconds for API response
+                long expiryInSeconds = application.getSecretExpiryTime() / 1000;
+                applicationDTO.setClientSecretExpiresAt(String.valueOf(expiryInSeconds));
             }
         }
         return applicationDTO;
