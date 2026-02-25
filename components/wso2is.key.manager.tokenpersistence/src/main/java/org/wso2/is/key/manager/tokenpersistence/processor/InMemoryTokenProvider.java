@@ -164,8 +164,8 @@ public class InMemoryTokenProvider implements TokenProvider {
                 } else {
                     validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
                 }
-                if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
-                    // claim can only be null for migrated tokens, which are already handled above.Hence, no null check.
+                if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled() && claimsSet.getClaim(
+                        PersistenceConstants.JWTClaim.IS_CONSENTED) != null) {
                     validationDataDO.setIsConsentedToken(
                             (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
                 }
