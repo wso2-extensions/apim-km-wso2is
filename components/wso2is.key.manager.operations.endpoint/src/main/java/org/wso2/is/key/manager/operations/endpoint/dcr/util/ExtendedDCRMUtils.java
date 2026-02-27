@@ -329,10 +329,10 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * @return a {@link ClientSecretResponseDTO} populated from the input entity, or null if input is null
      */
     public static ClientSecretResponseDTO getClientSecretDTOFromClientSecret(ClientSecret clientSecret) {
+
         if (clientSecret == null) {
             return null;
         }
-
         ClientSecretResponseDTO clientSecretDTO = new ClientSecretResponseDTO();
         clientSecretDTO.setId(clientSecret.getSecretId());
         clientSecretDTO.setDescription(clientSecret.getDescription());
@@ -352,14 +352,12 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
     public static ClientSecretListDTO getClientSecretListDTOFromClientSecretList(List<ClientSecret> clientSecrets) {
 
         ClientSecretListDTO clientSecretListDTO = new ClientSecretListDTO();
-
         List<ClientSecretResponseDTO> clientSecretList = new ArrayList<>();
         if (clientSecrets != null) {
             for (ClientSecret clientSecret : clientSecrets) {
                 clientSecretList.add(getClientSecretDTOFromClientSecret(clientSecret));
             }
         }
-
         clientSecretListDTO.setList(clientSecretList);
         clientSecretListDTO.setCount(clientSecretList.size());
         return clientSecretListDTO;
@@ -373,6 +371,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * @return The calculated expiry time in milliseconds since the epoch.
      */
     private static long calculateExpiresAt(int expiresIn) {
+
         return Instant.now().plusSeconds(expiresIn).toEpochMilli();
     }
 
@@ -395,18 +394,24 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
         private final String description;
 
         MultipleClientSecretsError(String code, String message, String description) {
+
             this.code = code;
             this.message = message;
             this.description = description;
         }
 
         public String getCode() {
+
             return code;
         }
+
         public String getMessage() {
+
             return message;
         }
+
         public String getDescription() {
+
             return description;
         }
     }
@@ -417,6 +422,7 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * @return true if multiple client secrets feature is enabled, false otherwise.
      */
     public static boolean isMultipleClientSecretsEnabled() {
+
         return IdentityUtil.getProperty(MULTIPLE_CLIENT_SECRETS_ENABLED) != null &&
                 Boolean.parseBoolean(IdentityUtil.getProperty(MULTIPLE_CLIENT_SECRETS_ENABLED));
     }

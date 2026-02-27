@@ -75,6 +75,7 @@ public class DcrApiServiceImpl implements DcrApiService {
     public Response generateClientSecret(String clientId,
                                          ClientSecretGenerationRequestDTO clientSecretGenerationRequest,
                                          MessageContext messageContext) {
+
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
@@ -88,7 +89,7 @@ public class DcrApiServiceImpl implements DcrApiService {
             ClientSecretGenerationRequest request = ExtendedDCRMUtils.
                     getClientSecretCreationRequest(clientId, clientSecretGenerationRequest);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Generating new client secret for client: " + clientId));
+                LOG.debug("Generating new client secret for client: " + clientId);
             }
             ClientSecret clientSecret = service.createClientSecret(request);
             clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
@@ -134,6 +135,7 @@ public class DcrApiServiceImpl implements DcrApiService {
      */
     @Override
     public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
+
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
@@ -192,6 +194,7 @@ public class DcrApiServiceImpl implements DcrApiService {
      */
     @Override
     public Response getClientSecret(String clientId, String secretId, MessageContext messageContext) {
+
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
@@ -226,6 +229,7 @@ public class DcrApiServiceImpl implements DcrApiService {
      */
     @Override
     public Response getClientSecrets(String clientId, MessageContext messageContext) {
+
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
                     ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
@@ -252,6 +256,7 @@ public class DcrApiServiceImpl implements DcrApiService {
 
     @Override
     public Response regenerateConsumerSecret(String clientId, MessageContext messageContext) {
+
         if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
             ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
                     ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getCode(),

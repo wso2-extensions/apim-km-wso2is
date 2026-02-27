@@ -635,7 +635,7 @@ public class DCRMService {
         if (registrationRequest.getBypassClientCredentials() != null) {
             oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
         }
-        if (StringUtils.isNotEmpty(registrationRequest.getSecretDescription())) {
+        if (StringUtils.isNotBlank(registrationRequest.getSecretDescription())) {
             oAuthConsumerApp.setSecretDescription(registrationRequest.getSecretDescription());
         }
         if (registrationRequest.getSecretExpiryTime() != null) {

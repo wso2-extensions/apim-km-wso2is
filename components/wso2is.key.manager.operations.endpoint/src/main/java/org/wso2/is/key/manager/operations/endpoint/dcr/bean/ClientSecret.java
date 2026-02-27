@@ -18,9 +18,10 @@
 package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
 
 /**
- * Client Secret Model.
+ * Represents a client secret associated with an OAuth application.
  */
 public class ClientSecret {
+
     private String secretId;
     private String description;
     private String clientId;
@@ -28,42 +29,52 @@ public class ClientSecret {
     private Long clientSecretExpiresAt;
 
     public String getSecretId() {
+
         return secretId;
     }
 
     public void setSecretId(String secretId) {
+
         this.secretId = secretId;
     }
 
     public String getDescription() {
+
         return description;
     }
 
     public void setDescription(String description) {
+
         this.description = description;
     }
 
     public String getClientId() {
+
         return clientId;
     }
 
     public void setClientId(String clientId) {
+
         this.clientId = clientId;
     }
 
     public String getClientSecret() {
+
         return clientSecret;
     }
 
     public void setClientSecret(String secretValue) {
+
         this.clientSecret = secretValue;
     }
 
     public Long getExpiryTime() {
+
         return clientSecretExpiresAt;
     }
 
     public void setExpiryTime(Long expiryTime) {
+
         this.clientSecretExpiresAt = expiryTime;
     }
 }
