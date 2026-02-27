@@ -413,6 +413,206 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 
+  ######################################################
+  # The client secrets of the oauth application
+  ######################################################
+  # Resource to generate a new OAuth client secret
+  /dcr/register/{clientId}/generate-secret:
+    post:
+      description: |
+        This operation is used to generate a new OAuth2 client secret
+      x-wso2-request: |
+        curl -k -X POST -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+                "Content-Type: application/json"
+                -d '{ "expires_in": 3600, "description": "Secret for mobile app"}'
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/generate-secret"
+      x-wso2-response: |
+        "HTTP/1.1 201 OK"
+      summary: Generate new OAuth2 client secret
+      operationId: generateClientSecret
+      parameters:
+        - name: clientId
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        - name: clientSecretCreateRequest
+          in: body
+          description: Request payload containing details for generating a new client secret
+          required: true
+          schema:
+            $ref: '#/definitions/ClientSecretGenerationRequest'
+      tags:
+        - OAuth2 Client Secrets
+      responses:
+        '201':
+          description: Secret generated successfully
+          schema:
+            $ref: '#/definitions/ClientSecretResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+        '409':
+          description: Conflict
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+  # Resource to get the secrets of an OAuth2 client
+  /dcr/register/{clientId}/secrets:
+    get:
+      description: |
+        This operation is used to get the secrets of an OAuth2 client
+      x-wso2-request: |
+        curl -k -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+                "Content-Type: application/json"
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets"
+      x-wso2-response: |
+        "HTTP/1.1 200 OK"
+      summary: Get secrets of an OAuth2 client
+      operationId: getClientSecrets
+      parameters:
+        - name: clientId
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+      tags:
+        - OAuth2 Client Secrets
+      responses:
+        '200':
+          description: Secrets of the client is returned.
+          schema:
+            $ref: '#/definitions/ClientSecretList'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Client not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+  # Resource to get a secret of an OAuth2 client
+  /dcr/register/{clientId}/secrets/{secretId}:
+    get:
+      description: |
+        This operation is used to get a secret of an OAuth2 client
+      x-wso2-request: |
+        curl -k -X GET -H "Authorization: Basic YWRtaW46YWRtaW4=" -H
+                "Content-Type: application/json"
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets/t36sqkRdhB"
+      x-wso2-response: |
+        "HTTP/1.1 200 OK"
+      summary: Get a secret of an OAuth2 client
+      operationId: getClientSecret
+      parameters:
+        - name: clientId
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        - name: secretId
+          type: string
+          in: path
+          description: Unique identifier of the secret to retrieve
+          required: true
+      tags:
+        - OAuth2 Client Secrets
+      responses:
+        '200':
+          description: Requested secret of the client is returned.
+          schema:
+            $ref: '#/definitions/ClientSecretResponse'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Secret not found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
+    # Resource to delete an OAuth client secret
+    delete:
+      description: |
+        This operation is used to delete an OAuth2 client secret
+      x-wso2-request: |
+        curl -k -X DELETE -H "Authorization: Basic YWRtaW46YWRtaW4="
+                "https://localhost:9443/keymanager-operations/dcr/register/s6BhdRkqt3/secrets/t36sqkRdhB"
+      x-wso2-response: |
+        "HTTP/1.1 204 No Content"
+      summary: Delete an OAuth2 client secret
+      operationId: deleteClientSecret
+      parameters:
+        - name: clientId
+          type: string
+          in: path
+          description: Unique identifier of the OAuth2 client application.
+          required: true
+        - name: secretId
+          type: string
+          in: path
+          description: Unique identifier of the secret to delete
+          required: true
+      tags:
+        - OAuth2 Client Secrets
+      responses:
+        '204':
+          description: Secret revoked successfully
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Error'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: Not Found
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Server Error
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   Claim:
     type: object
@@ -557,6 +757,10 @@ definitions:
         type: array
         items:
           type: string
+      ext_client_secret_description:
+        type: string
+      ext_client_secret_expires_in:
+        type: integer
 
     #-----------------------------------------------------
     # The Application Update Request Object
@@ -658,3 +862,58 @@ definitions:
           type: array
           items:
             type: string
+        ext_client_secret_description:
+          type: string
+
+  #-----------------------------------------------------
+  # Client Secret Object
+  #-----------------------------------------------------
+  ClientSecretResponse:
+    type: object
+    properties:
+      id:
+        type: string
+        description: Unique identifier for the secret
+        example: sec_123456
+      description:
+        type: string
+        description: Human-readable label for the secret
+        example: pizza application secret
+      client_secret:
+        type: string
+        description: The actual secret string
+        example: s3cr3tV@lu3
+      client_secret_expires_at:
+        type: integer
+        format: int64
+        description: Expiry timestamp in seconds since Unix epoch (0 means never expires)
+        example: 1755756933
+  #-----------------------------------------------------
+  # Client Secret Generation Request Object
+  #-----------------------------------------------------
+  ClientSecretGenerationRequest:
+    type: object
+    properties:
+      expires_in:
+        type: integer
+        description: Expiry time in seconds
+        example: 86400
+      description:
+        type: string
+        description: A human-readable label for this secret
+        example: pizza application secret
+  #-----------------------------------------------------
+  # Client Secret List Object
+  #-----------------------------------------------------
+  ClientSecretList:
+    title: Client Secret List
+    properties:
+      count:
+        type: integer
+        description: |
+          Number of client secrets returned.
+        example: 1
+      list:
+        type: array
+        items:
+          $ref: '#/definitions/ClientSecretResponse'

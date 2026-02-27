@@ -42,6 +42,8 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     private Boolean bypassClientCredentials = false;
     // List of scopes that can be requested in client credentials grant type
     private List<String> applicationScopes = new ArrayList<String>();
+    private String secretDescription;
+    private Long secretExpiryTime;
 
     public Long getApplicationAccessTokenLifeTime() {
 
@@ -147,6 +149,26 @@ public class ExtendedApplicationRegistrationRequest extends ApplicationRegistrat
     public void setApplicationScopes(List<String> applicationScopes) {
 
         this.applicationScopes = applicationScopes;
+    }
+
+    public String getSecretDescription() {
+
+        return secretDescription;
+    }
+
+    public void setSecretDescription(String secretDescription) {
+
+        this.secretDescription = secretDescription;
+    }
+
+    public Long getSecretExpiryTime() {
+
+        return secretExpiryTime;
+    }
+
+    public void setSecretExpiryTime(Long secretExpiryTime) {
+
+        this.secretExpiryTime = secretExpiryTime;
     }
 
 }

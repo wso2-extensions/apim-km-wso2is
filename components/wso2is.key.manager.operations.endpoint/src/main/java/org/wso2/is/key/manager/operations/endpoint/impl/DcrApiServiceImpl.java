@@ -22,16 +22,22 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMClientException;
 import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.List;
 import javax.ws.rs.core.Response;
 
 /**
@@ -57,6 +63,51 @@ public class DcrApiServiceImpl implements DcrApiService {
         return Response.status(Response.Status.OK).entity(applicationDTO).build();
     }
 
+    /**
+     * Create a new client secret for the OAuth application identified by the given client ID.
+     *
+     * @param clientId                  The client ID of the OAuth application.
+     * @param clientSecretGenerationRequest The request object containing details for the new client secret.
+     * @param messageContext            The message context.
+     * @return A Response object containing the created client secret details or an error response.
+     */
+    @Override
+    public Response generateClientSecret(String clientId,
+                                         ClientSecretGenerationRequestDTO clientSecretGenerationRequest,
+                                         MessageContext messageContext) {
+
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+        }
+        clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+        ClientSecretResponseDTO clientSecretDTO = null;
+        try {
+            ClientSecretGenerationRequest request = ExtendedDCRMUtils.
+                    getClientSecretCreationRequest(clientId, clientSecretGenerationRequest);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Generating new client secret for client: " + clientId);
+            }
+            ClientSecret clientSecret = service.createClientSecret(request);
+            clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Successfully generated new client secret for client: " + clientId);
+            }
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error occurred while generating new client secret for clientId: " + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.CREATED).entity(clientSecretDTO).build();
+    }
+
     @Override
     public Response deleteApplication(String clientId, MessageContext messageContext) {
         try {
@@ -65,6 +116,46 @@ public class DcrApiServiceImpl implements DcrApiService {
         } catch (DCRMClientException e) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Client error while deleting  application with client key:" + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
+    /**
+     * Delete a specific client secret associated with the OAuth application identified by the given client ID.
+     *
+     * @param clientId      The client ID of the OAuth application.
+     * @param secretId      The ID of the client secret to be deleted.
+     * @param messageContext The message context.
+     * @return A Response object indicating the result of the delete operation.
+     */
+    @Override
+    public Response deleteClientSecret(String clientId, String secretId, MessageContext messageContext) {
+
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+        }
+        try {
+            clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+            secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Deleting client secret: " + secretId + " for client: " + clientId);
+            }
+            service.deleteClientSecret(secretId);
+            if (LOG.isDebugEnabled()) {
+                LOG.info("Successfully deleted client secret: " + secretId + " for client: " + clientId);
+            }
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error occurred while deleting client secret of client: " + clientId, e);
             }
             ExtendedDCRMUtils.handleErrorResponse(e, LOG);
         } catch (Throwable throwable) {
@@ -93,8 +184,86 @@ public class DcrApiServiceImpl implements DcrApiService {
         return Response.status(Response.Status.OK).entity(applicationDTO).build();
     }
 
+    /**
+     * Retrieve a specific client secret associated with the OAuth application identified by the given client ID.
+     *
+     * @param clientId      The client ID of the OAuth application.
+     * @param secretId      The ID of the client secret to be retrieved.
+     * @param messageContext The message context.
+     * @return A Response object containing the client secret details or an error response.
+     */
+    @Override
+    public Response getClientSecret(String clientId, String secretId, MessageContext messageContext) {
+
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+        }
+        clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+        secretId = new String(Base64.getUrlDecoder().decode(secretId), StandardCharsets.UTF_8);
+        ClientSecretResponseDTO clientSecretDTO = null;
+        try {
+            ClientSecret clientSecret = service.getClientSecret(secretId);
+            clientSecretDTO = ExtendedDCRMUtils.getClientSecretDTOFromClientSecret(clientSecret);
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error occurred while retrieving secret: " + secretId + " of client: " + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.OK).entity(clientSecretDTO).build();
+    }
+
+    /**
+     * Retrieve all client secrets associated with the OAuth application identified by the given client ID.
+     *
+     * @param clientId       The client ID of the OAuth application.
+     * @param messageContext The message context.
+     * @return A Response object containing a list of client secrets or an error response.
+     */
+    @Override
+    public Response getClientSecrets(String clientId, MessageContext messageContext) {
+
+        if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.DISABLED.getDescription()
+            );
+        }
+        clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
+        ClientSecretListDTO clientSecretListDTO = null;
+        try {
+            List<ClientSecret> clientSecretList = service.getClientSecrets(clientId);
+            clientSecretListDTO = ExtendedDCRMUtils.getClientSecretListDTOFromClientSecretList(clientSecretList);
+        } catch (DCRMClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error occurred while retrieving secrets of client: " + clientId, e);
+            }
+            ExtendedDCRMUtils.handleErrorResponse(e, LOG);
+        } catch (Throwable throwable) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, throwable,
+                    true, LOG);
+        }
+        return Response.status(Response.Status.OK).entity(clientSecretListDTO).build();
+    }
+
     @Override
     public Response regenerateConsumerSecret(String clientId, MessageContext messageContext) {
+
+        if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            ExtendedDCRMUtils.handleErrorResponse(Response.Status.BAD_REQUEST,
+                    ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getCode(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getMessage(),
+                    ExtendedDCRMUtils.MultipleClientSecretsError.ENABLED.getDescription()
+            );
+        }
         ApplicationDTO applicationDTO = null;
         try {
             clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);

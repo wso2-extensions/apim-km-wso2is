@@ -45,7 +45,10 @@ import org.wso2.carbon.identity.oauth.dcr.util.DCRConstants;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.identity.oauth.dcr.util.ErrorCodes;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
+import org.wso2.carbon.identity.oauth.dto.OAuthConsumerSecretDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
@@ -526,6 +529,16 @@ public class DCRMService {
         application.setBypassClientCredentials(createdApp.isBypassClientCredentials());
         application.setTokenType(createdApp.getTokenType());
         application.setApplicationScopes(applicationScopes);
+        if (ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
+            application.setSecretDescription(createdApp.getSecretDescription());
+            // Set expiry time to 0 if the secret does not have an expiry indicating a never expiring secret according
+            // to the OAuth specification.
+            if (createdApp.getSecretExpiryTime() == null) {
+                application.setSecretExpiryTime(0L);
+            } else {
+                application.setSecretExpiryTime(createdApp.getSecretExpiryTime());
+            }
+        }
         return application;
     }
 
@@ -621,6 +634,12 @@ public class DCRMService {
         }
         if (registrationRequest.getBypassClientCredentials() != null) {
             oAuthConsumerApp.setBypassClientCredentials(registrationRequest.getBypassClientCredentials());
+        }
+        if (StringUtils.isNotBlank(registrationRequest.getSecretDescription())) {
+            oAuthConsumerApp.setSecretDescription(registrationRequest.getSecretDescription());
+        }
+        if (registrationRequest.getSecretExpiryTime() != null) {
+            oAuthConsumerApp.setSecretExpiryTime(registrationRequest.getSecretExpiryTime());
         }
         if (log.isDebugEnabled()) {
             log.debug("Creating OAuth Application: " + spName + " in tenant: " + tenantDomain);
@@ -1004,5 +1023,126 @@ public class DCRMService {
         }
 
         return buildResponse(getApplicationById(clientId), getApplicationScopesFromSP(sp));
+    }
+
+    /**
+     * Creates a new client secret using the provided data.
+     *
+     * @param clientSecretGenerationRequest the request containing client ID, optional description,
+     *                                      and optional expiry time
+     * @return the created {@link ClientSecret} object containing the generated secret details
+     * @throws DCRMException if secret creation fails due to internal errors
+     */
+    public ClientSecret createClientSecret(ClientSecretGenerationRequest clientSecretGenerationRequest)
+            throws DCRMException {
+
+        OAuthConsumerSecretDTO oAuthConsumerSecretDTO = new OAuthConsumerSecretDTO();
+        String clientId = clientSecretGenerationRequest.getClientId();
+        oAuthConsumerSecretDTO.setClientId(clientId);
+        oAuthConsumerSecretDTO.setDescription(clientSecretGenerationRequest.getDescription());
+        if (clientSecretGenerationRequest.getExpiresAt() != null) {
+            oAuthConsumerSecretDTO.setExpiresAt(clientSecretGenerationRequest.getExpiresAt());
+        }
+        OAuthConsumerSecretDTO createdSecret;
+        try {
+            createdSecret = oAuthAdminService.createClientSecret(oAuthConsumerSecretDTO);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateClientException(
+                    ErrorMessages.FAILED_TO_CREATE_CLIENT_SECRET, clientId, e);
+        }
+
+        return buildClientSecretResponse(createdSecret);
+    }
+
+    /**
+     * Deletes an existing client secret.
+     *
+     * @param secretId the unique identifier of the client secret to be deleted
+     * @throws DCRMException if secret deletion fails due to internal errors
+     */
+    public void deleteClientSecret(String secretId) throws DCRMException {
+
+        try {
+            oAuthAdminService.removeClientSecret(secretId);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(ErrorMessages.FAILED_TO_DELETE_CLIENT_SECRET, null, e);
+        }
+    }
+
+    /**
+     * Retrieves all secrets associated with the given client application.
+     *
+     * @param clientId the unique identifier of the client application
+     * @return a list of {@link ClientSecret} objects for the specified client
+     * @throws DCRMException if retrieving client secrets fails due to internal errors
+     */
+    public List<ClientSecret> getClientSecrets(String clientId) throws DCRMException {
+
+        List<OAuthConsumerSecretDTO> consumerSecretDTOList;
+        try {
+            consumerSecretDTOList = oAuthAdminService.getClientSecrets(clientId);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_GET_CLIENT_SECRETS, clientId, e);
+        }
+        return buildClientSecretListResponse(consumerSecretDTOList);
+    }
+    /**
+     * Retrieves a specific client secret by its unique identifier.
+     *
+     * @param secretId the unique identifier of the client secret to be retrieved
+     * @return the {@link ClientSecret} object containing the secret details
+     * @throws DCRMException if retrieving the client secret fails due to internal errors
+     */
+    public ClientSecret getClientSecret(String secretId) throws DCRMException {
+
+        OAuthConsumerSecretDTO consumerSecretDTO;
+        try {
+            consumerSecretDTO = oAuthAdminService.getClientSecret(secretId);
+        } catch (IdentityOAuthAdminException e) {
+            throw DCRMUtils.generateServerException(
+                    ErrorMessages.FAILED_TO_GET_CLIENT_SECRET, secretId, e);
+        }
+        return buildClientSecretResponse(consumerSecretDTO);
+    }
+
+    /**
+     * Builds a {@link ClientSecret} response object from the given
+     * {@link OAuthConsumerSecretDTO}.
+     *
+     * @param createdSecret the {@link OAuthConsumerSecretDTO} containing secret details
+     * @return a populated {@link ClientSecret} object
+     */
+    private ClientSecret buildClientSecretResponse(OAuthConsumerSecretDTO createdSecret) {
+
+        ClientSecret clientSecret = new ClientSecret();
+        clientSecret.setClientId(createdSecret.getClientId());
+        clientSecret.setDescription(createdSecret.getDescription());
+        // Set expiry time to 0 if the secret does not have an expiry indicating a never expiring secret according to
+        // the OAuth specification.
+        if (createdSecret.getExpiresAt() == null) {
+            clientSecret.setExpiryTime(0L);
+        } else {
+            clientSecret.setExpiryTime(createdSecret.getExpiresAt());
+        }
+        clientSecret.setSecretId(createdSecret.getSecretId());
+        clientSecret.setClientSecret(createdSecret.getClientSecret());
+        return clientSecret;
+    }
+
+    /**
+     * Builds a list of {@link ClientSecret} response objects from a list of
+     * {@link OAuthConsumerSecretDTO}.
+     *
+     * @param clientSecrets the list of {@link OAuthConsumerSecretDTO} objects
+     * @return a list of {@link ClientSecret} response objects
+     */
+    private List<ClientSecret> buildClientSecretListResponse(List<OAuthConsumerSecretDTO> clientSecrets) {
+
+        List<ClientSecret> clientSecretList = new ArrayList<>();
+        for (OAuthConsumerSecretDTO secretDTO : clientSecrets) {
+            clientSecretList.add(buildClientSecretResponse(secretDTO));
+        }
+        return clientSecretList;
     }
 }

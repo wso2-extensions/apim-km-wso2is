@@ -44,6 +44,8 @@ public class RegistrationRequestDTO   {
     private Boolean pkceSupportPlain = null;
     private Boolean bypassClientCredentials = null;
     private List<String> applicationScopes = new ArrayList<>();
+    private String extClientSecretDescription = null;
+    private Integer extClientSecretExpiresIn = null;
 
   /**
    **/
@@ -523,6 +525,40 @@ public class RegistrationRequestDTO   {
     this.applicationScopes = applicationScopes;
   }
 
+  /**
+   **/
+  public RegistrationRequestDTO extClientSecretDescription(String extClientSecretDescription) {
+    this.extClientSecretDescription = extClientSecretDescription;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_client_secret_description")
+  public String getExtClientSecretDescription() {
+    return extClientSecretDescription;
+  }
+  public void setExtClientSecretDescription(String extClientSecretDescription) {
+    this.extClientSecretDescription = extClientSecretDescription;
+  }
+
+  /**
+   **/
+  public RegistrationRequestDTO extClientSecretExpiresIn(Integer extClientSecretExpiresIn) {
+    this.extClientSecretExpiresIn = extClientSecretExpiresIn;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("ext_client_secret_expires_in")
+  public Integer getExtClientSecretExpiresIn() {
+    return extClientSecretExpiresIn;
+  }
+  public void setExtClientSecretExpiresIn(Integer extClientSecretExpiresIn) {
+    this.extClientSecretExpiresIn = extClientSecretExpiresIn;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -560,12 +596,14 @@ public class RegistrationRequestDTO   {
         Objects.equals(pkceMandatory, registrationRequest.pkceMandatory) &&
         Objects.equals(pkceSupportPlain, registrationRequest.pkceSupportPlain) &&
         Objects.equals(bypassClientCredentials, registrationRequest.bypassClientCredentials) &&
-        Objects.equals(applicationScopes, registrationRequest.applicationScopes);
+        Objects.equals(applicationScopes, registrationRequest.applicationScopes) &&
+        Objects.equals(extClientSecretDescription, registrationRequest.extClientSecretDescription) &&
+        Objects.equals(extClientSecretExpiresIn, registrationRequest.extClientSecretExpiresIn);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain, bypassClientCredentials, applicationScopes);
+    return Objects.hash(redirectUris, clientName, clientId, clientSecret, grantTypes, applicationDisplayName, applicationType, tokenTypeExtension, extApplicationOwner, extApplicationTokenLifetime, extUserTokenLifetime, extRefreshTokenLifetime, extIdTokenLifetime, jwksUri, url, extParamClientId, extParamClientSecret, contacts, postLogoutRedirectUris, requestUris, responseTypes, extParamSpTemplate, backchannelLogoutUri, backchannelLogoutSessionRequired, pkceMandatory, pkceSupportPlain, bypassClientCredentials, applicationScopes, extClientSecretDescription, extClientSecretExpiresIn);
   }
 
   @Override
@@ -601,6 +639,8 @@ public class RegistrationRequestDTO   {
     sb.append("    pkceSupportPlain: ").append(toIndentedString(pkceSupportPlain)).append("\n");
     sb.append("    bypassClientCredentials: ").append(toIndentedString(bypassClientCredentials)).append("\n");
     sb.append("    applicationScopes: ").append(toIndentedString(applicationScopes)).append("\n");
+    sb.append("    extClientSecretDescription: ").append(toIndentedString(extClientSecretDescription)).append("\n");
+    sb.append("    extClientSecretExpiresIn: ").append(toIndentedString(extClientSecretExpiresIn)).append("\n");
     sb.append("}");
     return sb.toString();
   }
