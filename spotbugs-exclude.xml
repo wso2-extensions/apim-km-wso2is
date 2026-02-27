@@ -83,6 +83,14 @@
         <Class name="org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Class name="org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
     <!-- Suppress EI_EXPOSE_REP and EI_EXPOSE_REP2 for notification event classes -->
     <Match>
         <Class name="org.wso2.is.notification.EventSender"/>
