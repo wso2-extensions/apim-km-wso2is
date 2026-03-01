@@ -258,7 +258,7 @@ public class TokenMgtUtil {
                     userName = getUserNameFromUserID(entityId, userTenantDomain);
                 }
                 if (StringUtils.isNotBlank(userName)) {
-                    authenticatedUser = OAuth2Util.getUserFromUserName(userName);
+                    authenticatedUser = OAuth2Util.getUserFromUserName(userName + "@" + userTenantDomain);
                     authenticatedUser.setTenantDomain(userTenantDomain);
                     authenticatedUser.setUserId(entityId);
                 } else if (!isFederated && !StringUtils.isBlank(sub)) {
