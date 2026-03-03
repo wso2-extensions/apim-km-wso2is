@@ -42,7 +42,6 @@ import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -119,7 +118,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (JWSAlgorithm.NONE.getName().equals(signatureAlgorithm.getName())) {
             return new PlainJWT(jwtClaimsSet).serialize();
         }
-        return signJWT(jwtClaimsSet, null, request);
+        return signJWT(jwtClaimsSet, null, request, true);
     }
 
     /**
@@ -145,7 +144,7 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         if (JWSAlgorithm.NONE.getName().equals(signatureAlgorithm.getName())) {
             return new PlainJWT(jwtClaimsSet).serialize();
         }
-        return signJWT(jwtClaimsSet, request, null);
+        return signJWT(jwtClaimsSet, request, null, true);
     }
 
     /**
@@ -197,16 +196,12 @@ public class ExtendedJWTTokenIssuer extends JWTTokenIssuer {
         jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.CLIENT_ID, consumerKey);
         String scope = getScope(authAuthzReqMessageContext, tokenReqMessageContext, sub);
         if (StringUtils.isNotEmpty(scope)) {
-            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.SCOPE, scope);
+            jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.REFRESH_TOKEN_SCOPE_CLAIM_KEY, scope);
         }
         // claim to identify the JWT as a refresh token.
         jwtClaimsSetBuilder.claim(PersistenceConstants.JWTClaim.TOKEN_TYPE_ELEM, PersistenceConstants.REFRESH_TOKEN);
-        /*
-         * This is a spec (openid-connect-core-1_0:2.0) requirement for ID tokens. But we are keeping this in JWT as
-         * well.
-         */
-        List<String> audience = OAuth2Util.getOIDCAudience(consumerKey, oAuthAppDO);
-        jwtClaimsSetBuilder.audience(audience);
+        // issuer is audience for refresh tokens
+        jwtClaimsSetBuilder.audience(issuer);
         setClaimsForNonPersistence(jwtClaimsSetBuilder, authAuthzReqMessageContext, tokenReqMessageContext,
                 authenticatedUser, oAuthAppDO);
         return jwtClaimsSetBuilder.build();
