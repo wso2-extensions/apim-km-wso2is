@@ -164,8 +164,8 @@ public class InMemoryTokenProvider implements TokenProvider {
                 } else {
                     validationDataDO.setTokenState(OAuthConstants.TokenStates.TOKEN_STATE_EXPIRED);
                 }
-                if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled()) {
-                    // claim can only be null for migrated tokens, which are already handled above.Hence, no null check.
+                if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled() && claimsSet.getClaim(
+                        PersistenceConstants.JWTClaim.IS_CONSENTED) != null) {
                     validationDataDO.setIsConsentedToken(
                             (boolean) claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED));
                 }
@@ -297,6 +297,11 @@ public class InMemoryTokenProvider implements TokenProvider {
     private RefreshTokenValidationDataDO validateJWTRefreshToken(JWTClaimsSet claimsSet, SignedJWT signedJWT)
             throws IdentityOAuth2Exception {
 
+        if (!StringUtils.equals(PersistenceConstants.JWTClaim.DEFAULT_JWT_RT_HEADER_VALUE,
+                signedJWT.getHeader().getType().getType())) {
+            throw new IdentityOAuth2Exception("Invalid jwt refresh token provided for validation.");
+        }
+
         RefreshTokenValidationDataDO validationDataDO = new RefreshTokenValidationDataDO();
         String consumerKey = (String) claimsSet
                 .getClaim(PersistenceConstants.JWTClaim.AUTHORIZATION_PARTY);
@@ -332,7 +337,8 @@ public class InMemoryTokenProvider implements TokenProvider {
         validationDataDO.setIssuedTime(new Timestamp(claimsSet.getIssueTime().getTime()));
         validationDataDO.setValidityPeriodInMillis(claimsSet.getExpirationTime().getTime()
                 - claimsSet.getIssueTime().getTime());
-        validationDataDO.setScope(TokenMgtUtil.getScopes(claimsSet.getClaim(PersistenceConstants.JWTClaim.SCOPE)));
+        validationDataDO.setScope(TokenMgtUtil.getScopes(
+                claimsSet.getClaim(PersistenceConstants.JWTClaim.REFRESH_TOKEN_SCOPE_CLAIM_KEY)));
         if (OAuth2ServiceComponentHolder.isConsentedTokenColumnEnabled() &&
                 claimsSet.getClaim(PersistenceConstants.JWTClaim.IS_CONSENTED) != null) {
             validationDataDO.setConsented(

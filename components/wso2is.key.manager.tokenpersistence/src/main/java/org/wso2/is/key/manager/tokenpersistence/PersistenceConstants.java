@@ -37,6 +37,8 @@ public class PersistenceConstants {
         public static final String TOKEN_TYPE_ELEM = "token_type";
         public static final String APP_DOMAIN = "app_td";
         public static final String USER_DOMAIN = "user_td";
+        public static final String REFRESH_TOKEN_SCOPE_CLAIM_KEY = "rt_scope";
+        public static final String DEFAULT_JWT_RT_HEADER_VALUE = "rt+jwt";
     }
     public static final int SECONDS_TO_MILLISECONDS_FACTOR = 1000;
     public static final String PREV_ACCESS_TOKEN = "previousAccessToken";
