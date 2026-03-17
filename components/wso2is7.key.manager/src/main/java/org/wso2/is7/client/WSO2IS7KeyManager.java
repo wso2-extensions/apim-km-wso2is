@@ -24,10 +24,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import feign.Feign;
+import feign.Response;
 import feign.auth.BasicAuthRequestInterceptor;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -78,6 +80,7 @@ import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
+import org.wso2.is7.client.model.RevokeClient;
 import org.wso2.is7.client.model.WSO2IS7APIResourceInfo;
 import org.wso2.is7.client.model.WSO2IS7APIResourceManagementClient;
 import org.wso2.is7.client.model.WSO2IS7APIResourceScopeInfo;
@@ -175,6 +178,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private Map<String, String> claimMappings;
     private CertificateMgtUtils certificateMgtUtils = CertificateMgtUtils.getInstance();
     private static String certificateType = "X.509";
+    private RevokeClient revokeClient;
 
     /* Use scim me endpoint to fetch user info only if explicitly specified as the userInfoEndpoint.
     Otherwise, use the keymanager-operations user-info endpoint. */
@@ -884,6 +888,15 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             enableRoleCreation = (Boolean) configuration.getParameter(ENABLE_ROLES_CREATION);
         }
 
+        String revokeOneTimeTokenEndpoint;
+        if (configuration.getParameter(APIConstants.KeyManager.REVOKE_ENDPOINT) != null) {
+            revokeOneTimeTokenEndpoint = (String) configuration.getParameter(APIConstants.KeyManager.REVOKE_ENDPOINT);
+        } else {
+            revokeOneTimeTokenEndpoint = keyManagerServiceUrl.split(
+                    "/" + APIConstants.SERVICES_URL_RELATIVE_PATH)[0].concat(getTenantAwareContext().trim())
+                    .concat("/oauth2/revoke");
+        }
+
         if ((WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.MTLS).equals(configuration.getConfiguration()
                 .get(WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.AUTHENTICATION))) {
             KeyStore trustStore = getTrustStore();
@@ -1033,6 +1046,12 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 .target(AuthClient.class, tokenEndpoint);
 
         claimMappings = ClaimMappingReader.loadClaimMappings();
+
+        revokeClient = Feign.builder()
+                .client(new ApacheFeignHttpClient(APIUtil.getHttpClient(revokeOneTimeTokenEndpoint)))
+                .encoder(new GsonEncoder()).decoder(new GsonDecoder()).logger(new Slf4jLogger())
+                .errorDecoder(new KMClientErrorDecoder()).encoder(new FormEncoder())
+                .target(RevokeClient.class, revokeOneTimeTokenEndpoint);
 
         if (configuration.getParameter(WSO2ISConstants.ENABLE_SCHEMA_CACHE) instanceof Boolean && Boolean.parseBoolean
                 (configuration.getParameter(WSO2ISConstants.ENABLE_SCHEMA_CACHE).toString())) {
@@ -1918,7 +1937,24 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     @Override
     public void revokeOneTimeToken(String token, String consumerKey) {
 
-        // Implementation is not applicable.
+        try {
+            Response response = revokeClient.revokeToken(
+                    (String) this.configuration.getParameter(APIConstants.KEY_MANAGER_USERNAME),
+                    (String) this.configuration.getParameter(APIConstants.KEY_MANAGER_PASSWORD), token, consumerKey);
+            if (log.isDebugEnabled()) {
+                if (response.status() == HttpStatus.SC_OK) {
+                    log.debug("Successfully revoked the token " + APIUtil.getMaskedToken(
+                            token) + " with consumer key " + consumerKey);
+                } else {
+                    log.error("Error occurred while revoking one time token " + APIUtil.getMaskedToken(
+                            token) + " with consumer key " + consumerKey + ". Status: " + response.status());
+                }
+            }
+        } catch (KeyManagerClientException e) {
+            log.error(
+                    "Could not reach the key manager resource for one time token revocation of the token " +
+                            APIUtil.getMaskedToken(token) + " with consumer key " + consumerKey + ". Error: " + e);
+        }
     }
 
     /* Copied from AMDefaultKeyManagerImpl. */
