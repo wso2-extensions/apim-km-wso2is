@@ -441,7 +441,7 @@ paths:
           description: Request payload containing details for generating a new client secret
           required: true
           schema:
-            $ref: '#/definitions/ClientSecretGenerationRequest'
+            $ref: '#/definitions/ClientSecretRequest'
       tags:
         - OAuth2 Client Secrets
       responses:
@@ -889,9 +889,9 @@ definitions:
         description: Expiry timestamp in seconds since Unix epoch (0 means never expires)
         example: 1755756933
   #-----------------------------------------------------
-  # Client Secret Generation Request Object
+  # Client Secret Request Object
   #-----------------------------------------------------
-  ClientSecretGenerationRequest:
+  ClientSecretRequest:
     type: object
     properties:
       expires_in:

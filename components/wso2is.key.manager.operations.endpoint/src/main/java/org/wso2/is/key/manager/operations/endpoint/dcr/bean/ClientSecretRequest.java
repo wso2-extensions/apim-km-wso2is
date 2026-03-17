@@ -21,7 +21,7 @@ package org.wso2.is.key.manager.operations.endpoint.dcr.bean;
  * Represents a request payload for generating a new client secret
  * for an OAuth application.
  */
-public class ClientSecretGenerationRequest {
+public class ClientSecretRequest {
 
     private String clientId;
     private Long expiresAt;

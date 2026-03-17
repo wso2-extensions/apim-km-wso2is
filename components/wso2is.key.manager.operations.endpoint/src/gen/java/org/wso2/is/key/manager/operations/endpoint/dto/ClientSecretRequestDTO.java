@@ -12,7 +12,7 @@ import javax.xml.bind.annotation.*;
 
 
 
-public class ClientSecretGenerationRequestDTO   {
+public class ClientSecretRequestDTO   {
   
     private Integer expiresIn = null;
     private String description = null;
@@ -21,7 +21,7 @@ public class ClientSecretGenerationRequestDTO   {
   /**
    * Expiry time in seconds
    **/
-  public ClientSecretGenerationRequestDTO expiresIn(Integer expiresIn) {
+  public ClientSecretRequestDTO expiresIn(Integer expiresIn) {
     this.expiresIn = expiresIn;
     return this;
   }
@@ -39,7 +39,7 @@ public class ClientSecretGenerationRequestDTO   {
   /**
    * A human-readable label for this secret
    **/
-  public ClientSecretGenerationRequestDTO description(String description) {
+  public ClientSecretRequestDTO description(String description) {
     this.description = description;
     return this;
   }
@@ -57,7 +57,7 @@ public class ClientSecretGenerationRequestDTO   {
   /**
    * Optional client secret value to restore. If not provided, a new secret is auto-generated.
    **/
-  public ClientSecretGenerationRequestDTO clientSecret(String clientSecret) {
+  public ClientSecretRequestDTO clientSecret(String clientSecret) {
     this.clientSecret = clientSecret;
     return this;
   }
@@ -81,10 +81,10 @@ public class ClientSecretGenerationRequestDTO   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ClientSecretGenerationRequestDTO clientSecretGenerationRequest = (ClientSecretGenerationRequestDTO) o;
-    return Objects.equals(expiresIn, clientSecretGenerationRequest.expiresIn) &&
-        Objects.equals(description, clientSecretGenerationRequest.description) &&
-        Objects.equals(clientSecret, clientSecretGenerationRequest.clientSecret);
+    ClientSecretRequestDTO clientSecretRequest = (ClientSecretRequestDTO) o;
+    return Objects.equals(expiresIn, clientSecretRequest.expiresIn) &&
+        Objects.equals(description, clientSecretRequest.description) &&
+        Objects.equals(clientSecret, clientSecretRequest.clientSecret);
   }
 
   @Override
@@ -95,7 +95,7 @@ public class ClientSecretGenerationRequestDTO   {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ClientSecretGenerationRequestDTO {\n");
+    sb.append("class ClientSecretRequestDTO {\n");
     
     sb.append("    expiresIn: ").append(toIndentedString(expiresIn)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
