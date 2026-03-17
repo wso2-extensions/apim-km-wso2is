@@ -16,6 +16,7 @@ public class ClientSecretGenerationRequestDTO   {
   
     private Integer expiresIn = null;
     private String description = null;
+    private String clientSecret = null;
 
   /**
    * Expiry time in seconds
@@ -53,6 +54,24 @@ public class ClientSecretGenerationRequestDTO   {
     this.description = description;
   }
 
+  /**
+   * Optional client secret value to restore. If not provided, a new secret is auto-generated.
+   **/
+  public ClientSecretGenerationRequestDTO clientSecret(String clientSecret) {
+    this.clientSecret = clientSecret;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "Optional client secret value to restore. If not provided, a new secret is auto-generated.")
+  @JsonProperty("client_secret")
+  public String getClientSecret() {
+    return clientSecret;
+  }
+  public void setClientSecret(String clientSecret) {
+    this.clientSecret = clientSecret;
+  }
+
 
   @Override
   public boolean equals(java.lang.Object o) {
@@ -64,12 +83,13 @@ public class ClientSecretGenerationRequestDTO   {
     }
     ClientSecretGenerationRequestDTO clientSecretGenerationRequest = (ClientSecretGenerationRequestDTO) o;
     return Objects.equals(expiresIn, clientSecretGenerationRequest.expiresIn) &&
-        Objects.equals(description, clientSecretGenerationRequest.description);
+        Objects.equals(description, clientSecretGenerationRequest.description) &&
+        Objects.equals(clientSecret, clientSecretGenerationRequest.clientSecret);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(expiresIn, description);
+    return Objects.hash(expiresIn, description, clientSecret);
   }
 
   @Override
@@ -79,6 +99,7 @@ public class ClientSecretGenerationRequestDTO   {
     
     sb.append("    expiresIn: ").append(toIndentedString(expiresIn)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
+    sb.append("    clientSecret: ").append(toIndentedString(clientSecret)).append("\n");
     sb.append("}");
     return sb.toString();
   }

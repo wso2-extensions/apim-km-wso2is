@@ -26,6 +26,7 @@ public class ClientSecretGenerationRequest {
     private String clientId;
     private Long expiresAt;
     private String description;
+    private String clientSecret;
 
     public Long getExpiresAt() {
 
@@ -55,5 +56,15 @@ public class ClientSecretGenerationRequest {
     public void setClientId(String clientId) {
 
         this.clientId = clientId;
+    }
+
+    public String getClientSecret() {
+
+        return clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+
+        this.clientSecret = clientSecret;
     }
 }

@@ -902,6 +902,9 @@ definitions:
         type: string
         description: A human-readable label for this secret
         example: pizza application secret
+      client_secret:
+        type: string
+        description: Optional client secret value to restore. If not provided, a new secret is auto-generated.
   #-----------------------------------------------------
   # Client Secret List Object
   #-----------------------------------------------------

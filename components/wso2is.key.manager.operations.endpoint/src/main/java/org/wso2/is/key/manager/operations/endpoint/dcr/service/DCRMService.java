@@ -1043,6 +1043,9 @@ public class DCRMService {
         if (clientSecretGenerationRequest.getExpiresAt() != null) {
             oAuthConsumerSecretDTO.setExpiresAt(clientSecretGenerationRequest.getExpiresAt());
         }
+        if (StringUtils.isNotBlank(clientSecretGenerationRequest.getClientSecret())) {
+            oAuthConsumerSecretDTO.setClientSecret(clientSecretGenerationRequest.getClientSecret());
+        }
         OAuthConsumerSecretDTO createdSecret;
         try {
             createdSecret = oAuthAdminService.createClientSecret(oAuthConsumerSecretDTO);

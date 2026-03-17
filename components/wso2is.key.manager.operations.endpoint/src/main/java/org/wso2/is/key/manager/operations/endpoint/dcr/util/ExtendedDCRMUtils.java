@@ -318,6 +318,9 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
             if (clientSecretGenerationRequestDTO.getExpiresIn() != null) {
                 request.setExpiresAt(calculateExpiresAt(clientSecretGenerationRequestDTO.getExpiresIn()));
             }
+            if (StringUtils.isNotBlank(clientSecretGenerationRequestDTO.getClientSecret())) {
+                request.setClientSecret(clientSecretGenerationRequestDTO.getClientSecret());
+            }
         }
         return request;
     }
