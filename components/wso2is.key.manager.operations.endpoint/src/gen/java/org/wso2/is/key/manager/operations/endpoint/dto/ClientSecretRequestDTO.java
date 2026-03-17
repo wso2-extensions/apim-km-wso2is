@@ -55,7 +55,7 @@ public class ClientSecretRequestDTO   {
   }
 
   /**
-   * Optional client secret value to restore. If not provided, a new secret is auto-generated.
+   * Optional client secret value. If not provided, a new secret is auto-generated.
    **/
   public ClientSecretRequestDTO clientSecret(String clientSecret) {
     this.clientSecret = clientSecret;
@@ -63,7 +63,7 @@ public class ClientSecretRequestDTO   {
   }
 
   
-  @ApiModelProperty(value = "Optional client secret value to restore. If not provided, a new secret is auto-generated.")
+  @ApiModelProperty(value = "Optional client secret value. If not provided, a new secret is auto-generated.")
   @JsonProperty("client_secret")
   public String getClientSecret() {
     return clientSecret;

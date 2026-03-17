@@ -904,7 +904,7 @@ definitions:
         example: pizza application secret
       client_secret:
         type: string
-        description: Optional client secret value to restore. If not provided, a new secret is auto-generated.
+        description: Optional client secret value. If not provided, a new secret is auto-generated.
   #-----------------------------------------------------
   # Client Secret List Object
   #-----------------------------------------------------
