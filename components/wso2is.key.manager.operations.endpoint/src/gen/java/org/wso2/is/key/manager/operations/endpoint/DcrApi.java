@@ -1,8 +1,8 @@
 package org.wso2.is.key.manager.operations.endpoint;
 
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
@@ -94,7 +94,7 @@ DcrApiService delegate = new DcrApiServiceImpl();
         @ApiResponse(code = 403, message = "Forbidden", response = ErrorDTO.class),
         @ApiResponse(code = 409, message = "Conflict", response = ErrorDTO.class),
         @ApiResponse(code = 500, message = "Server Error", response = ErrorDTO.class) })
-    public Response generateClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Request payload containing details for generating a new client secret" ,required=true) ClientSecretGenerationRequestDTO clientSecretCreateRequest){
+    public Response generateClientSecret(@ApiParam(value = "Unique identifier of the OAuth2 client application.",required=true) @PathParam("clientId") String clientId, @ApiParam(value = "Request payload containing details for generating a new client secret" ,required=true) ClientSecretRequestDTO clientSecretCreateRequest){
         return delegate.generateClientSecret(clientId, clientSecretCreateRequest, securityContext);
     }
 

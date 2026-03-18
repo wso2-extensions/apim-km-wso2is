@@ -28,14 +28,14 @@ import org.wso2.carbon.identity.oauth.dcr.exception.DCRMException;
 import org.wso2.carbon.identity.oauth.dcr.util.DCRMUtils;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
-import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.exception.DCRMEndpointException;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ErrorDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
@@ -305,18 +305,21 @@ public class ExtendedDCRMUtils extends  DCRMUtils {
      * Converts the input data transfer object into a ClientSecretCreationRequest for creating a new client secret.
      *
      * @param clientId the client identifier for which the secret is being created
-     * @param clientSecretGenerationRequestDTO the DTO containing optional description and expiry information
-     * @return a fully populated {@link ClientSecretGenerationRequest} object ready for client secret creation
+     * @param clientSecretRequestDTO the DTO containing optional description and expiry information
+     * @return a fully populated {@link ClientSecretRequest} object ready for client secret creation
      */
-    public static ClientSecretGenerationRequest getClientSecretCreationRequest(
-            String clientId, ClientSecretGenerationRequestDTO clientSecretGenerationRequestDTO) {
+    public static ClientSecretRequest getClientSecretCreationRequest(
+            String clientId, ClientSecretRequestDTO clientSecretRequestDTO) {
 
-        ClientSecretGenerationRequest request = new ClientSecretGenerationRequest();
+        ClientSecretRequest request = new ClientSecretRequest();
         request.setClientId(clientId);
-        if (clientSecretGenerationRequestDTO != null) {
-            request.setDescription(clientSecretGenerationRequestDTO.getDescription());
-            if (clientSecretGenerationRequestDTO.getExpiresIn() != null) {
-                request.setExpiresAt(calculateExpiresAt(clientSecretGenerationRequestDTO.getExpiresIn()));
+        if (clientSecretRequestDTO != null) {
+            request.setDescription(clientSecretRequestDTO.getDescription());
+            if (clientSecretRequestDTO.getExpiresIn() != null) {
+                request.setExpiresAt(calculateExpiresAt(clientSecretRequestDTO.getExpiresIn()));
+            }
+            if (StringUtils.isNotBlank(clientSecretRequestDTO.getClientSecret())) {
+                request.setClientSecret(clientSecretRequestDTO.getClientSecret());
             }
         }
         return request;

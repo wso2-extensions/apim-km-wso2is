@@ -48,7 +48,7 @@ import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerSecretDTO;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
-import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationUpdateRequest;
@@ -1028,20 +1028,23 @@ public class DCRMService {
     /**
      * Creates a new client secret using the provided data.
      *
-     * @param clientSecretGenerationRequest the request containing client ID, optional description,
+     * @param clientSecretRequest the request containing client ID, optional description,
      *                                      and optional expiry time
      * @return the created {@link ClientSecret} object containing the generated secret details
      * @throws DCRMException if secret creation fails due to internal errors
      */
-    public ClientSecret createClientSecret(ClientSecretGenerationRequest clientSecretGenerationRequest)
+    public ClientSecret createClientSecret(ClientSecretRequest clientSecretRequest)
             throws DCRMException {
 
         OAuthConsumerSecretDTO oAuthConsumerSecretDTO = new OAuthConsumerSecretDTO();
-        String clientId = clientSecretGenerationRequest.getClientId();
+        String clientId = clientSecretRequest.getClientId();
         oAuthConsumerSecretDTO.setClientId(clientId);
-        oAuthConsumerSecretDTO.setDescription(clientSecretGenerationRequest.getDescription());
-        if (clientSecretGenerationRequest.getExpiresAt() != null) {
-            oAuthConsumerSecretDTO.setExpiresAt(clientSecretGenerationRequest.getExpiresAt());
+        oAuthConsumerSecretDTO.setDescription(clientSecretRequest.getDescription());
+        if (clientSecretRequest.getExpiresAt() != null) {
+            oAuthConsumerSecretDTO.setExpiresAt(clientSecretRequest.getExpiresAt());
+        }
+        if (StringUtils.isNotBlank(clientSecretRequest.getClientSecret())) {
+            oAuthConsumerSecretDTO.setClientSecret(clientSecretRequest.getClientSecret());
         }
         OAuthConsumerSecretDTO createdSecret;
         try {

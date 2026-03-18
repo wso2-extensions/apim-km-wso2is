@@ -23,14 +23,14 @@ import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.wso2.carbon.identity.oauth.dcr.exception.DCRMClientException;
 import org.wso2.is.key.manager.operations.endpoint.DcrApiService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecret;
-import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretGenerationRequest;
+import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ClientSecretRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplication;
 import org.wso2.is.key.manager.operations.endpoint.dcr.bean.ExtendedApplicationRegistrationRequest;
 import org.wso2.is.key.manager.operations.endpoint.dcr.service.DCRMService;
 import org.wso2.is.key.manager.operations.endpoint.dcr.util.ExtendedDCRMUtils;
 import org.wso2.is.key.manager.operations.endpoint.dto.ApplicationDTO;
-import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretGenerationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretListDTO;
+import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.ClientSecretResponseDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.RegistrationRequestDTO;
 import org.wso2.is.key.manager.operations.endpoint.dto.UpdateRequestDTO;
@@ -67,13 +67,13 @@ public class DcrApiServiceImpl implements DcrApiService {
      * Create a new client secret for the OAuth application identified by the given client ID.
      *
      * @param clientId                  The client ID of the OAuth application.
-     * @param clientSecretGenerationRequest The request object containing details for the new client secret.
+     * @param clientSecretRequest The request object containing details for the new client secret.
      * @param messageContext            The message context.
      * @return A Response object containing the created client secret details or an error response.
      */
     @Override
     public Response generateClientSecret(String clientId,
-                                         ClientSecretGenerationRequestDTO clientSecretGenerationRequest,
+                                         ClientSecretRequestDTO clientSecretRequest,
                                          MessageContext messageContext) {
 
         if (!ExtendedDCRMUtils.isMultipleClientSecretsEnabled()) {
@@ -86,8 +86,8 @@ public class DcrApiServiceImpl implements DcrApiService {
         clientId = new String(Base64.getUrlDecoder().decode(clientId), StandardCharsets.UTF_8);
         ClientSecretResponseDTO clientSecretDTO = null;
         try {
-            ClientSecretGenerationRequest request = ExtendedDCRMUtils.
-                    getClientSecretCreationRequest(clientId, clientSecretGenerationRequest);
+            ClientSecretRequest request = ExtendedDCRMUtils.
+                    getClientSecretCreationRequest(clientId, clientSecretRequest);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Generating new client secret for client: " + clientId);
             }
