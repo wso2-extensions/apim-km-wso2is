@@ -29,6 +29,7 @@ import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.ClaimManager;
 import org.wso2.carbon.user.api.ClaimMapping;
 import org.wso2.carbon.user.api.UserRealmService;
@@ -122,6 +123,13 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
             try {
                 AccessTokenDO accessTokenDO = OAuth2ServiceComponentHolder.getInstance().getTokenProvider()
                         .getVerifiedAccessToken(accessToken, false);
+
+                if (hasAccessTokenExpired(accessTokenDO)) {
+                    return Response.status(Response.Status.UNAUTHORIZED).entity(UserInfoUtil
+                            .getError(Response.Status.UNAUTHORIZED.toString(), "Unauthorized",
+                                    "Access token has expired")).build();
+                }
+
                 // If the authenticated user is a federated user and not needed to bind federated user claims,
                 // no requirement to retrieve claims from local user store.
                 if (accessTokenDO.getAuthzUser() != null && accessTokenDO.getAuthzUser().isFederatedUser() &&
@@ -208,5 +216,24 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
             log.debug("Claims for user: " + username + " : " + claimValues.toString());
         }
         return claimValues;
+    }
+
+    /**
+     * Checks whether the access token has expired
+     * @param accessTokenDO
+     * @return true when the token has expired
+     */
+    private boolean hasAccessTokenExpired(AccessTokenDO accessTokenDO) {
+        // check whether the grant is expired
+        if (accessTokenDO.getValidityPeriod() < 0) {
+            log.debug("Access Token has infinite lifetime");
+        } else {
+            if (OAuth2Util.getAccessTokenExpireMillis(accessTokenDO, true) == 0) {
+                log.debug("Access Token has expired");
+                return true;
+            }
+        }
+
+        return false;
     }
 }
