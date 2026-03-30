@@ -142,11 +142,6 @@ paths:
           schema:
              $ref: '#/definitions/Error'
 
-        401:
-          description: Unauthorized. Invalid access token.
-          schema:
-            $ref: '#/definitions/Error'
-
         500:
           description: Server Error
           schema:
