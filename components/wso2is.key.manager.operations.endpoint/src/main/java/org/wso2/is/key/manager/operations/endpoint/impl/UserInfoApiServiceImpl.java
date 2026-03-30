@@ -125,9 +125,8 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                         .getVerifiedAccessToken(accessToken, false);
 
                 if (hasAccessTokenExpired(accessTokenDO)) {
-                    return Response.status(Response.Status.UNAUTHORIZED).entity(UserInfoUtil
-                            .getError(Response.Status.UNAUTHORIZED.toString(), "Unauthorized",
-                                    "Access token has expired")).build();
+                    customClaims.clear();
+                    log.warn("Expired access token found. Clearing custom claims retrieved from cache.");
                 }
 
                 // If the authenticated user is a federated user and not needed to bind federated user claims,
@@ -142,8 +141,8 @@ public class UserInfoApiServiceImpl implements UserInfoApiService {
                         .getError(Response.Status.INTERNAL_SERVER_ERROR.toString(), "Internal server error",
                                 "Error while retrieving the authenticated " + "userinfo")).build();
             } catch (IllegalArgumentException e) {
-                log.warn("Error while retrieving authenticated userinfo from token identifier. "
-                        + "Token is invalid or inactive.");
+                customClaims.clear();
+                log.warn("Invalid or inactive access token found. Clearing custom claims retrieved from cache.");
             }
         }
 
