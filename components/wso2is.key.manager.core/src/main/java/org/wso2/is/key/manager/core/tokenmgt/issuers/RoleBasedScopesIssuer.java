@@ -731,7 +731,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         if (roleClaim != null) {
             userAttributes
                     .put(ClaimMapping.build(roleClaim, roleClaim, null, false),
-                            updatedRoles.toString().replace(" ", ""));
+                            StringUtils.join(updatedRoles, FrameworkUtils.getMultiAttributeSeparator()));
             tokReqMsgCtx.addProperty(ResourceConstants.ROLE_CLAIM, roleClaim);
         }
         user.setUserAttributes(userAttributes);
