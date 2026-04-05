@@ -185,8 +185,7 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 AuthorizationGrantCacheEntry existingGrantCacheEntry = AuthorizationGrantCache.getInstance()
                         .getFromSessionStore(oldAccessToken.getTokenId());
                 if (existingGrantCacheEntry != null) {
-                    existingGrantCacheEntry.setValidityPeriod(
-                            TimeUnit.MILLISECONDS.toNanos(accessTokenBean.getValidityPeriodInMillis()));
+                    setAuthorizationGrantCacheValidity(existingGrantCacheEntry, accessTokenBean);
                     // This new method has introduced in order to resolve a regression occurred : wso2/product-is#4366.
                     AuthorizationGrantCache.getInstance().clearFromSessionStore(oldAccessToken.getTokenId());
                     AuthorizationGrantCache.getInstance().storeToSessionStore(accessTokenBean.getTokenId(),
@@ -215,13 +214,38 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
                 } else {
                     grantCacheEntry.setTokenId(null);
                 }
-                grantCacheEntry.setValidityPeriod(
-                        TimeUnit.MILLISECONDS.toNanos(accessTokenBean.getValidityPeriodInMillis()));
+                setAuthorizationGrantCacheValidity(grantCacheEntry, accessTokenBean);
                 // This new method has introduced in order to resolve a regression occurred : wso2/product-is#4366.
                 AuthorizationGrantCache.getInstance().clearCacheEntryByTokenId(oldAuthorizationGrantCacheKey,
                         oldAccessToken.getTokenId());
                 AuthorizationGrantCache.getInstance().addToCacheByToken(authorizationGrantCacheKey, grantCacheEntry);
             }
+        }
+    }
+
+    /**
+     * Sets the authorization grant cache validity period using refresh token validity period.
+     *
+     * @param authorizationGrantCacheEntry Authorization grant cache entry.
+     * @param accessTokenDO Access token object.
+     */
+    private void setAuthorizationGrantCacheValidity(AuthorizationGrantCacheEntry authorizationGrantCacheEntry,
+                                                    AccessTokenDO accessTokenDO) {
+
+        long refreshTokenValidityPeriodInMillis = accessTokenDO.getRefreshTokenValidityPeriodInMillis();
+        if (refreshTokenValidityPeriodInMillis > 0) {
+            if (log.isDebugEnabled()) {
+                log.debug("Setting cache validity period to refresh token validity: "
+                        + refreshTokenValidityPeriodInMillis + "ms");
+            }
+            authorizationGrantCacheEntry.setValidityPeriod(
+                    TimeUnit.MILLISECONDS.toNanos(refreshTokenValidityPeriodInMillis));
+        } else {
+            // Token is configured to never expire, use max value for cache validity.
+            if (log.isDebugEnabled()) {
+                log.debug("Token configured with no expiry. Setting cache validity to maximum value.");
+            }
+            authorizationGrantCacheEntry.setValidityPeriod(Long.MAX_VALUE);
         }
     }
 }
