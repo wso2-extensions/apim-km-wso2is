@@ -64,7 +64,7 @@ public class TokenRevocationBatchEvent extends Event {
     public String toString() {
 
         return "TokenRevocationBatchEvent{" +
-                ", eventId='" + eventId + '\'' +
+                " eventId='" + eventId + '\'' +
                 ", timeStamp=" + timeStamp +
                 ", type='" + type + '\'' +
                 ", tenantId=" + tenantId +
