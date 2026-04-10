@@ -1,3 +1,22 @@
+/*
+ *   Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com)
+ *
+ *   WSO2 LLC. licenses this file to you under the Apache License,
+ *   Version 2.0 (the "License"); you may not use this file except
+ *   in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
 package org.wso2.is.notification.internal;
 
 import org.apache.commons.logging.Log;
@@ -13,8 +32,10 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.core.util.IdentityCoreInitializedEvent;
 import org.wso2.carbon.identity.oauth.event.OAuthEventInterceptor;
+import org.wso2.carbon.identity.oauth.listener.OAuthApplicationMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import org.wso2.is.notification.APIMOAuthApplicationMgtListener;
 import org.wso2.is.notification.APIMTokenExchangeAuditLogger;
 import org.wso2.is.notification.ApimOauthEventInterceptor;
 
@@ -27,6 +48,7 @@ public class NotificationServiceComponent {
     private static final Log log = LogFactory.getLog(NotificationServiceComponent.class);
     ServiceRegistration<OAuthEventInterceptor> serviceRegistration;
     private ServiceRegistration<OAuthEventInterceptor> auditLoggerServiceRegistration;
+    private ServiceRegistration<OAuthApplicationMgtListener> oAuthApplicationMgtListenerServiceRegistration;
 
     @Activate
     protected void activate(ComponentContext componentContext) throws Exception {
@@ -36,6 +58,9 @@ public class NotificationServiceComponent {
                 bundleContext.registerService(OAuthEventInterceptor.class, new ApimOauthEventInterceptor(), null);
         auditLoggerServiceRegistration =
                 bundleContext.registerService(OAuthEventInterceptor.class, new APIMTokenExchangeAuditLogger(), null);
+        oAuthApplicationMgtListenerServiceRegistration =
+                bundleContext.registerService(OAuthApplicationMgtListener.class, new APIMOAuthApplicationMgtListener(),
+                        null);
     }
 
     @Reference(
@@ -95,6 +120,9 @@ public class NotificationServiceComponent {
         }
         if (auditLoggerServiceRegistration != null) {
             auditLoggerServiceRegistration.unregister();
+        }
+        if (oAuthApplicationMgtListenerServiceRegistration != null) {
+            oAuthApplicationMgtListenerServiceRegistration.unregister();
         }
         if (log.isDebugEnabled()) {
             log.info("Oauth Listeners disabled");
