@@ -25,6 +25,7 @@ package org.wso2.is.notification;
 public class NotificationConstants {
 
     public static final String TOKEN_REVOCATION_EVENT = "token_revocation";
+    public static final String TOKEN_REVOCATION_BATCH_EVENT = "token_revocation_batch";
     public static final String CONSUMER_APP_REVOCATION_EVENT
             = "consumer_app_revocation_event";
     public static final String SUBJECT_ENTITY_REVOCATION_EVENT
