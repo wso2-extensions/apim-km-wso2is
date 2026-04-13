@@ -19,10 +19,14 @@
 
 package org.wso2.is.key.manager.core.internal;
 
+import org.wso2.carbon.identity.oauth2.validators.scope.ScopeValidator;
 import org.wso2.carbon.registry.core.service.RegistryService;
 import org.wso2.carbon.registry.core.service.TenantRegistryLoader;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.ConfigurationContextService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Service holder to keep track on osgi Services
@@ -37,6 +41,7 @@ public class ServiceReferenceHolder {
     private static boolean restrictUnassignedScopes;
     private static boolean restrictApimRestApiScopes;
     private static boolean mergeApplicationScopes;
+    private List<ScopeValidator> scopeValidators = new ArrayList();
 
     private ServiceReferenceHolder() {
 
@@ -103,5 +108,20 @@ public class ServiceReferenceHolder {
 
     public static void setMergeApplicationScopes(boolean mergeApplicationScopes) {
         ServiceReferenceHolder.mergeApplicationScopes = mergeApplicationScopes;
+    }
+
+    public List<ScopeValidator> getScopeValidators() {
+
+        return scopeValidators;
+    }
+
+    public void addScopeValidator(ScopeValidator scopeValidator) {
+
+        scopeValidators.add(scopeValidator);
+    }
+
+    public void removeScopeValidator(ScopeValidator scopeValidator) {
+
+        scopeValidators.remove(scopeValidator);
     }
 }

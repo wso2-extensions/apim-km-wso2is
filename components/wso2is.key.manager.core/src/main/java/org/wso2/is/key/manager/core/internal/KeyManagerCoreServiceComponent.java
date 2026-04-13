@@ -190,4 +190,27 @@ public class KeyManagerCoreServiceComponent {
     protected void unsetConfigurationContextService(ConfigurationContextService contextService) {
         ServiceReferenceHolder.setContextService(null);
     }
+
+    @Reference(
+            name = "scope.validator.service",
+            service = ScopeValidator.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "removeScopeValidatorService"
+    )
+    protected void addScopeValidatorService(ScopeValidator scopeValidator) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Adding the Scope validator Service : " + scopeValidator.getName());
+        }
+        ServiceReferenceHolder.getInstance().addScopeValidator(scopeValidator);
+    }
+
+    protected void removeScopeValidatorService(ScopeValidator scopeValidator) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Removing the Scope validator Service : " + scopeValidator.getName());
+        }
+        ServiceReferenceHolder.getInstance().removeScopeValidator(scopeValidator);
+    }
 }

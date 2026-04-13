@@ -116,6 +116,7 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     private static final String REFRESH_TOKEN_GRANT_TYPE = "refresh_token";
     private static final String CLIENT_CREDENTIALS_GRANT_TYPE = "client_credentials";
     private static final String APPLICATION_SCOPES_PREFIX = "app_scopes_";
+    private static final String SYSTEM_SCOPE_ISSUER_CLASS = "org.wso2.carbon.apimgt.impl.issuers.SystemScopesIssuer";
 
     @Override
     public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
@@ -303,20 +304,19 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         List<String> scopes = new ArrayList<>();
         if (oAuthAuthzReqMessageContext.getApprovedScope() != null) {
             requestedScopes = new ArrayList<>(Arrays.asList(oAuthAuthzReqMessageContext.getApprovedScope()));
-            boolean isRestrictApimRestApiScopes = ServiceReferenceHolder.isRestrictApimRestApiScopes();
-            boolean isRestrictUnassignedScopes = ServiceReferenceHolder.isRestrictUnassignedScopes();
-            if (!(isRestrictUnassignedScopes && isRestrictApimRestApiScopes)) {
-                for (String scope : requestedScopes) {
-                    // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let
-                    // them pass to the final scope list returned from RoleBasedScopeIssuer. This is because
-                    // RoleBasedScopeIssuer is not responsible for validating Product REST API scopes. Those will be
-                    // handled by the SystemScopeIssuer.
-                    if (checkForProductRestAPIScopes(scope)) {
-                        scopes.add(scope);
-                    }
+
+            List<String> productRestAPIScopes = new ArrayList<>();
+            for (String scope : requestedScopes) {
+                if (checkForProductRestAPIScopes(scope)) {
+                    productRestAPIScopes.add(scope);
                 }
             }
-            requestedScopes.removeAll(scopes);
+            requestedScopes.removeAll(productRestAPIScopes);
+            if (isSystemScopeIssuerAvailable()) {
+                // Pass product REST API scopes through so SystemScopesIssuer can validate them.
+                scopes.addAll(productRestAPIScopes);
+            }
+
             if (requestedScopes.isEmpty()) {
                 return getAllowedScopes(scopes);
             }
@@ -348,7 +348,24 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
     public List<String> getScopes(OAuthCallback scopeValidationCallback) {
 
         List<String> authorizedScopes = null;
-        List<String> requestedScopes = Arrays.asList(scopeValidationCallback.getRequestedScope());
+        List<String> scopes = new ArrayList<>();
+        List<String> requestedScopes = new ArrayList<>(Arrays.asList(scopeValidationCallback.getRequestedScope()));
+
+        List<String> productRestAPIScopes = new ArrayList<>();
+        for (String scope : requestedScopes) {
+            if (checkForProductRestAPIScopes(scope)) {
+                productRestAPIScopes.add(scope);
+            }
+        }
+        requestedScopes.removeAll(productRestAPIScopes);
+        if (isSystemScopeIssuerAvailable()) {
+            // Pass product REST API scopes through so SystemScopesIssuer can validate them.
+            scopes.addAll(productRestAPIScopes);
+        }
+        if (requestedScopes.isEmpty()) {
+            return getAllowedScopes(scopes);
+        }
+
         String clientId = scopeValidationCallback.getClient();
         AuthenticatedUser authenticatedUser = scopeValidationCallback.getResourceOwner();
 
@@ -356,12 +373,15 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         if (appScopes != null) {
             //If no scopes can be found in the context of the application
             if (isAppScopesEmpty(appScopes, clientId)) {
-                return getAllowedScopes(requestedScopes);
+                authorizedScopes = getAllowedScopes(requestedScopes);
+                scopes.addAll(authorizedScopes);
+                return scopes;
             }
             String[] userRoles = getUserRoles(authenticatedUser, null);
             authorizedScopes = getAuthorizedScopes(userRoles, requestedScopes, appScopes);
+            scopes.addAll(authorizedScopes);
         }
-        return authorizedScopes;
+        return scopes;
     }
 
     /**
@@ -376,20 +396,19 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
         List<String> authorizedScopes = new ArrayList<>();
         List<String> scopes = new ArrayList<>();
         List<String> requestedScopes = new ArrayList<>(Arrays.asList(tokReqMsgCtx.getScope()));
-        boolean isRestrictApimRestApiScopes = ServiceReferenceHolder.isRestrictApimRestApiScopes();
-        boolean isRestrictUnassignedScopes = ServiceReferenceHolder.isRestrictUnassignedScopes();
-        if (!(isRestrictUnassignedScopes && isRestrictApimRestApiScopes)) {
-            for (String scope : requestedScopes) {
-                // If requestedScopes contains Product REST APIs (Publisher/DevPortal/Admin) scopes, just let
-                // them pass to the final scope list returned from RoleBasedScopeIssuer. This is because
-                // RoleBasedScopeIssuer is not responsible for validating Product REST API scopes. Those will be
-                // handled by SystemScopeIssuer.
-                if (checkForProductRestAPIScopes(scope)) {
-                    scopes.add(scope);
-                }
+
+        List<String> productRestAPIScopes = new ArrayList<>();
+        for (String scope : requestedScopes) {
+            if (checkForProductRestAPIScopes(scope)) {
+                productRestAPIScopes.add(scope);
             }
         }
-        requestedScopes.removeAll(scopes);
+        requestedScopes.removeAll(productRestAPIScopes);
+        if (isSystemScopeIssuerAvailable()) {
+            // Pass product REST API scopes through so SystemScopesIssuer can validate them.
+            scopes.addAll(productRestAPIScopes);
+        }
+
         String clientId = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getClientId();
         AuthenticatedUser authenticatedUser = tokReqMsgCtx.getAuthorizedUser();
         String grantType = tokReqMsgCtx.getOauth2AccessTokenReqDTO().getGrantType();
@@ -898,5 +917,22 @@ public class RoleBasedScopesIssuer extends AbstractScopesIssuer implements Scope
             return currentRoleClaimValue;
         }
         return null;
+    }
+
+    /**
+     * Check whether the SystemScopesIssuer is available in the system. If it is available, that means the system
+     * is configured to have at least two separate scope issuers, one for product REST API scopes and one for
+     * application scopes and RoleBasedScopesIssuer should not handle product REST API scopes.
+     *
+     * @return true if SystemScopesIssuer is available, false otherwise
+     */
+    private boolean isSystemScopeIssuerAvailable() {
+        List<ScopeValidator> list = ServiceReferenceHolder.getInstance().getScopeValidators();
+        for (ScopeValidator scopeValidator : list) {
+            if (StringUtils.equalsIgnoreCase(scopeValidator.getClass().getName(), SYSTEM_SCOPE_ISSUER_CLASS)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
