@@ -1247,8 +1247,12 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 Set<String> existingScopeNames = getExistingWSO2IS7ScopeNames(wso2IS7APIResourceId);
                 nonExistingWSO2IS7Scopes = getNonExistingWSO2IS7Scopes(newScopes, existingScopeNames);
                 addScopesToWSO2IS7APIResource(wso2IS7APIResourceId, nonExistingWSO2IS7Scopes);
+                removeStaleRoleBindingsAndUpdateExistingScopes(wso2IS7APIResourceId, newScopes, existingScopeNames);
             } catch (KeyManagerClientException e) {
                 handleException("Failed to add scopes to WSO2 IS7 API Resource: " +
+                        DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+            } catch (APIManagementException e) {
+                handleException("Failed to update existing scopes in WSO2 IS7 API Resource: " +
                         DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
             }
         } else {
@@ -1291,12 +1295,55 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         List<WSO2IS7APIResourceScopeInfo> wso2IS7ScopesToAdd = new ArrayList<>();
         for (Scope scope : newLocalScopes) {
-            if (!existingScopeNames.contains(scope.getName())) {
+            if (!existingScopeNames.contains(scope.getKey())) {
                 wso2IS7ScopesToAdd.add(new WSO2IS7APIResourceScopeInfo(scope.getKey(), scope.getName(),
                         scope.getDescription()));
             }
         }
         return wso2IS7ScopesToAdd;
+    }
+
+    /**
+     * Removes role-to-scope bindings that are no longer assigned in APIM, and updates
+     * display name and description of already existing scopes.
+     * New bindings are added afterward by
+     * {@link #createWSO2IS7RoleToScopeBindings}.
+     *
+     * @param wso2IS7APIResourceId   ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}
+     * @param scopes                 Scopes from the current APIM request
+     * @param existingScopeNames     Scope keys already registered in the IS7 API resource
+     * @throws KeyManagerClientException Failed to patch scope metadata in IS7
+     * @throws APIManagementException    Failed to remove stale role-to-scope bindings
+     */
+    private void removeStaleRoleBindingsAndUpdateExistingScopes(String wso2IS7APIResourceId, Set<Scope> scopes,
+                                             Set<String> existingScopeNames)
+            throws KeyManagerClientException, APIManagementException {
+
+        boolean hasExistingScopes = scopes.stream().anyMatch(s -> existingScopeNames.contains(s.getKey()));
+        if (!hasExistingScopes) {
+            return;
+        }
+
+        JsonArray allIS7Roles = searchRoles(null);
+        for (Scope scope : scopes) {
+            if (!existingScopeNames.contains(scope.getKey())) {
+                continue;
+            }
+            // Update meta data for exiting scopes
+            WSO2IS7APIResourceScopeInfo scopeInfo = new WSO2IS7APIResourceScopeInfo();
+            scopeInfo.setDisplayName(scope.getName());
+            scopeInfo.setDescription(scope.getDescription());
+            wso2IS7APIResourceManagementClient.patchAPIResourceScope(wso2IS7APIResourceId, scope.getKey(), scopeInfo);
+
+            // Update with removed scope-to-role bindings for exiting scopes
+            List<String> existingAPIMRoles = getAPIMRolesFromIS7Roles(
+                    getWSO2IS7RolesHavingScope(scope.getKey(), allIS7Roles));
+            List<String> roleBindingsToRemove = new ArrayList<>(existingAPIMRoles);
+            roleBindingsToRemove.removeAll(getRoles(scope));
+            if (!roleBindingsToRemove.isEmpty()) {
+                removeWSO2IS7RoleToScopeBindings(scope.getKey(), roleBindingsToRemove);
+            }
+        }
     }
 
     /**
@@ -1391,6 +1438,15 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         try {
             WSO2IS7RoleInfo role = wso2IS7SCIMRolesClient.getRole(roleId);
             List<Map<String, String>> permissions = role.getPermissions();
+
+            if (permissions == null) {
+                permissions = Collections.emptyList();
+            }
+
+            // Skip if this role already has the scope
+            if (permissions.stream().anyMatch(p -> scope.getKey().equals(p.get("value")))) {
+                return;
+            }
 
             List<WSO2IS7PatchRoleOperationInfo.Permission> allPermissions = new ArrayList<>();
             for (Map<String, String> existingPermission : permissions) {
@@ -1609,13 +1665,17 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
             throws APIManagementException {
 
         String wso2IS7APIResourceId = getWSO2IS7APIResourceId();
-        // Remove the old local scopes
+        Set<String> newLocalScopeKeys = newLocalScopes.stream().map(Scope::getKey).collect(Collectors.toSet());
+        Set<String> removedScopeKeys = new HashSet<>(oldLocalScopeKeys);
+        removedScopeKeys.removeAll(newLocalScopeKeys);
+
+        // Remove only scopes that are no longer present after update.
         if (wso2IS7APIResourceId != null) {
-            for (String oldScope : oldLocalScopeKeys) {
+            for (String removedScope : removedScopeKeys) {
                 try {
-                    wso2IS7APIResourceManagementClient.deleteScopeFromAPIResource(wso2IS7APIResourceId, oldScope);
+                    wso2IS7APIResourceManagementClient.deleteScopeFromAPIResource(wso2IS7APIResourceId, removedScope);
                 } catch (KeyManagerClientException e) {
-                    handleException("Failed to delete scope: " + oldScope + " from WSO2 IS7 API Resource: " +
+                    handleException("Failed to delete scope: " + removedScope + " from WSO2 IS7 API Resource: " +
                             DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
                 }
             }
@@ -1719,6 +1779,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 if (roleId != null) {
                     WSO2IS7RoleInfo roleInfo = wso2IS7SCIMRolesClient.getRole(roleId);
                     List<Map<String, String>> existingScopes = roleInfo.getPermissions();
+                    if (existingScopes == null) {
+                        existingScopes = Collections.emptyList();
+                    }
 
                     // Update the role with all the existing scopes(permissions) except the given scope(permission)
                     List<WSO2IS7PatchRoleOperationInfo.Permission> permissions = new ArrayList<>();
