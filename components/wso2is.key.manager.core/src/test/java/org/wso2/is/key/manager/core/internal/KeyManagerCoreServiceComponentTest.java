@@ -57,8 +57,9 @@ public class KeyManagerCoreServiceComponentTest {
         Whitebox.invokeMethod(component, "addScopeValidatorService", validator);
 
         List<ScopeValidator> validators = ServiceReferenceHolder.getInstance().getScopeValidators();
-        Assert.assertEquals(1, validators.size());
-        Assert.assertTrue(validators.contains(validator));
+        Assert.assertEquals("Binding a scope validator service should register exactly one validator; got "
+                + validators, 1, validators.size());
+        Assert.assertTrue("Bound validator should be present in the registry", validators.contains(validator));
     }
 
     @Test
@@ -70,6 +71,7 @@ public class KeyManagerCoreServiceComponentTest {
         Whitebox.invokeMethod(component, "addScopeValidatorService", validator);
         Whitebox.invokeMethod(component, "removeScopeValidatorService", validator);
 
-        Assert.assertTrue(ServiceReferenceHolder.getInstance().getScopeValidators().isEmpty());
+        Assert.assertTrue("Unbinding the scope validator service should leave the registry empty",
+                ServiceReferenceHolder.getInstance().getScopeValidators().isEmpty());
     }
 }

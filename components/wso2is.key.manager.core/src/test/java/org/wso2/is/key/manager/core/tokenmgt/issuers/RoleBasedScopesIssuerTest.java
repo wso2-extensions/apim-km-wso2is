@@ -118,16 +118,26 @@ public class RoleBasedScopesIssuerTest {
     }
 
     @Test
-    public void testAuthzProductScopesPassThroughWhenSystemIssuerAvailable() {
+    public void testAuthzProductScopesPassThroughWhenSystemIssuerAvailable() throws Exception {
 
         registerSystemScopesIssuer();
+        // When the pass-through works, requestedScopes is emptied and the method returns before getAppScopes is
+        // reached; this stub only takes effect if the (regressed) code falls through, yielding a clean assertion
+        // failure instead of a NoClassDefFoundError from real infrastructure.
+        PowerMockito.doReturn(null).when(scopesIssuer)
+                .getAppScopes(Mockito.anyString(), Mockito.any(AuthenticatedUser.class), Mockito.anyList());
         OAuthAuthzReqMessageContext context = mockAuthzContext(new String[]{PRODUCT_SCOPE_1, PRODUCT_SCOPE_2});
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_2));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_1
+                + " should pass through to SystemScopesIssuer when one is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_2
+                + " should pass through to SystemScopesIssuer when one is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_2));
+        Assert.assertEquals("Only the two requested product scopes should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -138,8 +148,10 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = scopesIssuer.getScopes(context);
 
         // No SystemScopesIssuer: product scopes are dropped and requestedScopes becomes empty -> default scope.
-        Assert.assertEquals(1, result.size());
-        Assert.assertTrue(result.contains(DEFAULT_SCOPE));
+        Assert.assertEquals("Without a SystemScopesIssuer, product scopes are dropped leaving only the default "
+                + "scope; got " + result, 1, result.size());
+        Assert.assertTrue("Result should fall back to the default scope " + DEFAULT_SCOPE + "; got " + result,
+                result.contains(DEFAULT_SCOPE));
     }
 
     @Test
@@ -153,9 +165,12 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = scopesIssuer.getScopes(context);
 
         // Product scope passes through, app scope passes through the empty-app-scopes branch.
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(APP_SCOPE));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_1 + " should pass through with a SystemScopesIssuer; got "
+                + result, result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("App scope " + APP_SCOPE + " should be retained; got " + result,
+                result.contains(APP_SCOPE));
+        Assert.assertEquals("Both the product scope and the app scope should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -168,9 +183,12 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = scopesIssuer.getScopes(context);
 
         // Product scope dropped, only the app scope remains.
-        Assert.assertFalse(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(APP_SCOPE));
-        Assert.assertEquals(1, result.size());
+        Assert.assertFalse("Product scope " + PRODUCT_SCOPE_1
+                + " should be dropped without a SystemScopesIssuer; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("App scope " + APP_SCOPE + " should be retained; got " + result,
+                result.contains(APP_SCOPE));
+        Assert.assertEquals("Only the app scope should remain; got " + result, 1, result.size());
     }
 
     @Test
@@ -187,7 +205,8 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertTrue(result.isEmpty());
+        Assert.assertTrue("A null approved scope should yield no authorized scopes; got " + result,
+                result.isEmpty());
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -195,19 +214,26 @@ public class RoleBasedScopesIssuerTest {
     // ------------------------------------------------------------------------------------------------
 
     @Test
-    public void testRestrictFlagsDoNotGateProductScopesWhenSystemIssuerAvailable() {
+    public void testRestrictFlagsDoNotGateProductScopesWhenSystemIssuerAvailable() throws Exception {
 
         // Both restrict flags ON used to suppress product scope pass-through; now only the SystemScopesIssuer matters.
         ServiceReferenceHolder.setRestrictUnassignedScopes(true);
         ServiceReferenceHolder.setRestrictApimRestApiScopes(true);
         registerSystemScopesIssuer();
+        PowerMockito.doReturn(null).when(scopesIssuer)
+                .getAppScopes(Mockito.anyString(), Mockito.any(AuthenticatedUser.class), Mockito.anyList());
         OAuthAuthzReqMessageContext context = mockAuthzContext(new String[]{PRODUCT_SCOPE_1, PRODUCT_SCOPE_3});
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_3));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("restrict.* flags must not gate pass-through; product scope " + PRODUCT_SCOPE_1
+                + " should pass through when a SystemScopesIssuer is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("restrict.* flags must not gate pass-through; product scope " + PRODUCT_SCOPE_3
+                + " should pass through when a SystemScopesIssuer is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_3));
+        Assert.assertEquals("Only the two requested product scopes should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -221,10 +247,15 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertFalse(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertFalse(result.contains(PRODUCT_SCOPE_3));
-        Assert.assertEquals(1, result.size());
-        Assert.assertTrue(result.contains(DEFAULT_SCOPE));
+        Assert.assertFalse("Without a SystemScopesIssuer, product scope " + PRODUCT_SCOPE_1
+                + " should be dropped regardless of the restrict.* flags; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertFalse("Without a SystemScopesIssuer, product scope " + PRODUCT_SCOPE_3
+                + " should be dropped regardless of the restrict.* flags; got " + result,
+                result.contains(PRODUCT_SCOPE_3));
+        Assert.assertEquals("Only the default scope should remain; got " + result, 1, result.size());
+        Assert.assertTrue("Result should fall back to the default scope " + DEFAULT_SCOPE + "; got " + result,
+                result.contains(DEFAULT_SCOPE));
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -241,16 +272,23 @@ public class RoleBasedScopesIssuerTest {
     }
 
     @Test
-    public void testCallbackProductScopesPassThroughWhenSystemIssuerAvailable() {
+    public void testCallbackProductScopesPassThroughWhenSystemIssuerAvailable() throws Exception {
 
         registerSystemScopesIssuer();
+        PowerMockito.doReturn(null).when(scopesIssuer)
+                .getAppScopes(Mockito.anyString(), Mockito.any(AuthenticatedUser.class), Mockito.anyList());
         OAuthCallback callback = mockCallback(new String[]{PRODUCT_SCOPE_1, PRODUCT_SCOPE_2});
 
         List<String> result = scopesIssuer.getScopes(callback);
 
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_2));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_1
+                + " should pass through (OAuthCallback) when a SystemScopesIssuer is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_2
+                + " should pass through (OAuthCallback) when a SystemScopesIssuer is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_2));
+        Assert.assertEquals("Only the two requested product scopes should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -260,8 +298,10 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(callback);
 
-        Assert.assertEquals(1, result.size());
-        Assert.assertTrue(result.contains(DEFAULT_SCOPE));
+        Assert.assertEquals("Without a SystemScopesIssuer (OAuthCallback), product scopes are dropped leaving only "
+                + "the default scope; got " + result, 1, result.size());
+        Assert.assertTrue("Result should fall back to the default scope " + DEFAULT_SCOPE + "; got " + result,
+                result.contains(DEFAULT_SCOPE));
     }
 
     @Test
@@ -274,9 +314,13 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(callback);
 
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_2));
-        Assert.assertTrue(result.contains(APP_SCOPE));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_2
+                + " should pass through (OAuthCallback) with a SystemScopesIssuer; got " + result,
+                result.contains(PRODUCT_SCOPE_2));
+        Assert.assertTrue("App scope " + APP_SCOPE + " should be retained; got " + result,
+                result.contains(APP_SCOPE));
+        Assert.assertEquals("Both the product scope and the app scope should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -288,9 +332,12 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(callback);
 
-        Assert.assertFalse(result.contains(PRODUCT_SCOPE_2));
-        Assert.assertTrue(result.contains(APP_SCOPE));
-        Assert.assertEquals(1, result.size());
+        Assert.assertFalse("Product scope " + PRODUCT_SCOPE_2
+                + " should be dropped (OAuthCallback) without a SystemScopesIssuer; got " + result,
+                result.contains(PRODUCT_SCOPE_2));
+        Assert.assertTrue("App scope " + APP_SCOPE + " should be retained; got " + result,
+                result.contains(APP_SCOPE));
+        Assert.assertEquals("Only the app scope should remain; got " + result, 1, result.size());
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -310,17 +357,24 @@ public class RoleBasedScopesIssuerTest {
     }
 
     @Test
-    public void testTokenProductScopesPassThroughWhenSystemIssuerAvailable() {
+    public void testTokenProductScopesPassThroughWhenSystemIssuerAvailable() throws Exception {
 
         registerSystemScopesIssuer();
+        PowerMockito.doReturn(null).when(scopesIssuer)
+                .getAppScopes(Mockito.anyString(), Mockito.any(AuthenticatedUser.class), Mockito.anyList());
         OAuthTokenReqMessageContext context =
                 mockTokenContext(new String[]{PRODUCT_SCOPE_1, PRODUCT_SCOPE_2}, "authorization_code");
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_2));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_1
+                + " should pass through (token flow) when a SystemScopesIssuer is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_2
+                + " should pass through (token flow) when a SystemScopesIssuer is registered; got " + result,
+                result.contains(PRODUCT_SCOPE_2));
+        Assert.assertEquals("Only the two requested product scopes should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -331,8 +385,10 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertEquals(1, result.size());
-        Assert.assertTrue(result.contains(DEFAULT_SCOPE));
+        Assert.assertEquals("Without a SystemScopesIssuer (token flow), product scopes are dropped leaving only "
+                + "the default scope; got " + result, 1, result.size());
+        Assert.assertTrue("Result should fall back to the default scope " + DEFAULT_SCOPE + "; got " + result,
+                result.contains(DEFAULT_SCOPE));
     }
 
     @Test
@@ -346,9 +402,13 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertTrue(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(APP_SCOPE));
-        Assert.assertEquals(2, result.size());
+        Assert.assertTrue("Product scope " + PRODUCT_SCOPE_1
+                + " should pass through (token flow) with a SystemScopesIssuer; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("App scope " + APP_SCOPE + " should be retained; got " + result,
+                result.contains(APP_SCOPE));
+        Assert.assertEquals("Both the product scope and the app scope should be returned; got " + result,
+                2, result.size());
     }
 
     @Test
@@ -361,9 +421,12 @@ public class RoleBasedScopesIssuerTest {
 
         List<String> result = scopesIssuer.getScopes(context);
 
-        Assert.assertFalse(result.contains(PRODUCT_SCOPE_1));
-        Assert.assertTrue(result.contains(APP_SCOPE));
-        Assert.assertEquals(1, result.size());
+        Assert.assertFalse("Product scope " + PRODUCT_SCOPE_1
+                + " should be dropped (token flow) without a SystemScopesIssuer; got " + result,
+                result.contains(PRODUCT_SCOPE_1));
+        Assert.assertTrue("App scope " + APP_SCOPE + " should be retained; got " + result,
+                result.contains(APP_SCOPE));
+        Assert.assertEquals("Only the app scope should remain; got " + result, 1, result.size());
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -375,14 +438,16 @@ public class RoleBasedScopesIssuerTest {
 
         registerSystemScopesIssuer();
         boolean available = Whitebox.invokeMethod(scopesIssuer, "isSystemScopeIssuerAvailable");
-        Assert.assertTrue(available);
+        Assert.assertTrue("isSystemScopeIssuerAvailable() should return true when a SystemScopesIssuer is registered",
+                available);
     }
 
     @Test
     public void testIsSystemScopeIssuerAvailableFalseWhenEmpty() throws Exception {
 
         boolean available = Whitebox.invokeMethod(scopesIssuer, "isSystemScopeIssuerAvailable");
-        Assert.assertFalse(available);
+        Assert.assertFalse("isSystemScopeIssuerAvailable() should return false when no validators are registered",
+                available);
     }
 
     @Test
@@ -393,7 +458,8 @@ public class RoleBasedScopesIssuerTest {
         ServiceReferenceHolder.getInstance().addScopeValidator(new RoleBasedScopesIssuer());
 
         boolean available = Whitebox.invokeMethod(scopesIssuer, "isSystemScopeIssuerAvailable");
-        Assert.assertFalse(available);
+        Assert.assertFalse("isSystemScopeIssuerAvailable() should return false when only non-SystemScopesIssuer "
+                + "validators are registered", available);
     }
 
     // ------------------------------------------------------------------------------------------------
@@ -416,9 +482,11 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = Whitebox.invokeMethod(scopesIssuer, "getAuthorizedScopes",
                 userRoles, requestedScopes, appScopes);
 
-        Assert.assertTrue(result.contains("app_scope"));
-        Assert.assertTrue(result.contains("whitelisted_scope"));
-        Assert.assertFalse(result.contains("unassigned_scope"));
+        Assert.assertTrue("App scope should be authorized; got " + result, result.contains("app_scope"));
+        Assert.assertTrue("Whitelisted scope should be authorized; got " + result,
+                result.contains("whitelisted_scope"));
+        Assert.assertFalse("Unassigned scope must be filtered when restrict.unassigned.scopes is on; got " + result,
+                result.contains("unassigned_scope"));
     }
 
     @Test
@@ -434,8 +502,9 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = Whitebox.invokeMethod(scopesIssuer, "getAuthorizedScopes",
                 userRoles, requestedScopes, appScopes);
 
-        Assert.assertTrue(result.contains("app_scope"));
-        Assert.assertTrue(result.contains("unassigned_scope"));
+        Assert.assertTrue("App scope should be authorized; got " + result, result.contains("app_scope"));
+        Assert.assertTrue("Unassigned scope should be allowed when restrict.unassigned.scopes is off; got " + result,
+                result.contains("unassigned_scope"));
     }
 
     @Test
@@ -452,7 +521,8 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = Whitebox.invokeMethod(scopesIssuer, "getAuthorizedScopes",
                 userRoles, requestedScopes, appScopes);
 
-        Assert.assertTrue(result.contains("scope1"));
+        Assert.assertTrue("With preservedCaseSensitive off, role 'admin' should match scope role 'Admin'; got "
+                + result, result.contains("scope1"));
     }
 
     @Test
@@ -469,7 +539,9 @@ public class RoleBasedScopesIssuerTest {
         List<String> result = Whitebox.invokeMethod(scopesIssuer, "getAuthorizedScopes",
                 userRoles, requestedScopes, appScopes);
 
-        Assert.assertFalse(result.contains("scope1"));
-        Assert.assertTrue(result.contains(DEFAULT_SCOPE));
+        Assert.assertFalse("With preservedCaseSensitive on, role 'admin' should not match scope role 'Admin'; got "
+                + result, result.contains("scope1"));
+        Assert.assertTrue("Result should fall back to the default scope " + DEFAULT_SCOPE + "; got " + result,
+                result.contains(DEFAULT_SCOPE));
     }
 }

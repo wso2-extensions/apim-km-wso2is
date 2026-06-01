@@ -50,8 +50,9 @@ public class ServiceReferenceHolderTest {
         ServiceReferenceHolder.getInstance().addScopeValidator(validator);
 
         List<ScopeValidator> validators = ServiceReferenceHolder.getInstance().getScopeValidators();
-        Assert.assertEquals(1, validators.size());
-        Assert.assertTrue(validators.contains(validator));
+        Assert.assertEquals("Registry should hold exactly one validator after a single add; got " + validators,
+                1, validators.size());
+        Assert.assertTrue("Added validator should be present in the registry", validators.contains(validator));
     }
 
     @Test
@@ -63,9 +64,9 @@ public class ServiceReferenceHolderTest {
         ServiceReferenceHolder.getInstance().addScopeValidator(validator2);
 
         List<ScopeValidator> validators = ServiceReferenceHolder.getInstance().getScopeValidators();
-        Assert.assertEquals(2, validators.size());
-        Assert.assertTrue(validators.contains(validator1));
-        Assert.assertTrue(validators.contains(validator2));
+        Assert.assertEquals("Registry should hold both added validators; got " + validators, 2, validators.size());
+        Assert.assertTrue("First added validator should be present", validators.contains(validator1));
+        Assert.assertTrue("Second added validator should be present", validators.contains(validator2));
     }
 
     @Test
@@ -79,15 +80,17 @@ public class ServiceReferenceHolderTest {
         ServiceReferenceHolder.getInstance().removeScopeValidator(validator1);
 
         List<ScopeValidator> validators = ServiceReferenceHolder.getInstance().getScopeValidators();
-        Assert.assertEquals(1, validators.size());
-        Assert.assertFalse(validators.contains(validator1));
-        Assert.assertTrue(validators.contains(validator2));
+        Assert.assertEquals("Registry should hold one validator after removing one of two; got " + validators,
+                1, validators.size());
+        Assert.assertFalse("Removed validator should no longer be present", validators.contains(validator1));
+        Assert.assertTrue("Remaining validator should still be present", validators.contains(validator2));
     }
 
     @Test
     public void testGetScopeValidatorsInitiallyEmpty() {
 
-        Assert.assertTrue(ServiceReferenceHolder.getInstance().getScopeValidators().isEmpty());
+        Assert.assertTrue("A freshly cleared registry should report empty",
+                ServiceReferenceHolder.getInstance().getScopeValidators().isEmpty());
     }
 
     @Test
@@ -96,6 +99,7 @@ public class ServiceReferenceHolderTest {
         ScopeValidator validator = Mockito.mock(ScopeValidator.class);
         ServiceReferenceHolder.getInstance().removeScopeValidator(validator);
 
-        Assert.assertTrue(ServiceReferenceHolder.getInstance().getScopeValidators().isEmpty());
+        Assert.assertTrue("Removing a validator that was never added should be a no-op and leave the registry empty",
+                ServiceReferenceHolder.getInstance().getScopeValidators().isEmpty());
     }
 }
