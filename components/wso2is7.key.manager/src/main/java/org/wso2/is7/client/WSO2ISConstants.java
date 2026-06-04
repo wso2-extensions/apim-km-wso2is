@@ -49,6 +49,9 @@ public class WSO2ISConstants {
     public static final String CANONICAL_VALUES = "canonicalValues";
     public static final String REFERENCE_TYPES = "referenceTypes";
 
+    public static final String DOMAIN_PREFIX_SYSTEM_PRIMARY = "system_primary_";
+    public static final String DOMAIN_PREFIX_SYSTEM = "system_";
+
     WSO2ISConstants() {
 
     }

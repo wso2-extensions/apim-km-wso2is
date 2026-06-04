@@ -121,6 +121,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1592,6 +1593,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     /**
      * Converts a list of WSO2 IS7 roles to API Manager roles.
      * If a role starts with "system_primary_", it removes the prefix.
+     * If a role starts with "system_<domain>_", it reconstructs it as "<DOMAIN>/<roleName>".
      * Otherwise, it prepends "Internal/" to the role name.
      *
      * @param is7Roles List of WSO2 IS7 roles.
@@ -1599,9 +1601,22 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      */
     private List<String> getAPIMRolesFromIS7Roles(List<String> is7Roles) {
         return is7Roles.stream()
-                .map(roleName -> roleName.startsWith("system_primary_")
-                        ? roleName.replaceFirst("^system_primary_", "")
-                        : "Internal/" + roleName)
+                .map(roleName -> {
+                    if (roleName.startsWith(WSO2ISConstants.DOMAIN_PREFIX_SYSTEM_PRIMARY)) {
+                        return roleName.replaceFirst("^" + WSO2ISConstants.DOMAIN_PREFIX_SYSTEM_PRIMARY,
+                                StringUtils.EMPTY);
+                    }
+                    if (roleName.startsWith(WSO2ISConstants.DOMAIN_PREFIX_SYSTEM)) {
+                        String withoutPrefix = roleName.substring(WSO2ISConstants.DOMAIN_PREFIX_SYSTEM.length());
+                        int underscoreIndex = withoutPrefix.indexOf('_');
+                        if (underscoreIndex > 0) {
+                            String domain = withoutPrefix.substring(0, underscoreIndex).toUpperCase(Locale.ENGLISH);
+                            String role = withoutPrefix.substring(underscoreIndex + 1);
+                            return domain + UserCoreConstants.DOMAIN_SEPARATOR + role;
+                        }
+                    }
+                    return "Internal/" + roleName;
+                })
                 .collect(Collectors.toList());
     }
     /**
@@ -2106,7 +2121,8 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * When role creation is enabled, the method applies specific naming conventions:
      * - Removes the "Internal/" prefix if present.
      * - Throws an exception if the role starts with "Application/".
-     * - Prepends "system_primary_" to the role name if no specific prefix is found.
+     * - For roles with a userstore domain (e.g., "LDAP/admin"), uses "system_<domain>_<roleName>" (domain lowercased).
+     * - For roles without a domain or with the PRIMARY domain, uses "system_primary_<roleName>".
      *
      * @param roleName The role name to process.
      * @return The processed WSO2 IS7 role name.
@@ -2122,7 +2138,17 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         } else if (roleName.startsWith("Application/")) {
             throw new APIManagementException("Role: " + roleName + " is invalid.");
         }
-        return "system_primary_" + roleName;
+        int separatorIndex = roleName.indexOf(UserCoreConstants.DOMAIN_SEPARATOR);
+        if (separatorIndex > 0) {
+            String domain = roleName.substring(0, separatorIndex);
+            String roleWithoutDomain = roleName.substring(separatorIndex + UserCoreConstants.DOMAIN_SEPARATOR.length());
+            if (!UserCoreConstants.PRIMARY_DEFAULT_DOMAIN_NAME.equalsIgnoreCase(domain)) {
+                return WSO2ISConstants.DOMAIN_PREFIX_SYSTEM + domain.toLowerCase(Locale.ENGLISH) + "_" +
+                        roleWithoutDomain;
+            }
+            return WSO2ISConstants.DOMAIN_PREFIX_SYSTEM_PRIMARY + roleWithoutDomain;
+        }
+        return WSO2ISConstants.DOMAIN_PREFIX_SYSTEM_PRIMARY + roleName;
     }
 
 }
