@@ -256,6 +256,20 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     }
 
     /**
+     * Splits a callback URL value into individual URLIs. Handles both a plain comma-separated list
+     * and the "regexp=(url1|url2)" pattern IS returns for apps with multiple callback URLs
+     */
+    private String[] extractCallbackURLs(String callBackURL) {
+        if (callBackURL.startsWith(WSO2IS7KeyManagerConstants.CALLBACK_URL_REGEXP_PREFIX)
+            && callBackURL.endsWith(")")) {
+            String urls = callBackURL.substring(WSO2IS7KeyManagerConstants.CALLBACK_URL_REGEXP_PREFIX.length(),
+                    callBackURL.length() - 1);
+            return urls.split("\\|");
+        }
+        return callBackURL.trim().split("\\s*,\\s*");
+    }
+
+    /**
      * Copied from AMDefaultKeyManagerImpl. WSO2IS7ClientInfo is used instead of ClientInfo.
      * Construct ClientInfo object for application create request
      *
@@ -282,8 +296,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
         if (StringUtils.isNotEmpty(info.getCallBackURL())) {
             String callBackURL = info.getCallBackURL();
-            String[] callbackURLs = callBackURL.trim().split("\\s*,\\s*");
-            clientInfo.setRedirectUris(Arrays.asList(callbackURLs));
+            clientInfo.setRedirectUris(Arrays.asList(extractCallbackURLs(callBackURL)));
         }
 
         clientInfo.setClientName(oauthClientName);
@@ -683,6 +696,22 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     }
 
     /**
+     * Converts the redirected URIs returned by the DCR endpoint back into a comma-separated callback URL
+     * string, decoding the "regexp=(url1|url2)" pattern IS uses to store multiple callback URLs
+     */
+    private String buildCallbackURL(List<String> redirectUris) {
+        if (redirectUris.size() == 1
+                && redirectUris.get(0).startsWith(WSO2IS7KeyManagerConstants.CALLBACK_URL_REGEXP_PREFIX)
+                && redirectUris.get(0).endsWith(")")) {
+            String regexValue = redirectUris.get(0);
+            String urls = regexValue.substring(WSO2IS7KeyManagerConstants.CALLBACK_URL_REGEXP_PREFIX.length(),
+                    regexValue.length() - 1);
+            return String.join(",", urls.split("\\|"));
+        }
+        return String.join(",", redirectUris);
+    }
+
+    /**
      * Copied from AMDefaultKeyManagerImpl.
      * Builds an OAuthApplicationInfo object using the ClientInfo response
      *
@@ -696,9 +725,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         oAuthApplicationInfo.setClientName(appResponse.getClientName());
         oAuthApplicationInfo.setClientId(appResponse.getClientId());
         if (appResponse.getRedirectUris() != null) {
-            oAuthApplicationInfo.setCallBackURL(String.join(",", appResponse.getRedirectUris()));
-            oAuthApplicationInfo.addParameter(ApplicationConstants.OAUTH_REDIRECT_URIS,
-                    String.join(",", appResponse.getRedirectUris()));
+            String callBackURL = buildCallbackURL(appResponse.getRedirectUris());
+            oAuthApplicationInfo.setCallBackURL(callBackURL);
+            oAuthApplicationInfo.addParameter(ApplicationConstants.OAUTH_REDIRECT_URIS, callBackURL);
         }
         oAuthApplicationInfo.setClientSecret(appResponse.getClientSecret());
         if (appResponse.getGrantTypes() != null) {

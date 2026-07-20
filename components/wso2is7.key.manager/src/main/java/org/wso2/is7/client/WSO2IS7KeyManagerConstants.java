@@ -33,6 +33,7 @@ public class WSO2IS7KeyManagerConstants {
     public static final String PKCE_SUPPORT_PLAIN = "ext_pkce_support_plain";
     public static final String PUBLIC_CLIENT = "ext_public_client";
     public static final String REFRESH_TOKEN_TYPE = "Refresh";
+    public static final String CALLBACK_URL_REGEXP_PREFIX = "regexp=(";
 
     /**
      * Constants related to WSO2 Identity Server 7 Key Manager Connector Configuration.
