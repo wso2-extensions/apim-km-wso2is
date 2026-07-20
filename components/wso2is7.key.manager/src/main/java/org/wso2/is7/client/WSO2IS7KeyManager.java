@@ -727,7 +727,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (appResponse.getRedirectUris() != null) {
             String callBackURL = buildCallbackURL(appResponse.getRedirectUris());
             oAuthApplicationInfo.setCallBackURL(callBackURL);
-            oAuthApplicationInfo.addParameter(ApplicationConstants.OAUTH_CALLBACK_URIS, callBackURL);
+            oAuthApplicationInfo.addParameter(ApplicationConstants.OAUTH_REDIRECT_URIS, callBackURL);
         }
         oAuthApplicationInfo.setClientSecret(appResponse.getClientSecret());
         if (appResponse.getGrantTypes() != null) {
