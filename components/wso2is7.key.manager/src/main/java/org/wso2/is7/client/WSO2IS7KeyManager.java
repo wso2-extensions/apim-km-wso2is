@@ -101,6 +101,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -117,6 +118,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -169,6 +171,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private static final String TLS_V1_3 = "TLSv1.3";
 
     private boolean enableRoleCreation = false;
+    private boolean manageScopesById = false;
 
     private WSO2IS7DCRClient wso2IS7DCRClient;
     private IntrospectionClient introspectionClient;
@@ -936,6 +939,14 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (configuration.getParameter(ENABLE_ROLES_CREATION) instanceof Boolean) {
             enableRoleCreation = (Boolean) configuration.getParameter(ENABLE_ROLES_CREATION);
         }
+        Object scopeManagementByIdConfig = configuration.getParameter(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_SCOPE_MANAGEMENT_BY_ID);
+        if (scopeManagementByIdConfig instanceof Boolean) {
+            manageScopesById = (Boolean) scopeManagementByIdConfig;
+        } else if (scopeManagementByIdConfig instanceof String) {
+            // Key managers created through the Admin REST API can carry the checkbox value as a string.
+            manageScopesById = Boolean.parseBoolean((String) scopeManagementByIdConfig);
+        }
 
         String revokeOneTimeTokenEndpoint;
         if (configuration.getParameter(APIConstants.KeyManager.REVOKE_ENDPOINT) != null) {
@@ -1314,6 +1325,150 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     }
 
     /**
+     * Gets the WSO2 IS7 scope name to scope ID mapping of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @param wso2IS7APIResourceId          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @return                              Mapping of WSO2 IS7 scope name to WSO2 IS7 scope ID.
+     * @throws KeyManagerClientException    Failed to get the scopes of the
+     *                                      {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     */
+    private Map<String, String> getWSO2IS7ScopeIds(String wso2IS7APIResourceId) throws KeyManagerClientException {
+
+        JsonArray existingScopes = wso2IS7APIResourceManagementClient.getAPIResourceScopes(wso2IS7APIResourceId);
+        return buildScopeIdMap(existingScopes);
+    }
+
+    /**
+     * Builds a WSO2 IS7 scope name to scope ID mapping, out of the given WSO2 IS7 scope listing.
+     * @param scopes    WSO2 IS7 scope listing, as returned by the API resource scopes endpoint.
+     * @return          Mapping of WSO2 IS7 scope name to WSO2 IS7 scope ID.
+     */
+    private Map<String, String> buildScopeIdMap(JsonArray scopes) {
+
+        Map<String, String> scopeIds = new HashMap<>();
+        for (JsonElement scope : scopes) {
+            JsonObject scopeJsonObject = scope.getAsJsonObject();
+            JsonElement scopeName = scopeJsonObject.get("name");
+            JsonElement scopeId = scopeJsonObject.get("id");
+            if (scopeName != null && !scopeName.isJsonNull() && scopeId != null && !scopeId.isJsonNull()) {
+                scopeIds.put(scopeName.getAsString(), scopeId.getAsString());
+            }
+        }
+        return scopeIds;
+    }
+
+    /**
+     * Deletes the given scopes from the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource of WSO2 IS7.
+     * When {@link WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants#ENABLE_SCOPE_MANAGEMENT_BY_ID}
+     * is enabled, the scope IDs are resolved with a single request and the scope ID based WSO2 IS7 endpoint is used,
+     * so that scope names containing '/' - which cannot be addressed through the scope name based endpoint - are
+     * deleted as well. Otherwise, the scope name based endpoint is used.
+     * @param wso2IS7APIResourceId      ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @param scopeNames                Names (keys) of the scopes to be deleted.
+     * @throws APIManagementException   Failed to delete a scope from the
+     *                                  {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     */
+    private void deleteWSO2IS7Scopes(String wso2IS7APIResourceId, Collection<String> scopeNames)
+            throws APIManagementException {
+
+        if (scopeNames == null || scopeNames.isEmpty()) {
+            return;
+        }
+        Map<String, String> scopeIds = Collections.emptyMap();
+        if (manageScopesById) {
+            try {
+                scopeIds = getWSO2IS7ScopeIds(wso2IS7APIResourceId);
+            } catch (KeyManagerClientException e) {
+                handleException("Failed to get the scope IDs of WSO2 IS7 API Resource: " +
+                        DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+            }
+        }
+        for (String scopeName : scopeNames) {
+            try {
+                if (manageScopesById) {
+                    String scopeId = scopeIds.get(scopeName);
+                    if (scopeId == null) {
+                        // The scope is already absent in WSO2 IS7, hence there is nothing to delete.
+                        if (log.isDebugEnabled()) {
+                            log.debug("Scope: " + scopeName + " does not exist in WSO2 IS7 API Resource: " +
+                                    DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER + ". Skipping the deletion.");
+                        }
+                        continue;
+                    }
+                    wso2IS7APIResourceManagementClient.deleteScopeFromAPIResourceById(wso2IS7APIResourceId, scopeId);
+                } else {
+                    wso2IS7APIResourceManagementClient.deleteScopeFromAPIResource(wso2IS7APIResourceId, scopeName);
+                }
+            } catch (KeyManagerClientException e) {
+                handleException("Failed to delete scope: " + scopeName + " from WSO2 IS7 API Resource: " +
+                        DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER + getScopeManagementHint(scopeName, e), e);
+            }
+        }
+    }
+
+    /**
+     * Updates the metadata of the given scope in the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER} API resource of
+     * WSO2 IS7, using the pre-resolved scope ID mapping when
+     * {@link WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants#ENABLE_SCOPE_MANAGEMENT_BY_ID} is enabled.
+     * @param wso2IS7APIResourceId          ID of the {@link #DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER}.
+     * @param scope                         Scope whose metadata is to be updated.
+     * @param scopeIds                      Mapping of WSO2 IS7 scope name to scope ID. Only read when scope
+     *                                      management by ID is enabled.
+     * @throws KeyManagerClientException    Failed to update the scope in WSO2 IS7.
+     */
+    private void updateWSO2IS7Scope(String wso2IS7APIResourceId, Scope scope, Map<String, String> scopeIds)
+            throws KeyManagerClientException {
+
+        WSO2IS7APIResourceScopeInfo scopeInfo = new WSO2IS7APIResourceScopeInfo();
+        scopeInfo.setDisplayName(scope.getName());
+        scopeInfo.setDescription(scope.getDescription());
+        if (manageScopesById) {
+            String scopeId = scopeIds.get(scope.getKey());
+            if (scopeId == null) {
+                throw new KeyManagerClientException("Scope: " + scope.getKey() +
+                        " does not exist in WSO2 IS7 API Resource: " + DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER);
+            }
+            wso2IS7APIResourceManagementClient.patchAPIResourceScopeById(wso2IS7APIResourceId, scopeId, scopeInfo);
+        } else {
+            wso2IS7APIResourceManagementClient.patchAPIResourceScope(wso2IS7APIResourceId, scope.getKey(), scopeInfo);
+        }
+    }
+
+    /**
+     * Builds a hint to be appended to a scope management failure, whenever the failure is likely to be caused by the
+     * {@link WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants#ENABLE_SCOPE_MANAGEMENT_BY_ID}
+     * configuration not matching the connected WSO2 IS7. The scope ID based endpoints are unavailable in WSO2 IS7
+     * versions that predate them, and the scope name based endpoints cannot address scope names containing '/' -
+     * both of which surface as a 404.
+     * @param scopeName Name (key) of the scope that was being managed.
+     * @param e         Failure received from WSO2 IS7.
+     * @return          Hint to be appended to the error message, or an empty string.
+     */
+    private String getScopeManagementHint(String scopeName, KeyManagerClientException e) {
+
+        if (e.getStatusCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+            return "";
+        }
+        if (manageScopesById) {
+            // The scope ID was just resolved from this API resource's own scope listing, so the scope does exist.
+            // A 404 therefore means the connected WSO2 IS7 does not expose the scope ID based endpoint at all.
+            return ". The scope ID based endpoint (PATCH/DELETE /api-resources/{apiResourceId}/scopes/id/" +
+                    "{scopeId}) was NOT FOUND in the connected WSO2 Identity Server 7, even though the scope " +
+                    "exists. This WSO2 Identity Server 7 does not support scope management by ID. Either " +
+                    "upgrade it to a version that exposes those endpoints, or disable the '" +
+                    WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_SCOPE_MANAGEMENT_BY_ID +
+                    "' configuration of this key manager to fall back to the scope name based endpoints";
+        }
+        if (scopeName.contains("/")) {
+            return ". The scope name contains '/', which the scope name based WSO2 Identity Server 7 endpoints " +
+                    "cannot address. Enable the '" +
+                    WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_SCOPE_MANAGEMENT_BY_ID +
+                    "' configuration of this key manager, provided that the connected WSO2 Identity Server 7 " +
+                    "exposes the scope ID based endpoints (/scopes/id/{scopeId})";
+        }
+        return "";
+    }
+
+    /**
      * Checks the provided set of new WSO2 IS7 scopes against the provided set of existing WSO2 IS7 scope names,
      * and returns the list of non-existing WSO2 IS7 scopes.
      * @param newLocalScopes        Set of new WSO2 IS7 scopes that have been created.
@@ -1355,15 +1510,20 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         }
 
         JsonArray allIS7Roles = searchRoles(null);
+        // Resolved once for the whole batch, so that scope management by ID costs a single extra request.
+        Map<String, String> scopeIds = manageScopesById
+                ? getWSO2IS7ScopeIds(wso2IS7APIResourceId) : Collections.emptyMap();
         for (Scope scope : scopes) {
             if (!existingScopeNames.contains(scope.getKey())) {
                 continue;
             }
             // Update meta data for exiting scopes
-            WSO2IS7APIResourceScopeInfo scopeInfo = new WSO2IS7APIResourceScopeInfo();
-            scopeInfo.setDisplayName(scope.getName());
-            scopeInfo.setDescription(scope.getDescription());
-            wso2IS7APIResourceManagementClient.patchAPIResourceScope(wso2IS7APIResourceId, scope.getKey(), scopeInfo);
+            try {
+                updateWSO2IS7Scope(wso2IS7APIResourceId, scope, scopeIds);
+            } catch (KeyManagerClientException e) {
+                handleException("Failed to update scope: " + scope.getName() + " in WSO2 IS7 API Resource: " +
+                        DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER + getScopeManagementHint(scope.getKey(), e), e);
+            }
 
             // Update with removed scope-to-role bindings for exiting scopes
             List<String> existingAPIMRoles = getAPIMRolesFromIS7Roles(
@@ -1715,14 +1875,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         // Remove only scopes that are no longer present after update.
         if (wso2IS7APIResourceId != null) {
-            for (String removedScope : removedScopeKeys) {
-                try {
-                    wso2IS7APIResourceManagementClient.deleteScopeFromAPIResource(wso2IS7APIResourceId, removedScope);
-                } catch (KeyManagerClientException e) {
-                    handleException("Failed to delete scope: " + removedScope + " from WSO2 IS7 API Resource: " +
-                            DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
-                }
-            }
+            deleteWSO2IS7Scopes(wso2IS7APIResourceId, removedScopeKeys);
         }
         registerWSO2IS7Scopes(wso2IS7APIResourceId, newLocalScopes);
     }
@@ -1746,12 +1899,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         String wso2IS7APIResourceId = getWSO2IS7APIResourceId();
         if (wso2IS7APIResourceId != null) {
-            try {
-                wso2IS7APIResourceManagementClient.deleteScopeFromAPIResource(wso2IS7APIResourceId, scopeName);
-            } catch (KeyManagerClientException e) {
-                handleException("Failed to delete scope: " + scopeName + " from WSO2 IS7 API Resource: " +
-                        DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
-            }
+            deleteWSO2IS7Scopes(wso2IS7APIResourceId, Collections.singleton(scopeName));
         }
     }
 
@@ -1768,15 +1916,13 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         try {
             String wso2IS7APIResourceId = getWSO2IS7APIResourceId();
             if (wso2IS7APIResourceId != null) {
-                WSO2IS7APIResourceScopeInfo scopeInfo = new WSO2IS7APIResourceScopeInfo();
-                scopeInfo.setDisplayName(scope.getName());
-                scopeInfo.setDescription(scope.getDescription());
                 try {
-                    wso2IS7APIResourceManagementClient.patchAPIResourceScope(wso2IS7APIResourceId, scope.getKey(),
-                            scopeInfo);
+                    Map<String, String> scopeIds = manageScopesById
+                            ? getWSO2IS7ScopeIds(wso2IS7APIResourceId) : Collections.emptyMap();
+                    updateWSO2IS7Scope(wso2IS7APIResourceId, scope, scopeIds);
                 } catch (KeyManagerClientException e) {
                     handleException("Failed to update scope: " + scope.getName() + " in WSO2 IS7 API Resource: " +
-                            DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER, e);
+                            DEFAULT_OAUTH_2_RESOURCE_IDENTIFIER + getScopeManagementHint(scope.getKey(), e), e);
                 }
             }
             JsonArray allIS7Roles = searchRoles(null);

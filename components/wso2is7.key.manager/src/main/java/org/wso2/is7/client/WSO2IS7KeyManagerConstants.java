@@ -52,6 +52,7 @@ public class WSO2IS7KeyManagerConstants {
         public static final String API_RESOURCE_MANAGEMENT_ENDPOINT = "api_resource_management_endpoint";
         public static final String ROLES_ENDPOINT = "is7_roles_endpoint";
         public static final String ENABLE_ROLES_CREATION = "enable_roles_creation";
+        public static final String ENABLE_SCOPE_MANAGEMENT_BY_ID = "enable_scope_management_by_id";
     }
 
     /**

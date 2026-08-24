@@ -60,4 +60,14 @@ public interface WSO2IS7APIResourceManagementClient {
     void deleteScopeFromAPIResource(@Param("apiResourceId") String apiResourceId, @Param("scopeName") String scopeName)
             throws KeyManagerClientException;
 
+    @RequestLine("PATCH /{apiResourceId}/scopes/id/{scopeId}")
+    @Headers("Content-Type: application/json")
+    void patchAPIResourceScopeById(@Param("apiResourceId") String apiResourceId, @Param("scopeId") String scopeId,
+                                   WSO2IS7APIResourceScopeInfo scope) throws KeyManagerClientException;
+
+    @RequestLine("DELETE /{apiResourceId}/scopes/id/{scopeId}")
+    @Headers("Content-Type: application/json")
+    void deleteScopeFromAPIResourceById(@Param("apiResourceId") String apiResourceId, @Param("scopeId") String scopeId)
+            throws KeyManagerClientException;
+
 }
