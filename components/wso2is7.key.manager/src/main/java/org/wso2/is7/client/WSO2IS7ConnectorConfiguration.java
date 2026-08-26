@@ -83,6 +83,14 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                 "Enable User Schema Caching", "checkbox",
                 "Enable user schema caching, corresponding to the user schemas defined in IS 7.x",
                 "Enable", false, false, Collections.singletonList("Enable"), false));
+        configurationDtoList.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_SCOPE_MANAGEMENT_BY_ID,
+                "Manage scopes using the scope ID", "checkbox",
+                "Update and delete scopes through the scope ID based WSO2 Identity Server 7 endpoints " +
+                        "(/scopes/id/{scopeId}), instead of the scope name based endpoints. This is required for " +
+                        "scope names that contain '/', which the scope name based endpoints cannot address. Enable " +
+                        "this only if the connected WSO2 Identity Server 7 exposes the scope ID based endpoints.",
+                "", false, false, Collections.singletonList("Enable"), false));
         return configurationDtoList;
     }
 
