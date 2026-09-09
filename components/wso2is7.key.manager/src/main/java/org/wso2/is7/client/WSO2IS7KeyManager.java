@@ -283,7 +283,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * @throws JSONException          for errors in parsing the OAuthApplicationInfo json string
      * @throws APIManagementException if an error occurs while constructing the ClientInfo object
      */
-    private WSO2IS7ClientInfo createClientInfo(OAuthApplicationInfo info, String oauthClientName, boolean isUpdate)
+    protected WSO2IS7ClientInfo createClientInfo(OAuthApplicationInfo info, String oauthClientName, boolean isUpdate)
             throws JSONException, APIManagementException {
 
         WSO2IS7ClientInfo clientInfo = new WSO2IS7ClientInfo();
