@@ -110,6 +110,9 @@ public class WSO2IS7ClientInfo {
     @SerializedName("token_endpoint_auth_method")
     private String tokenEndpointAuthMethod;
 
+    @SerializedName("token_endpoint_allow_reuse_pvt_key_jwt")
+    private Boolean tokenEndpointAllowReusePvtKeyJwt;
+
     @SerializedName("token_endpoint_auth_signing_alg")
     private String tokenEndpointAuthSigningAlg;
 
@@ -369,6 +372,14 @@ public class WSO2IS7ClientInfo {
 
     public void setTokenEndpointAuthMethod(String tokenEndpointAuthMethod) {
         this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
+    }
+
+    public Boolean getTokenEndpointAllowReusePvtKeyJwt() {
+        return tokenEndpointAllowReusePvtKeyJwt;
+    }
+
+    public void setTokenEndpointAllowReusePvtKeyJwt(Boolean tokenEndpointAllowReusePvtKeyJwt) {
+        this.tokenEndpointAllowReusePvtKeyJwt = tokenEndpointAllowReusePvtKeyJwt;
     }
 
     public String getTokenEndpointAuthSigningAlg() {

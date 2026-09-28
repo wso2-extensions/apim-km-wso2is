@@ -722,7 +722,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
      * @param oAuthApplicationInfo original OAuthApplicationInfo object
      * @return OAuthApplicationInfo object with response information added
      */
-    private OAuthApplicationInfo buildDTOFromClientInfo(WSO2IS7ClientInfo appResponse,
+    protected OAuthApplicationInfo buildDTOFromClientInfo(WSO2IS7ClientInfo appResponse,
                                                         OAuthApplicationInfo oAuthApplicationInfo) {
 
         oAuthApplicationInfo.setClientName(appResponse.getClientName());
