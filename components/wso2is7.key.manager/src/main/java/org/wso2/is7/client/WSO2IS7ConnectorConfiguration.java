@@ -91,6 +91,12 @@ public class WSO2IS7ConnectorConfiguration implements KeyManagerConnectorConfigu
                         "scope names that contain '/', which the scope name based endpoints cannot address. Enable " +
                         "this only if the connected WSO2 Identity Server 7 exposes the scope ID based endpoints.",
                 "", false, false, Collections.singletonList("Enable"), false));
+        configurationDtoList.add(new ConfigurationDto(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASS_THROUGH_UNMAPPED_SCIM2_CLAIMS,
+                "Pass Through SCIM2 User Claims", "checkbox",
+                "Applicable when the UserInfo Endpoint is scim2/Me. Include user attributes that have no claim " +
+                        "mapping in the backend JWT under their SCIM2 attribute URI, instead of dropping them.",
+                "", false, false, Collections.singletonList("Enable"), false));
         return configurationDtoList;
     }
 

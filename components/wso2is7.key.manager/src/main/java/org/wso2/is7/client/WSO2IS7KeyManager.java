@@ -188,6 +188,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     /* Use scim me endpoint to fetch user info only if explicitly specified as the userInfoEndpoint.
     Otherwise, use the keymanager-operations user-info endpoint. */
     private boolean isUserInfoEndpointScimMe;
+    /* When the userInfoEndpoint is scim2/Me, include claims without a claim mapping instead of dropping them.
+    Disabled by default to preserve the existing scim2/Me behavior. */
+    private boolean passThroughUnmappedScim2Claims;
     private UserClient userClient;
 
 
@@ -938,6 +941,11 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         if (configuration.getParameter(ENABLE_ROLES_CREATION) instanceof Boolean) {
             enableRoleCreation = (Boolean) configuration.getParameter(ENABLE_ROLES_CREATION);
+        }
+        Object passThroughUnmappedScim2ClaimsConfig = configuration.getParameter(
+                WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.PASS_THROUGH_UNMAPPED_SCIM2_CLAIMS);
+        if (passThroughUnmappedScim2ClaimsConfig instanceof Boolean) {
+            passThroughUnmappedScim2Claims = (Boolean) passThroughUnmappedScim2ClaimsConfig;
         }
         Object scopeManagementByIdConfig = configuration.getParameter(
                 WSO2IS7KeyManagerConstants.ConnectorConfigurationConstants.ENABLE_SCOPE_MANAGEMENT_BY_ID);
@@ -2125,7 +2133,9 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         if (!isUserInfoEndpointScimMe) {
             Map<String, String> userInfoEndpointClaims = getUserClaimsUsingUserInfoEndpoint(username, properties);
             Map<String, String> claimMappings = getClaimMappings();
-            return getMappedAttributes(userInfoEndpointClaims, claimMappings);
+            // The user-info endpoint returns claims in the requested dialect, which the SCIM2-keyed default mappings
+            // do not cover. Apply the configured mappings, but keep unmapped claims instead of dropping them.
+            return getMappedAttributes(userInfoEndpointClaims, claimMappings, true);
         }
 
         Map<String, String> userClaims = new HashMap<>();
@@ -2136,7 +2146,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                 Map<String, String> claims = AttributeMapper.getUserClaims(scimUserObjectString.toString(),
                         wso2IS7SCIMSchemasClient, accessToken, configuration, tenantDomain);
                 Map<String, String> claimMappings = getClaimMappings();
-                userClaims = getMappedAttributes(claims, claimMappings);
+                userClaims = getMappedAttributes(claims, claimMappings, passThroughUnmappedScim2Claims);
             } catch (KeyManagerClientException e) {
                 throw new APIManagementException("Error while getting user info for user: " + username, e);
             }
@@ -2145,15 +2155,18 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     }
 
     private Map<String, String> getClaimMappings() {
-        Map<String, String> claimMappings = this.claimMappings;
+        // Copy, so that the configured mappings are not written into the shared default mappings on every call.
+        Map<String, String> claimMappings = new HashMap<>(this.claimMappings);
 
         // Add configured claim mappings (overwrite if present).
         List<Map<String, String>> configuredClaimMappings =
                 (List<Map<String, String>>) this.configuration.getParameter(CLAIM_MAPPINGS_CONFIG_PARAMETER);
-        for (Map<String, String> claimMapping : configuredClaimMappings) {
-            String remoteClaim = claimMapping.get(REMOTE_CLAIM);
-            String localClaim = claimMapping.get(LOCAL_CLAIM);
-            claimMappings.put(remoteClaim, localClaim);
+        if (configuredClaimMappings != null) {
+            for (Map<String, String> claimMapping : configuredClaimMappings) {
+                String remoteClaim = claimMapping.get(REMOTE_CLAIM);
+                String localClaim = claimMapping.get(LOCAL_CLAIM);
+                claimMappings.put(remoteClaim, localClaim);
+            }
         }
 
         return claimMappings;
@@ -2194,16 +2207,37 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
         return map;
     }
 
-    private Map<String, String> getMappedAttributes(Map<String, String> claims, Map<String, String> claimMappings) {
+    /**
+     * Maps the given claims using the given claim mappings.
+     *
+     * @param claims                Claims to map, keyed by claim URI.
+     * @param claimMappings         Claim mappings, from remote claim URI to local claim URI.
+     * @param includeUnmappedClaims Whether to keep a claim that has no mapping under its original URI. If false, such
+     *                              claims are dropped.
+     * @return Mapped claims.
+     */
+    private Map<String, String> getMappedAttributes(Map<String, String> claims, Map<String, String> claimMappings,
+                                                    boolean includeUnmappedClaims) {
         Map<String, String> mappedAttributes = new HashMap<>();
+        Map<String, String> unmappedAttributes = new HashMap<>();
         for (Map.Entry<String, String> claim : claims.entrySet()) {
-            String scim2Claim = claim.getKey();
-            String localClaim = claimMappings.get(scim2Claim);
+            String claimUri = claim.getKey();
+            String localClaim = claimMappings.get(claimUri);
             if (localClaim != null) {
                 mappedAttributes.put(localClaim, claim.getValue());
+            } else {
+                unmappedAttributes.put(claimUri, claim.getValue());
             }
         }
-        return mappedAttributes;
+        if (!includeUnmappedClaims) {
+            if (log.isDebugEnabled() && !unmappedAttributes.isEmpty()) {
+                log.debug("Dropped user claims without a claim mapping: " + unmappedAttributes.keySet());
+            }
+            return mappedAttributes;
+        }
+        // A mapped claim takes precedence over an unmapped claim with the same URI.
+        unmappedAttributes.putAll(mappedAttributes);
+        return unmappedAttributes;
     }
 
     @Override
