@@ -38,7 +38,9 @@ import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.RefreshTokenValidationDataDO;
+import org.wso2.carbon.identity.oauth2.token.AccessTokenIssuer;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.is.key.manager.tokenpersistence.PersistenceConstants;
 import org.wso2.is.key.manager.tokenpersistence.internal.ServiceReferenceHolder;
 import org.wso2.is.key.manager.tokenpersistence.utils.TokenMgtUtil;
@@ -184,6 +186,10 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
             if (oldAccessToken.getTokenId() != null && accessTokenBean.getTokenId() != null) {
                 AuthorizationGrantCacheEntry existingGrantCacheEntry = AuthorizationGrantCache.getInstance()
                         .getFromSessionStore(oldAccessToken.getTokenId());
+                if (existingGrantCacheEntry == null && isStoredEntryLookupApplicable(msgCtx)) {
+                    existingGrantCacheEntry = AuthorizationGrantCache.getInstance()
+                            .getFromSessionStore(oldAccessToken.getTokenId(), OAuth2Constants.STORE_OPERATION);
+                }
                 if (existingGrantCacheEntry != null) {
                     setAuthorizationGrantCacheValidity(existingGrantCacheEntry, accessTokenBean);
                     // This new method has introduced in order to resolve a regression occurred : wso2/product-is#4366.
@@ -202,6 +208,11 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
             AuthorizationGrantCacheEntry grantCacheEntry =
                     AuthorizationGrantCache.getInstance().getValueFromCacheByTokenId(oldAuthorizationGrantCacheKey,
                             oldAccessToken.getTokenId());
+            if (grantCacheEntry == null && isStoredEntryLookupApplicable(msgCtx)) {
+                grantCacheEntry = AuthorizationGrantCache.getInstance()
+                        .getValueFromCacheByTokenId(oldAuthorizationGrantCacheKey, oldAccessToken.getTokenId(),
+                                OAuth2Constants.STORE_OPERATION);
+            }
             if (grantCacheEntry != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Getting user attributes cached against the previous access token with access token id: "
@@ -245,5 +256,21 @@ public class InMemoryRefreshTokenGrantProcessor implements RefreshTokenGrantProc
             log.debug("Token configured with no expiry. Setting cache validity to maximum value.");
             authorizationGrantCacheEntry.setValidityPeriod(Long.MAX_VALUE);
         }
+    }
+
+    /**
+     * Checks whether the latest stored cache entry of the previous token should be read when it is not found
+     * (federated users with JWT tokens only).
+     *
+     * @param msgCtx Token request message context.
+     * @return true if the stored entry lookup is applicable.
+     */
+    private boolean isStoredEntryLookupApplicable(OAuthTokenReqMessageContext msgCtx) {
+
+        if (msgCtx.getAuthorizedUser() == null || !msgCtx.getAuthorizedUser().isFederatedUser()) {
+            return false;
+        }
+        OAuthAppDO oAuthAppDO = (OAuthAppDO) msgCtx.getProperty(AccessTokenIssuer.OAUTH_APP_DO);
+        return oAuthAppDO != null && OAuth2Util.JWT.equals(oAuthAppDO.getTokenType());
     }
 }
