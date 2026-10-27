@@ -492,17 +492,24 @@ public class TokenMgtUtil {
 
         AuthenticatedUser authenticatedUser;
         try {
-            authenticatedUser = UserSessionStore.getInstance().getUser(userId);
-            if (authenticatedUser == null) {
+            AuthenticatedUser sessionUser = UserSessionStore.getInstance().getUser(userId);
+            if (sessionUser == null) {
                 throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
                         + "federated user. No user found for the userId");
             }
+            authenticatedUser = new AuthenticatedUser();
             authenticatedUser.setUserId(userId);
-            authenticatedUser.setUserName(authenticatedUser.getUserName());
-            authenticatedUser.setTenantDomain(authenticatedUser.getTenantDomain());
-            authenticatedUser.setUserStoreDomain(authenticatedUser.getUserStoreDomain());
+            authenticatedUser.setUserName(sessionUser.getUserName());
+            authenticatedUser.setTenantDomain(sessionUser.getTenantDomain());
+            /* The user session store keeps 'FEDERATED' as the domain of federated users. It is a reserved marker,
+             not a user store, so do not set it as the user store domain. This aligns with
+             OAuth2Util.createAuthenticatedUser() used when tokens are persisted. */
+            if (!StringUtils.startsWith(sessionUser.getUserStoreDomain(),
+                    OAuthConstants.UserType.FEDERATED_USER_DOMAIN_PREFIX)) {
+                authenticatedUser.setUserStoreDomain(sessionUser.getUserStoreDomain());
+            }
             authenticatedUser.setFederatedUser(true);
-            authenticatedUser.setFederatedIdPName(authenticatedUser.getFederatedIdPName());
+            authenticatedUser.setFederatedIdPName(sessionUser.getFederatedIdPName());
         } catch (UserSessionException e) {
             // In here we better not log the user id.
             throw new IdentityOAuth2Exception("Error occurred while resolving the user from the userId for the "
