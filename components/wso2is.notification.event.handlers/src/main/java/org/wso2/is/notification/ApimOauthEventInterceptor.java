@@ -97,6 +97,19 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
             } catch (UserStoreException e) {
                 log.error("Error while resolving tenantDomain", e);
             }
+        } else if (enabled && refreshTokenDO != null && !revokeResponseDTO.isError()
+                && StringUtils.isNotEmpty(refreshTokenDO.getAccessToken())) {
+            // Revoked using the refresh token: IS has also revoked the access token issued with it,
+            // so the gateway must be notified about that access token.
+            try {
+                TokenRevocationEvent tokenRevocationEvent =
+                        toTokenRevocationEvent(refreshTokenDO, revokeRequestDTO.getConsumerKey());
+                publishEvent(tokenRevocationEvent);
+            } catch (InvalidOAuthClientException e) {
+                log.error("Error while retrieving token type", e);
+            } catch (UserStoreException e) {
+                log.error("Error while resolving tenantId", e);
+            }
         }
 
     }
@@ -121,6 +134,36 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
         accessToken = getJWTid(accessToken, oauthApp);
         TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(accessToken, expiryTime, user,
                 accessTokenDO.getConsumerKey(), tokenType);
+        tokenRevocationEvent.setTenantId(tenantID);
+        tokenRevocationEvent.setTenantDomain(tenantDomain);
+        return tokenRevocationEvent;
+    }
+
+    /**
+     * Builds the revocation event for the access token that IS revoked along with a refresh token.
+     * RefreshTokenValidationDataDO carries no consumer key or tenant id, so the consumer key is taken from the
+     * revocation request (IS only resolves the refresh token for that client) and the tenant from the user.
+     */
+    private TokenRevocationEvent toTokenRevocationEvent(RefreshTokenValidationDataDO refreshTokenDO,
+                                                        String consumerKey)
+            throws IdentityOAuth2Exception, InvalidOAuthClientException, UserStoreException {
+
+        long expiryTime;
+        long validityTime = refreshTokenDO.getAccessTokenValidityInMillis();
+        if (validityTime > 0 && refreshTokenDO.getAccessTokenIssuedTime() != null) {
+            expiryTime = refreshTokenDO.getAccessTokenIssuedTime().getTime() + validityTime;
+        } else {
+            expiryTime = Long.MAX_VALUE;
+        }
+        String user = refreshTokenDO.getAuthorizedUser().getUserName();
+        String tenantDomain = refreshTokenDO.getAuthorizedUser().getTenantDomain();
+        int tenantID =
+                ServiceReferenceHolder.getInstance().getRealmService().getTenantManager().getTenantId(tenantDomain);
+        OAuthAppDO oauthApp = OAuth2Util.getAppInformationByClientId(consumerKey);
+        String tokenType = oauthApp.getTokenType();
+        String accessToken = getJWTid(refreshTokenDO.getAccessToken(), oauthApp);
+        TokenRevocationEvent tokenRevocationEvent = new TokenRevocationEvent(accessToken, expiryTime, user,
+                consumerKey, tokenType);
         tokenRevocationEvent.setTenantId(tenantID);
         tokenRevocationEvent.setTenantDomain(tenantDomain);
         return tokenRevocationEvent;
