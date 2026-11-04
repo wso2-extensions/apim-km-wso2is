@@ -106,9 +106,9 @@ public class ApimOauthEventInterceptor extends AbstractOAuthEventInterceptor {
                         toTokenRevocationEvent(refreshTokenDO, revokeRequestDTO.getConsumerKey());
                 ServiceReferenceHolder.getInstance().getEventSenderService().publishEvent(tokenRevocationEvent);
             } catch (InvalidOAuthClientException e) {
-                log.error("Error while retrieving token type", e);
+                log.error("Error while retrieving token type when revoking with a refresh token", e);
             } catch (UserStoreException e) {
-                log.error("Error while resolving tenantId", e);
+                log.error("Error while resolving tenantId when revoking with a refresh token", e);
             }
         }
 
