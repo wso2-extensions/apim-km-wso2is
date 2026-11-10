@@ -1,0 +1,147 @@
+/*
+ *   Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com) All Rights Reserved.
+ *
+ *   WSO2 LLC. licenses this file to you under the Apache License,
+ *   Version 2.0 (the "License"); you may not use this file except
+ *   in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
+package org.wso2.is.notification;
+
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Test;
+import org.wso2.is.notification.event.TokenRevocationEvent;
+
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Tests that EventSender releases its per-event HTTP connection (issue #20772, CLOSE_WAIT leak on 9443).
+ */
+public class EventSenderTest {
+
+    private static final long CLOSE_WAIT_MILLIS = 5000L;
+    private static final long AWAIT_MILLIS = 15000L;
+    private static final String HOSTNAME_VERIFIER = "httpclient.hostnameVerifier";
+    private static final String DISABLE_HOSTNAME_VERIFICATION =
+            "org.opensaml.httpclient.https.disableHostnameVerification";
+
+    @AfterMethod
+    public void clearSystemProperties() {
+
+        System.clearProperty(HOSTNAME_VERIFIER);
+        System.clearProperty(DISABLE_HOSTNAME_VERIFICATION);
+    }
+
+    private static TokenRevocationEvent newEvent() {
+
+        return new TokenRevocationEvent("dummy-token", 3600L, "user1", "dummy-client", "Default");
+    }
+
+    private static boolean runAndCheckClosed(int status) throws Exception {
+
+        try (OneShotHttpServer server = new OneShotHttpServer(status, CLOSE_WAIT_MILLIS)) {
+            new EventSender.EventRunner(server.getEndpoint(), "admin", "admin",
+                    Collections.<String, String>emptyMap(), newEvent()).run();
+            return server.awaitClientClosed(AWAIT_MILLIS);
+        }
+    }
+
+    @Test(description = "The client connection is closed after a successful notify call")
+    public void testConnectionClosedAfterSuccessfulNotification() throws Exception {
+
+        Assert.assertTrue(runAndCheckClosed(200),
+                "Notify connection was left open after a 200 response; it would end up in CLOSE_WAIT");
+    }
+
+    @Test(description = "The client connection is closed even when the endpoint returns an error status")
+    public void testConnectionClosedAfterErrorResponse() throws Exception {
+
+        Assert.assertTrue(runAndCheckClosed(500),
+                "Notify connection was left open after a 500 response; it would end up in CLOSE_WAIT");
+    }
+
+    @Test(description = "The AllowAll hostname-verifier branch also closes its client")
+    public void testConnectionClosedWithAllowAllHostnameVerifier() throws Exception {
+
+        System.setProperty(HOSTNAME_VERIFIER, "AllowAll");
+        Assert.assertTrue(runAndCheckClosed(200), "Notify connection was left open in the AllowAll branch");
+    }
+
+    @Test(description = "The disableHostnameVerification branch also closes its client")
+    public void testConnectionClosedWithHostnameVerificationDisabled() throws Exception {
+
+        System.setProperty(DISABLE_HOSTNAME_VERIFICATION, "true");
+        Assert.assertTrue(runAndCheckClosed(200),
+                "Notify connection was left open when hostname verification is disabled");
+    }
+
+    @Test(description = "Request still carries Basic auth, custom headers and the JSON event payload")
+    public void testRequestContentUnchanged() throws Exception {
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put("X-Test-Header", "test-value");
+        try (OneShotHttpServer server = new OneShotHttpServer(200, CLOSE_WAIT_MILLIS)) {
+            new EventSender.EventRunner(server.getEndpoint(), "admin", "admin", headers, newEvent()).run();
+            Assert.assertTrue(server.awaitClientClosed(AWAIT_MILLIS));
+            String request = server.getRequest();
+            String expectedAuth = "Basic " + Base64.getEncoder()
+                    .encodeToString("admin:admin".getBytes(StandardCharsets.UTF_8));
+            Assert.assertTrue(request.startsWith("POST /internal/data/v1/notify "), request);
+            Assert.assertTrue(request.contains("Authorization: " + expectedAuth), request);
+            Assert.assertTrue(request.contains("X-Test-Header: test-value"), request);
+            Assert.assertTrue(request.contains("Content-Type: application/json"), request);
+            Assert.assertTrue(request.contains("\"accessToken\":\"dummy-token\""), request);
+        }
+    }
+
+    @Test(description = "No Authorization header is sent when credentials are absent")
+    public void testNoAuthorizationHeaderWithoutCredentials() throws Exception {
+
+        try (OneShotHttpServer server = new OneShotHttpServer(200, CLOSE_WAIT_MILLIS)) {
+            new EventSender.EventRunner(server.getEndpoint(), null, null,
+                    Collections.<String, String>emptyMap(), newEvent()).run();
+            Assert.assertTrue(server.awaitClientClosed(AWAIT_MILLIS));
+            Assert.assertFalse(server.getRequest().contains("Authorization:"), server.getRequest());
+        }
+    }
+
+    @Test(description = "An unreachable endpoint is logged and does not propagate an exception")
+    public void testUnreachableEndpointDoesNotThrow() throws Exception {
+
+        int port;
+        try (ServerSocket probe = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            port = probe.getLocalPort();
+        }
+        new EventSender.EventRunner("http://127.0.0.1:" + port + "/internal/data/v1/notify", "admin", "admin",
+                Collections.<String, String>emptyMap(), newEvent()).run();
+    }
+
+    @Test(description = "publishEvent delivers the event asynchronously and the pooled thread closes the client")
+    public void testPublishEventClosesConnection() throws Exception {
+
+        try (OneShotHttpServer server = new OneShotHttpServer(200, CLOSE_WAIT_MILLIS)) {
+            EventSender sender = new EventSender(server.getEndpoint(), "admin", "admin",
+                    Collections.<String, String>emptyMap());
+            sender.publishEvent(newEvent());
+            Assert.assertTrue(server.awaitClientClosed(AWAIT_MILLIS),
+                    "Connection opened by publishEvent was left open; it would end up in CLOSE_WAIT");
+        }
+    }
+}

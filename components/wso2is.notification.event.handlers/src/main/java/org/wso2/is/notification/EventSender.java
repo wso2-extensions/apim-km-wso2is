@@ -110,7 +110,8 @@ public class EventSender implements NotificationEventSenderService {
             } else {
                 closeableHttpClient = HttpClientBuilder.create().useSystemProperties().build();
             }
-            try {
+            // Close the per-event client as well as the response so the connection is not left in CLOSE_WAIT.
+            try (CloseableHttpClient client = closeableHttpClient) {
                 HttpPost httpPost = new HttpPost(notificationEndpoint);
                 if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
                     byte[] credentials =
@@ -125,7 +126,7 @@ public class EventSender implements NotificationEventSenderService {
                 StringEntity requestEntity = new StringEntity(content);
                 requestEntity.setContentType("application/json");
                 httpPost.setEntity(requestEntity);
-                try (CloseableHttpResponse execute = closeableHttpClient.execute(httpPost)) {
+                try (CloseableHttpResponse execute = client.execute(httpPost)) {
                 }
             } catch (IOException e) {
                 log.error("Error while sending Revocation Event to " + notificationEndpoint, e);
