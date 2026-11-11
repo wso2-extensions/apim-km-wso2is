@@ -18,9 +18,9 @@
 
 package org.wso2.is.notification;
 
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 import org.wso2.is.notification.event.TokenRevocationEvent;
 
 import java.net.InetAddress;
@@ -42,7 +42,7 @@ public class EventSenderTest {
     private static final String DISABLE_HOSTNAME_VERIFICATION =
             "org.opensaml.httpclient.https.disableHostnameVerification";
 
-    @AfterMethod
+    @After
     public void clearSystemProperties() {
 
         System.clearProperty(HOSTNAME_VERIFIER);
@@ -63,36 +63,36 @@ public class EventSenderTest {
         }
     }
 
-    @Test(description = "The client connection is closed after a successful notify call")
+    @Test
     public void testConnectionClosedAfterSuccessfulNotification() throws Exception {
 
-        Assert.assertTrue(runAndCheckClosed(200),
-                "Notify connection was left open after a 200 response; it would end up in CLOSE_WAIT");
+        Assert.assertTrue("Notify connection was left open after a 200 response; it would end up in CLOSE_WAIT",
+                runAndCheckClosed(200));
     }
 
-    @Test(description = "The client connection is closed even when the endpoint returns an error status")
+    @Test
     public void testConnectionClosedAfterErrorResponse() throws Exception {
 
-        Assert.assertTrue(runAndCheckClosed(500),
-                "Notify connection was left open after a 500 response; it would end up in CLOSE_WAIT");
+        Assert.assertTrue("Notify connection was left open after a 500 response; it would end up in CLOSE_WAIT",
+                runAndCheckClosed(500));
     }
 
-    @Test(description = "The AllowAll hostname-verifier branch also closes its client")
+    @Test
     public void testConnectionClosedWithAllowAllHostnameVerifier() throws Exception {
 
         System.setProperty(HOSTNAME_VERIFIER, "AllowAll");
-        Assert.assertTrue(runAndCheckClosed(200), "Notify connection was left open in the AllowAll branch");
+        Assert.assertTrue("Notify connection was left open in the AllowAll branch", runAndCheckClosed(200));
     }
 
-    @Test(description = "The disableHostnameVerification branch also closes its client")
+    @Test
     public void testConnectionClosedWithHostnameVerificationDisabled() throws Exception {
 
         System.setProperty(DISABLE_HOSTNAME_VERIFICATION, "true");
-        Assert.assertTrue(runAndCheckClosed(200),
-                "Notify connection was left open when hostname verification is disabled");
+        Assert.assertTrue("Notify connection was left open when hostname verification is disabled",
+                runAndCheckClosed(200));
     }
 
-    @Test(description = "Request still carries Basic auth, custom headers and the JSON event payload")
+    @Test
     public void testRequestContentUnchanged() throws Exception {
 
         Map<String, String> headers = new HashMap<>();
@@ -103,26 +103,26 @@ public class EventSenderTest {
             String request = server.getRequest();
             String expectedAuth = "Basic " + Base64.getEncoder()
                     .encodeToString("admin:admin".getBytes(StandardCharsets.UTF_8));
-            Assert.assertTrue(request.startsWith("POST /internal/data/v1/notify "), request);
-            Assert.assertTrue(request.contains("Authorization: " + expectedAuth), request);
-            Assert.assertTrue(request.contains("X-Test-Header: test-value"), request);
-            Assert.assertTrue(request.contains("Content-Type: application/json"), request);
-            Assert.assertTrue(request.contains("\"accessToken\":\"dummy-token\""), request);
+            Assert.assertTrue(request, request.startsWith("POST /internal/data/v1/notify "));
+            Assert.assertTrue(request, request.contains("Authorization: " + expectedAuth));
+            Assert.assertTrue(request, request.contains("X-Test-Header: test-value"));
+            Assert.assertTrue(request, request.contains("Content-Type: application/json"));
+            Assert.assertTrue(request, request.contains("\"accessToken\":\"dummy-token\""));
         }
     }
 
-    @Test(description = "No Authorization header is sent when credentials are absent")
+    @Test
     public void testNoAuthorizationHeaderWithoutCredentials() throws Exception {
 
         try (OneShotHttpServer server = new OneShotHttpServer(200, CLOSE_WAIT_MILLIS)) {
             new EventSender.EventRunner(server.getEndpoint(), null, null,
                     Collections.<String, String>emptyMap(), newEvent()).run();
             Assert.assertTrue(server.awaitClientClosed(AWAIT_MILLIS));
-            Assert.assertFalse(server.getRequest().contains("Authorization:"), server.getRequest());
+            Assert.assertFalse(server.getRequest(), server.getRequest().contains("Authorization:"));
         }
     }
 
-    @Test(description = "An unreachable endpoint is logged and does not propagate an exception")
+    @Test
     public void testUnreachableEndpointDoesNotThrow() throws Exception {
 
         int port;
@@ -133,15 +133,15 @@ public class EventSenderTest {
                 Collections.<String, String>emptyMap(), newEvent()).run();
     }
 
-    @Test(description = "publishEvent delivers the event asynchronously and the pooled thread closes the client")
+    @Test
     public void testPublishEventClosesConnection() throws Exception {
 
         try (OneShotHttpServer server = new OneShotHttpServer(200, CLOSE_WAIT_MILLIS)) {
             EventSender sender = new EventSender(server.getEndpoint(), "admin", "admin",
                     Collections.<String, String>emptyMap());
             sender.publishEvent(newEvent());
-            Assert.assertTrue(server.awaitClientClosed(AWAIT_MILLIS),
-                    "Connection opened by publishEvent was left open; it would end up in CLOSE_WAIT");
+            Assert.assertTrue("Connection opened by publishEvent was left open; it would end up in CLOSE_WAIT",
+                    server.awaitClientClosed(AWAIT_MILLIS));
         }
     }
 }
