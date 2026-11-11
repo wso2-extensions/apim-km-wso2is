@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -68,7 +69,9 @@ public class OneShotHttpServer implements AutoCloseable {
      */
     public String getEndpoint() {
 
-        return "http://127.0.0.1:" + serverSocket.getLocalPort() + "/internal/data/v1/notify";
+        InetAddress address = serverSocket.getInetAddress();
+        String host = address instanceof Inet6Address ? "[" + address.getHostAddress() + "]" : address.getHostAddress();
+        return "http://" + host + ":" + serverSocket.getLocalPort() + "/internal/data/v1/notify";
     }
 
     /**
@@ -125,10 +128,11 @@ public class OneShotHttpServer implements AutoCloseable {
 
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         int b;
+        int last4 = 0;
         while ((b = in.read()) != -1) {
             buffer.write(b);
-            String soFar = new String(buffer.toByteArray(), StandardCharsets.US_ASCII);
-            if (soFar.endsWith("\r\n\r\n")) {
+            last4 = (last4 << 8) | b;
+            if (last4 == 0x0D0A0D0A) {
                 break;
             }
         }
