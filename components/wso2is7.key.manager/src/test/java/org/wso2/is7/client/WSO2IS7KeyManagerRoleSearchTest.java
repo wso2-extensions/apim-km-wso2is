@@ -185,6 +185,117 @@ public class WSO2IS7KeyManagerRoleSearchTest {
         verify(rolesClient, times(2)).searchRoles(any(JsonObject.class));
     }
 
+    @Test
+    public void testUpdateResourceScopesRemovesBindingOfRoleBeyondFirstPage() throws Exception {
+        useScopeResource();
+        setField("enableRoleCreation", true);
+        stubRole("testrole005", SCOPE);
+        stubRole("testrole110", SCOPE);
+
+        keyManager.updateResourceScopes(null, Collections.singleton(SCOPE),
+                Collections.singleton(localScope(SCOPE, "Internal/testrole110")),
+                Collections.emptySet(), Collections.emptySet());
+
+        ArgumentCaptor<WSO2IS7PatchRoleOperationInfo> patch =
+                ArgumentCaptor.forClass(WSO2IS7PatchRoleOperationInfo.class);
+        verify(rolesClient).patchRole(eq("id-testrole005"), patch.capture());
+        assertTrue(patch.getValue().getOperations().get(0).getValue().getPermissions().isEmpty());
+        verify(rolesClient, never()).patchRole(eq("id-testrole110"), any());
+    }
+
+    @Test
+    public void testUpdateResourceScopesKeepsRequestedRoleBeyondFirstPage() throws Exception {
+        useScopeResource();
+        setField("enableRoleCreation", true);
+        stubRole("testrole005", SCOPE);
+        stubRole("testrole110", SCOPE);
+
+        keyManager.updateResourceScopes(null, Collections.singleton(SCOPE),
+                Collections.singleton(localScope(SCOPE, "Internal/testrole005")),
+                Collections.emptySet(), Collections.emptySet());
+
+        ArgumentCaptor<WSO2IS7PatchRoleOperationInfo> patch =
+                ArgumentCaptor.forClass(WSO2IS7PatchRoleOperationInfo.class);
+        verify(rolesClient).patchRole(eq("id-testrole110"), patch.capture());
+        assertTrue(patch.getValue().getOperations().get(0).getValue().getPermissions().isEmpty());
+        verify(rolesClient, never()).patchRole(eq("id-testrole005"), any());
+    }
+
+    @Test
+    public void testUpdateResourceScopesByIdRemovesBindingOfRoleBeyondFirstPage() throws Exception {
+        useScopeResource();
+        setField("enableRoleCreation", true);
+        setField("manageScopesById", true);
+        stubRole("testrole005", SCOPE);
+        stubRole("testrole110", SCOPE);
+
+        keyManager.updateResourceScopes(null, Collections.singleton(SCOPE),
+                Collections.singleton(localScope(SCOPE, "Internal/testrole110")),
+                Collections.emptySet(), Collections.emptySet());
+
+        Field field = WSO2IS7KeyManager.class.getDeclaredField("wso2IS7APIResourceManagementClient");
+        field.setAccessible(true);
+        WSO2IS7APIResourceManagementClient apiResourceClient =
+                (WSO2IS7APIResourceManagementClient) field.get(keyManager);
+        verify(apiResourceClient).patchAPIResourceScopeById(eq("resource-id"), eq("scope-id"), any());
+        ArgumentCaptor<WSO2IS7PatchRoleOperationInfo> patch =
+                ArgumentCaptor.forClass(WSO2IS7PatchRoleOperationInfo.class);
+        verify(rolesClient).patchRole(eq("id-testrole005"), patch.capture());
+        assertTrue(patch.getValue().getOperations().get(0).getValue().getPermissions().isEmpty());
+        verify(rolesClient, never()).patchRole(eq("id-testrole110"), any());
+    }
+
+    @Test
+    public void testRegisterScopeBindsRoleBeyondFirstPage() throws Exception {
+        useScopeResource();
+        setField("enableRoleCreation", true);
+        stubRole("testrole005", SCOPE);
+
+        keyManager.registerScope(localScope("new_scope", "Internal/testrole005"));
+
+        // A new scope needs only the filtered role lookup, which must find a role beyond the first page.
+        ArgumentCaptor<JsonObject> payload = ArgumentCaptor.forClass(JsonObject.class);
+        verify(rolesClient, times(1)).searchRoles(payload.capture());
+        assertEquals("displayName eq testrole005", payload.getValue().get("filter").getAsString());
+        ArgumentCaptor<WSO2IS7PatchRoleOperationInfo> patch =
+                ArgumentCaptor.forClass(WSO2IS7PatchRoleOperationInfo.class);
+        verify(rolesClient).patchRole(eq("id-testrole005"), patch.capture());
+        List<WSO2IS7PatchRoleOperationInfo.Permission> permissions =
+                patch.getValue().getOperations().get(0).getValue().getPermissions();
+        assertEquals(2, permissions.size());
+        assertEquals("new_scope", permissions.get(1).getValue());
+        verify(rolesClient, never()).createRole(any());
+    }
+
+    @Test
+    public void testRegisterScopeCreatesRoleWhenRoleSearchHasNoResources() throws Exception {
+        useScopeResource();
+        setField("enableRoleCreation", true);
+        JsonObject emptyResponse = new JsonObject();
+        emptyResponse.addProperty("totalResults", 0);
+        when(rolesClient.searchRoles(any(JsonObject.class))).thenReturn(emptyResponse);
+
+        keyManager.registerScope(localScope("new_scope", "Internal/absentrole"));
+
+        ArgumentCaptor<WSO2IS7RoleInfo> role = ArgumentCaptor.forClass(WSO2IS7RoleInfo.class);
+        verify(rolesClient).createRole(role.capture());
+        assertEquals("absentrole", role.getValue().getDisplayName());
+        assertEquals("new_scope", role.getValue().getPermissions().get(0).get("value"));
+        verify(rolesClient, never()).getRole(any());
+        verify(rolesClient, never()).patchRole(any(), any());
+    }
+
+    @Test
+    public void testRegisterScopeSkipsAbsentRoleWhenRoleCreationIsDisabled() throws Exception {
+        useScopeResource();
+
+        keyManager.registerScope(localScope("new_scope", "absentrole"));
+
+        verify(rolesClient, times(1)).searchRoles(any(JsonObject.class));
+        verify(rolesClient, never()).createRole(any());
+        verify(rolesClient, never()).patchRole(any(), any());
+    }
+
     /**
      * Mocks an API resource holding the test scope and paged role search results.
      */
@@ -198,6 +309,7 @@ public class WSO2IS7KeyManagerRoleSearchTest {
         apiResourcesResponse.add("apiResources", apiResources);
         when(apiResourceClient.getAPIResources(any())).thenReturn(apiResourcesResponse);
         JsonObject scope = new JsonObject();
+        scope.addProperty("id", "scope-id");
         scope.addProperty("name", SCOPE);
         scope.addProperty("displayName", SCOPE);
         scope.addProperty("description", "test");
@@ -251,6 +363,33 @@ public class WSO2IS7KeyManagerRoleSearchTest {
         }
         response.add("Resources", resources);
         return response;
+    }
+
+    /**
+     * Returns an APIM scope with the given key and comma separated role bindings.
+     */
+    private static Scope localScope(String key, String roles) {
+        Scope scope = new Scope();
+        scope.setKey(key);
+        scope.setName(key);
+        scope.setDescription("test");
+        scope.setRoles(roles);
+        return scope;
+    }
+
+    /**
+     * Stubs the SCIM role lookup by ID for the given IS7 role, holding the given scopes as permissions.
+     */
+    private void stubRole(String name, String... scopes) throws Exception {
+        WSO2IS7RoleInfo role = new WSO2IS7RoleInfo();
+        role.setId("id-" + name);
+        role.setDisplayName(name);
+        List<Map<String, String>> permissions = new ArrayList<>();
+        for (String scope : scopes) {
+            permissions.add(Collections.singletonMap("value", scope));
+        }
+        role.setPermissions(permissions);
+        when(rolesClient.getRole("id-" + name)).thenReturn(role);
     }
 
     private JsonArray searchRoles(String filter) throws Exception {
