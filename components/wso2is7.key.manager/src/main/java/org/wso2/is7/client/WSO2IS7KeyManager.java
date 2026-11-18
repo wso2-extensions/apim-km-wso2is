@@ -150,6 +150,11 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     private static final String DEFAULT_OAUTH_2_RESOURCE_NAME = "User-defined OAuth2 Resource";
     private static final String DEFAULT_OAUTH_2_RESOURCE_DESCRIPTION = "This is Default OAuth2 Resource Representation";
     private static final String SEARCH_REQUEST_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:SearchRequest";
+    private static final String SCIM_START_INDEX = "startIndex";
+    private static final String SCIM_COUNT = "count";
+    private static final String SCIM_RESOURCES = "Resources";
+    private static final String SCIM_TOTAL_RESULTS = "totalResults";
+    private static final int ROLES_SEARCH_PAGE_SIZE = 100;
     private static final String CLAIM_MAPPINGS_CONFIG_PARAMETER = "claim_mappings";
     private static final String REMOTE_CLAIM = "remoteClaim";
     private static final String LOCAL_CLAIM = "localClaim";
@@ -1619,7 +1624,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
 
         String filter = "displayName eq " + roleDisplayName;
         JsonArray roles = searchRoles(filter);
-        if (roles != null && !roles.isJsonNull() && roles.size() > 0) {
+        if (roles.size() > 0) {
             return roles.get(0).getAsJsonObject().get("id").getAsString();
         }
         return null;
@@ -1745,22 +1750,45 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
     }
 
     /**
-     * Searches for WSO2 IS7 roles with the given filter.
+     * Searches for WSO2 IS7 roles with the given filter, paging through all result pages.
      * @param filter                        Filter to search for roles.
-     * @return                              Response with the list of roles.
+     * @return                              All matching roles, never null.
      * @throws KeyManagerClientException    Failed to search for roles.
      */
     private JsonArray searchRoles(String filter) throws KeyManagerClientException {
 
-        JsonObject payload = new JsonObject();
-        JsonArray schemas = new JsonArray();
-        schemas.add(SEARCH_REQUEST_SCHEMA);
-        payload.add("schemas", schemas);
-        if (filter != null) {
-            payload.addProperty("filter", filter);
+        JsonArray allRoles = new JsonArray();
+        int startIndex = 1;
+        while (true) {
+            JsonObject payload = new JsonObject();
+            JsonArray schemas = new JsonArray();
+            schemas.add(SEARCH_REQUEST_SCHEMA);
+            payload.add("schemas", schemas);
+            if (filter != null) {
+                payload.addProperty("filter", filter);
+            }
+            payload.addProperty(SCIM_START_INDEX, startIndex);
+            payload.addProperty(SCIM_COUNT, ROLES_SEARCH_PAGE_SIZE);
+            JsonObject rolesResponse = wso2IS7SCIMRolesClient.searchRoles(payload);
+            if (rolesResponse == null || !rolesResponse.has(SCIM_RESOURCES)
+                    || !rolesResponse.get(SCIM_RESOURCES).isJsonArray()) {
+                break;
+            }
+            JsonArray page = rolesResponse.getAsJsonArray(SCIM_RESOURCES);
+            if (page.size() == 0) {
+                break;
+            }
+            allRoles.addAll(page);
+            if (rolesResponse.has(SCIM_TOTAL_RESULTS) && !rolesResponse.get(SCIM_TOTAL_RESULTS).isJsonNull()) {
+                if (allRoles.size() >= rolesResponse.get(SCIM_TOTAL_RESULTS).getAsInt()) {
+                    break;
+                }
+            } else if (page.size() < ROLES_SEARCH_PAGE_SIZE) {
+                break;
+            }
+            startIndex += page.size();
         }
-        JsonObject rolesResponse = wso2IS7SCIMRolesClient.searchRoles(payload);
-        return rolesResponse.getAsJsonArray("Resources");
+        return allRoles;
     }
 
     /**
