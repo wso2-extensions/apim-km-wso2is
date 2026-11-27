@@ -25,6 +25,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import feign.Feign;
 import feign.Response;
+import feign.auth.BasicAuthRequestInterceptor;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
@@ -91,7 +92,6 @@ import org.wso2.is7.client.model.WSO2IS7SCIMMeClient;
 import org.wso2.is7.client.model.WSO2IS7SCIMRolesClient;
 import org.wso2.is7.client.model.WSO2IS7SCIMSchemasClient;
 import org.wso2.is7.client.utils.AttributeMapper;
-import org.wso2.is7.client.utils.BasicAuthInterceptorUtil;
 import org.wso2.is7.client.utils.ClaimMappingReader;
 
 import java.io.ByteArrayInputStream;
@@ -1049,7 +1049,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(BasicAuthInterceptorUtil.createBasicAuthInterceptor(username, password))
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password, StandardCharsets.UTF_8))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7DCRClient.class, dcrEndpoint);
 
@@ -1058,7 +1058,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(BasicAuthInterceptorUtil.createBasicAuthInterceptor(username, password))
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password, StandardCharsets.UTF_8))
                     .requestInterceptor(new TenantHeaderInterceptor(tenantDomain))
                     .errorDecoder(new KMClientErrorDecoder())
                     .encoder(new FormEncoder())
@@ -1077,7 +1077,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(BasicAuthInterceptorUtil.createBasicAuthInterceptor(username, password))
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password, StandardCharsets.UTF_8))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7APIResourceManagementClient.class, apiResourceManagementEndpoint);
 
@@ -1086,7 +1086,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                     .encoder(new GsonEncoder())
                     .decoder(new GsonDecoder())
                     .logger(new Slf4jLogger())
-                    .requestInterceptor(BasicAuthInterceptorUtil.createBasicAuthInterceptor(username, password))
+                    .requestInterceptor(new BasicAuthRequestInterceptor(username, password, StandardCharsets.UTF_8))
                     .errorDecoder(new KMClientErrorDecoder())
                     .target(WSO2IS7SCIMRolesClient.class, rolesEndpoint);
 
@@ -1104,7 +1104,7 @@ public class WSO2IS7KeyManager extends AbstractKeyManager {
                         .encoder(new GsonEncoder())
                         .decoder(new GsonDecoder())
                         .logger(new Slf4jLogger())
-                        .requestInterceptor(BasicAuthInterceptorUtil.createBasicAuthInterceptor(username, password))
+                        .requestInterceptor(new BasicAuthRequestInterceptor(username, password, StandardCharsets.UTF_8))
                         .errorDecoder(new KMClientErrorDecoder())
                         .target(UserClient.class, userInfoEndpoint);
             }
