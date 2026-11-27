@@ -19,6 +19,7 @@
 package org.wso2.is7.tenant.management;
 
 import feign.Feign;
+import feign.auth.BasicAuthRequestInterceptor;
 import feign.gson.GsonDecoder;
 import feign.gson.GsonEncoder;
 import feign.slf4j.Slf4jLogger;
@@ -50,8 +51,8 @@ import org.wso2.is7.client.model.TenantOwnerUpdateInfo;
 import org.wso2.is7.client.model.TenantResponse;
 import org.wso2.is7.client.model.TenantStatusUpdateInfo;
 import org.wso2.is7.client.model.WSO2IS7TenantManagementClient;
-import org.wso2.is7.client.utils.BasicAuthInterceptorUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -111,8 +112,8 @@ public class ISTenantSyncListener implements TenantMgtListener {
                             .encoder(new GsonEncoder())
                             .decoder(new GsonDecoder())
                             .logger(new Slf4jLogger())
-                            .requestInterceptor(BasicAuthInterceptorUtil.createBasicAuthInterceptor(
-                                    identityServerAdminUsername, identityServerAdminPassword))
+                            .requestInterceptor(new BasicAuthRequestInterceptor(identityServerAdminUsername,
+                                    identityServerAdminPassword, StandardCharsets.UTF_8))
                             .errorDecoder(new TenantManagementErrorDecoder())
                             .target(WSO2IS7TenantManagementClient.class, tenantManagementEndpoint);
                 } catch (Exception e) {
